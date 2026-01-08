@@ -20,7 +20,7 @@ services:
       - MYSQL_DATABASE=${DB_DATABASE}
       - MYSQL_USER=${DB_USERNAME}
       - MYSQL_PASSWORD=${DB_PASSWORD}
-      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD} # healthcheck를 위한 root 비밀번호
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD} # healthcheck를 위한 root 비밀번호
     volumes:
       - mysql-data:/var/lib/mysql
     networks:
