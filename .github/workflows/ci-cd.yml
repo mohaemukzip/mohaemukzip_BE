@@ -80,7 +80,7 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/mohaemukzip:1.0.1
+            ${{ secrets.DOCKERHUB_USERNAME }}/mohaemukzip:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/mohaemukzip:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -105,15 +105,11 @@ jobs:
             git fetch origin
             git reset --hard origin/main
 
+            export DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+  
             docker compose -f compose.yaml -f compose.prod.yaml down || true
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mohaemukzip:1.0.1
-            
-            # compose 파일의 이미지 경로 수정
-            sed -i "s|image: \${DOCKERHUB_USERNAME}/mohaemukzip:1.0.1|image: ${{ secrets.DOCKERHUB_USERNAME }}/mohaemukzip:1.0.1|g" compose.prod.yml
-            
+            docker pull ${DOCKERHUB_USERNAME}/mohaemukzip:latest
+  
             docker compose -f compose.yaml -f compose.prod.yaml up -d
-
-            chmod +x ./blue-green-deploy.sh
-            ./blue-green-deploy.sh
-                        
+        
             docker image prune -af --filter "until=24h"
