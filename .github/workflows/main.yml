@@ -1,0 +1,124 @@
+name: CI/CD Workflow
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  CI:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Gradle Caching
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+#      - name: Run Unit Tests
+#        if: github.event_name == 'pull_request'
+#        run: SPRING_PROFILES_ACTIVE=test ./gradlew clean test --stacktrace
+#
+#      - name: Run Tests with Coverage
+#        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+#        run: ./gradlew clean jacocoTestReport --stacktrace
+
+      - name: Create application.yml
+        run: |
+          mkdir -p ./src/main/resources
+          echo "${{ secrets.APPLICATION }}" > ./src/main/resources/application-prod.yml
+
+      - name: Build with Gradle
+        run: ./gradlew clean bootJar -x test
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # - name: Test Docker Build (PR Only)
+      #   if: github.event_name == 'pull_request'
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: .
+      #     file: ./Dockerfile
+      #     push: false
+      #     tags: test-build
+      #     cache-from: type=gha
+      #     cache-to: type=gha,mode=max
+
+      - name: Login to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/mohaemukzip:1.0.1
+            ${{ secrets.DOCKERHUB_USERNAME }}/mohaemukzip:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  CD:
+    needs: CI
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: prod
+      url: https://api.mohaemukzip.site
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/mohaemukzip-api
+            
+            git fetch origin
+            git reset --hard origin/main
+
+            docker compose -f compose.yaml -f compose.prod.yaml down || true
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mohaemukzip:1.0.1
+            
+            # compose 파일의 이미지 경로 수정
+            sed -i "s|image: \${DOCKERHUB_USERNAME}/mohaemukzip:1.0.1|image: ${{ secrets.DOCKERHUB_USERNAME }}/mohaemukzip:1.0.1|g" compose.prod.yml
+            
+            docker compose -f compose.yaml -f compose.override.yaml -f compose.prod.yaml up -d
+
+            chmod +x ./blue-green-deploy.sh
+            ./blue-green-deploy.sh
+                        
+            docker image prune -af --filter "until=24h"
