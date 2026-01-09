@@ -106,10 +106,10 @@ jobs:
             git reset --hard origin/main
 
             export DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-  
-            docker compose -f compose.yaml -f compose.prod.yaml down || true
+            
+            docker-compose -f compose.yaml -f compose.prod.yaml down || true
             docker pull ${DOCKERHUB_USERNAME}/mohaemukzip:latest
-  
-            docker compose -f compose.yaml -f compose.prod.yaml up -d
+            
+            docker-compose -f compose.yaml -f compose.prod.yaml up -d
         
             docker image prune -af --filter "until=24h"
