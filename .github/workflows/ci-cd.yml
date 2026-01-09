@@ -48,11 +48,6 @@ jobs:
 #        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 #        run: ./gradlew clean jacocoTestReport --stacktrace
 
-      - name: Create application.yml
-        run: |
-          mkdir -p ./src/main/resources
-          echo "${{ secrets.APPLICATION }}" > ./src/main/resources/application-prod.yml
-
       - name: Build with Gradle
         run: ./gradlew clean bootJar -x test
 
@@ -116,7 +111,7 @@ jobs:
             # compose 파일의 이미지 경로 수정
             sed -i "s|image: \${DOCKERHUB_USERNAME}/mohaemukzip:1.0.1|image: ${{ secrets.DOCKERHUB_USERNAME }}/mohaemukzip:1.0.1|g" compose.prod.yml
             
-            docker compose -f compose.yaml -f compose.override.yaml -f compose.prod.yaml up -d
+            docker compose -f compose.yaml -f compose.prod.yaml up -d
 
             chmod +x ./blue-green-deploy.sh
             ./blue-green-deploy.sh
