@@ -82,8 +82,9 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/mohaemukzip:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/mohaemukzip:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          no-cache: true            # 🔹 추가
+          cache-from: ""            # 🔹 캐시 비움
+          cache-to: ""              # 🔹 캐시 비움
 
   CD:
     needs: CI
