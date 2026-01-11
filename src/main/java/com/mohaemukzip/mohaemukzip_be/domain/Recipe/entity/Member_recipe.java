@@ -20,7 +20,7 @@ import lombok.*;
 public class Member_recipe {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "recipe_id")
+    @Column(name = "member_recipe_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
