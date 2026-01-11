@@ -20,6 +20,7 @@ public class Ingredient extends BaseEntity {
     @Column(name = "name", nullable = false)
     private String name;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "unit")
     private Unit unit;
 

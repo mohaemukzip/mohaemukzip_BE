@@ -31,6 +31,7 @@ public class Member_Ingredient extends BaseEntity {
     @Column(name = "expire_date")
     private LocalDate expireDate;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "storage_type")
     private StorageType storageType;
 
