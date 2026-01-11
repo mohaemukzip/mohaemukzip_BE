@@ -1,0 +1,7 @@
+package com.mohaemukzip.mohaemukzip_be.domain.mission.repository;
+
+import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.Mission;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface MissionRepository extends JpaRepository<Mission,Long> {
+}
