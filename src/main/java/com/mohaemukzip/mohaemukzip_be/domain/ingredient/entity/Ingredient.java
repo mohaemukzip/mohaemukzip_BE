@@ -1,5 +1,6 @@
 package com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity;
 
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Category;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Unit;
 import com.mohaemukzip.mohaemukzip_be.global.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -26,4 +27,8 @@ public class Ingredient extends BaseEntity {
 
     @Column(name = "weight")
     private Double weight;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category")
+    private Category category;
 }
