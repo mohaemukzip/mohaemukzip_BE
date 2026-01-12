@@ -23,6 +23,6 @@ public class Mission extends BaseEntity {
     @Column(name = "reward")
     private Integer reward;
 
-    @Column(name = "explain", nullable = false, columnDefinition = "TEXT")
-    private String explain;
+    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
+    private String description;
 }
