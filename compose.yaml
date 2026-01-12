@@ -9,6 +9,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    container_name: mohaemukzip-redis
     volumes:
       - redis-data:/data
     networks:
