@@ -1,9 +1,48 @@
 package com.mohaemukzip.mohaemukzip_be.domain.ingredient.service;
 
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Category;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.IngredientRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
+
 public class IngredientQueryServiceImpl implements IngredientQueryService {
+
+    private final IngredientRepository ingredientRepository;
+
+    @Override
+    public List<IngredientResponseDTO> getIngredients(String keyword, Category category) {
+
+        List<Ingredient> ingredients;
+
+        // 키워드 + 카테고리가 있는 경우 조회
+        if (keyword != null && !keyword.isBlank() && category != null) {
+            ingredients = ingredientRepository.findByNameContainingAndCategory(keyword, category);
+        }
+        // 2. 키워드만 있는 경우
+        else if (keyword != null && !keyword.isBlank()) {
+            ingredients = ingredientRepository.findByNameContaining(keyword);
+        }
+        // 3. 카테고리만 있는 경우
+        else if (category != null) {
+            ingredients = ingredientRepository.findByCategory(category);
+        }
+        // 4. 둘 다 없는 경우 (전체 출력)
+        else {
+            ingredients = ingredientRepository.findAll();
+        }
+
+        return ingredients.stream()
+                .map(IngredientResponseDTO::from)
+                .collect(Collectors.toList());
+    }
 }

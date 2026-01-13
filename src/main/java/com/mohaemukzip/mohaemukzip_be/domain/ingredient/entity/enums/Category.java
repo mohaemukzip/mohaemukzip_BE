@@ -1,5 +1,8 @@
 package com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum Category {
     PROCESSED_DAIRY("가공/유제품"),
     MEAT_EGG("육류/계란"),

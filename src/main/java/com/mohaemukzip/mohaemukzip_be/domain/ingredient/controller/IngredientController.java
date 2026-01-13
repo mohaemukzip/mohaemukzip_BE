@@ -1,10 +1,18 @@
 package com.mohaemukzip.mohaemukzip_be.domain.ingredient.controller;
 
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Category;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.service.IngredientQueryService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -12,4 +20,18 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Ingredient")
 @Validated
 public class IngredientController {
+
+    private final IngredientQueryService ingredientQueryService;
+
+    @GetMapping
+    public ResponseEntity<List<IngredientResponseDTO>> searchIngredients(
+      @RequestParam(name = "query", required = false) String query,
+      @RequestParam(name = "category", required = false) Category category
+    ) {
+        List<IngredientResponseDTO> response = ingredientQueryService.getIngredients(query,category);
+
+    return ResponseEntity.ok(response);
+    }
 }
+
+
