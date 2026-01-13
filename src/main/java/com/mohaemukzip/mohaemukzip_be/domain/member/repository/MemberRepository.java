@@ -9,4 +9,6 @@ public interface MemberRepository extends JpaRepository<Member,Long> {
     Optional<Member> findById(Long id);
     Optional<Member> findByOauthId(Long oauthId);
     Boolean existsByOauthId(Long oauthId);
+    Optional<Member> findByLoginId(String loginId);
+    Boolean existsByLoginId(String loginId);
 }
