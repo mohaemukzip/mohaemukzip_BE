@@ -4,22 +4,21 @@ import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDT
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Category;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.IngredientRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-
 public class IngredientQueryServiceImpl implements IngredientQueryService {
 
     private final IngredientRepository ingredientRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<IngredientResponseDTO> getIngredients(String keyword, Category category) {
 
         List<Ingredient> ingredients;

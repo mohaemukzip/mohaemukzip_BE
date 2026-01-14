@@ -1,8 +1,5 @@
 package com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums;
 
-import lombok.Getter;
-
-@Getter
 public enum Unit {
     EACH("개"),
     GRAM("g"),
