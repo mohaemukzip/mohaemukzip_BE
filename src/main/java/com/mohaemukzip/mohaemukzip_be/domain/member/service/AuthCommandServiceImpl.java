@@ -11,6 +11,7 @@ import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.jwt.JwtProvider;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthCommandServiceImpl implements AuthCommandService {
@@ -46,18 +48,21 @@ public class AuthCommandServiceImpl implements AuthCommandService {
                 .build();
         memberRepository.save(member);
 
+        log.info("✅ 회원 저장 완료 - memberId: {}", member.getId());
+
         return generateAndSaveTokens(member, true);
     }
 
-    @Transactional(readOnly = true)
     public AuthResponseDTO.GetUserDTO login(AuthRequestDTO.LoginRequest request) {
+        log.info("🔐 로그인 시도 - loginId: {}", request.loginId());
+
         Member member = memberRepository.findByLoginId(request.loginId())
                 .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
 
         if (!passwordEncoder.matches(request.password(), member.getPassword())) {
             throw new BusinessException(ErrorStatus.INVALID_PASSWORD);
         }
-
+        log.info("✅ 로그인 성공 - memberId: {}", member.getId());
         return generateAndSaveTokens(member, false);
     }
 
@@ -74,6 +79,8 @@ public class AuthCommandServiceImpl implements AuthCommandService {
      * Refresh Token을 Redis에 저장
      */
     private void saveRefreshTokenToRedis(String userId, String refreshToken) {
+        String key = REFRESH_TOKEN_PREFIX + userId;
+        log.info("💾 Redis 저장 시도 - key: {}, token 길이: {}", REFRESH_TOKEN_PREFIX + userId, refreshToken.length());
 
         redisTemplate.opsForValue().set(
                 REFRESH_TOKEN_PREFIX + userId,
@@ -81,6 +88,14 @@ public class AuthCommandServiceImpl implements AuthCommandService {
                 JwtProvider.REFRESH_TOKEN_VALIDITY_MS,
                 TimeUnit.MILLISECONDS
         );
+
+        // 저장 확인
+        String saved = redisTemplate.opsForValue().get(key);
+        if (saved != null) {
+            log.info("✅ Redis 저장 성공 - key: {}", key);
+        } else {
+            log.error("❌ Redis 저장 실패 - key: {}", key);
+        }
     }
 
     private String getUserIdFromToken(String token) {
@@ -91,15 +106,19 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     }
 
     private void validateRefreshToken(String memberId, String clientRefreshToken) {
+        String key = REFRESH_TOKEN_PREFIX + memberId;
+        log.info("🔍 Refresh Token 검증 - key: {}", key);
 
         String storedRefreshToken = redisTemplate.opsForValue().get(REFRESH_TOKEN_PREFIX + memberId);
 
         if (storedRefreshToken == null) {
+            log.error("❌ Redis에 토큰 없음 - key: {}", key);
             throw new BusinessException(ErrorStatus.REFRESH_TOKEN_NOT_FOUND);
         }
 
         if (!storedRefreshToken.equals(clientRefreshToken)) {
             // 토큰 불일치 시 탈취로 간주하고 즉시 삭제
+            log.error("❌ 토큰 불일치 - key: {}", key);
             redisTemplate.delete(REFRESH_TOKEN_PREFIX + memberId);
             throw new BusinessException(ErrorStatus.REFRESH_TOKEN_MISMATCH);
         }
@@ -109,10 +128,12 @@ public class AuthCommandServiceImpl implements AuthCommandService {
             redisTemplate.delete(REFRESH_TOKEN_PREFIX + memberId);
             throw new BusinessException(ErrorStatus.REFRESH_TOKEN_EXPIRED);
         }
+        log.info("✅ Refresh Token 검증 성공 - key: {}", key);
     }
 
     @Transactional
     public AuthResponseDTO.TokenResponse reissueToken(String refreshToken) {
+        log.info("🔄 토큰 재발급 시작");
         String userId = getUserIdFromToken(refreshToken);
         validateRefreshToken(userId, refreshToken);
 
@@ -122,8 +143,8 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         String newAccessToken = jwtProvider.generateAccessToken(member);
         String newRefreshToken = jwtProvider.generateRefreshToken(member);
         saveRefreshTokenToRedis(userId, newRefreshToken);
-
-        return AuthConverter.toTokenResponseDTO(newAccessToken, refreshToken);
+        log.info("✅ 토큰 재발급 완료 - memberId: {}", userId);
+        return AuthConverter.toTokenResponseDTO(newAccessToken, newRefreshToken);
     }
 
 }

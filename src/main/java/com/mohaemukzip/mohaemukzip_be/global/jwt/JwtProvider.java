@@ -1,9 +1,9 @@
 package com.mohaemukzip.mohaemukzip_be.global.jwt;
 
-import com.mohaemukzip.mohaemukzip_be.domain.member.dto.AuthResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
+import static com.mohaemukzip.mohaemukzip_be.global.jwt.JwtConstants.*;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -20,13 +20,10 @@ import org.springframework.util.StringUtils;
 import java.security.Key;
 import java.util.Date;
 
+
 @Slf4j
 @Component
 public class JwtProvider {
-    private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String BEARER_PREFIX = "Bearer ";
-    private static final String AUTHORITIES_KEY = "auth";
-
     // 30분 (1000L * 60 * 30)
     private static final long ACCESS_TOKEN_VALIDITY_MS = 1800000L;
     // 7일 (1000L * 60 * 60 * 24 * 7)
@@ -151,10 +148,10 @@ public class JwtProvider {
         } catch (ExpiredJwtException e) {
             // 토큰이 만료되었어도 Subject(userId)는 추출
             return e.getClaims().getSubject();
-        } catch (Exception e) {
-            log.error("토큰에서 User ID 추출 중 오류 발생: {}", e.getMessage());
-            throw new BusinessException(ErrorStatus.INVALID_TOKEN);
+        }  catch (MalformedJwtException e) {
+            throw new BusinessException(ErrorStatus.MALFORMED_TOKEN);
+        } catch (SignatureException e) {
+        throw new BusinessException(ErrorStatus.INVALID_SIGNATURE);
         }
-
     }
 }
