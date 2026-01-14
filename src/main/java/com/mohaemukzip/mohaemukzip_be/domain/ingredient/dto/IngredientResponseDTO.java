@@ -19,8 +19,8 @@ public class IngredientResponseDTO {
         return IngredientResponseDTO.builder()
                 .id(ingredient.getId())
                 .name(ingredient.getName())
-                .category(ingredient.getCategory().getLabel())
-                .unit(ingredient.getUnit().getLabel())
+                .category(ingredient.getCategory() != null ? ingredient.getCategory().getLabel() : null)
+                .unit(ingredient.getUnit() != null ? ingredient.getUnit().getLabel() : null)
                 .build();
     }
 }
