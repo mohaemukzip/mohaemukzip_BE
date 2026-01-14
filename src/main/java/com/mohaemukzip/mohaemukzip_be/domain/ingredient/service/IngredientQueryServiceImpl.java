@@ -19,11 +19,11 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<IngredientResponseDTO> getIngredients(String keyword, Category category) {
+    public List<IngredientResponseDTO.Detail> getIngredients(String keyword, Category category) {
 
         List<Ingredient> ingredients;
 
-        // 키워드 + 카테고리가 있는 경우 조회
+        // 1. 키워드 + 카테고리가 있는 경우 조회
         if (keyword != null && !keyword.isBlank() && category != null) {
             ingredients = ingredientRepository.findByNameContainingAndCategory(keyword, category);
         }
@@ -41,7 +41,7 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
         }
 
         return ingredients.stream()
-                .map(IngredientResponseDTO::from)
+                .map(IngredientResponseDTO.Detail::from)
                 .collect(Collectors.toList());
     }
 }
