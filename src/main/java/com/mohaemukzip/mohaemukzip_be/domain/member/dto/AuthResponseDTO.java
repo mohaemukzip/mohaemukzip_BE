@@ -5,24 +5,29 @@ import lombok.Builder;
 
 public class AuthResponseDTO {
 
-    public record LoginResponse(
+    public record GetUserDTO(
             Long id,
             String accessToken,
             String refreshToken,
             boolean isNewUser,
             boolean isInactive
     ) {
-        @Builder
-        public LoginResponse {}
-
-        public static LoginResponse of(Member member, String accessToken, String refreshToken , boolean isNewUser) {
-            return LoginResponse.builder()
-                    .id(member.getId())
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
-                    .isNewUser(isNewUser)
-                    .isInactive(member.isInactive())
-                    .build();
+        public static GetUserDTO of(Member member, String accessToken, String refreshToken , boolean isNewUser) {
+            return new GetUserDTO(
+                    member.getId(),
+                    accessToken,
+                    refreshToken,
+                    isNewUser,
+                    member.isInactive()
+            );
         }
+    }
+
+    public record TokenResponse(
+            String accessToken,
+            String refreshToken
+    ) {
+        @Builder
+        public TokenResponse {}
     }
 }
