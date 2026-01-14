@@ -1,25 +1,56 @@
 package com.mohaemukzip.mohaemukzip_be.global.config;
 
+import com.mohaemukzip.mohaemukzip_be.global.jwt.JwtAuthenticationFilter;
+import com.mohaemukzip.mohaemukzip_be.global.jwt.JwtProvider;
+import com.mohaemukzip.mohaemukzip_be.global.security.JwtAccessDeniedHandler;
+import com.mohaemukzip.mohaemukzip_be.global.security.JwtAuthenticationEntryPoint;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
+@EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final JwtProvider jwtProvider;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
+
+    @Bean
+    public BCryptPasswordEncoder encoder(){
+        return new BCryptPasswordEncoder();
+    }
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+            .csrf(AbstractHttpConfigurer::disable)
+            .httpBasic(AbstractHttpConfigurer::disable)
+            .formLogin(AbstractHttpConfigurer::disable)
 
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**"
-                        ).permitAll()
-                        .anyRequest().permitAll()
-                );
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+            .exceptionHandling(handler ->
+                handler.authenticationEntryPoint(jwtAuthenticationEntryPoint) // 401
+                    .accessDeniedHandler(jwtAccessDeniedHandler)) // 403
+
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .anyRequest().authenticated()
+            )
+
+           .addFilterBefore(new JwtAuthenticationFilter(jwtProvider),
+                UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
