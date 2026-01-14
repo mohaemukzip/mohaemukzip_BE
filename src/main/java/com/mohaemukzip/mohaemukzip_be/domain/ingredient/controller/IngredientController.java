@@ -9,6 +9,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
 import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
@@ -42,7 +43,7 @@ public class IngredientController {
     @PostMapping("/me")
     public ApiResponse<IngredientResponseDTO.AddFridgeResult> addFridgeIngredient(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
-            @RequestBody IngredientRequestDTO.AddFridge request
+            @RequestBody @Valid IngredientRequestDTO.AddFridge request
     ) {
         Member member = customUserDetails.getMember();
 
