@@ -19,6 +19,6 @@ reviews:
     auto_incremental_review: true
     drafts: false
     base_branches:
-      - '*'
+      - ".*"
 chat:
   auto_reply: true
