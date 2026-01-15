@@ -80,8 +80,8 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/mohaemukzip:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/mohaemukzip:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/mohaemukzip-api:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/mohaemukzip-api:${{ github.sha }}
           no-cache: true            # 🔹 추가
           cache-from: ""            # 🔹 캐시 비움
           cache-to: ""              # 🔹 캐시 비움
@@ -109,7 +109,7 @@ jobs:
             export DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
             
             docker-compose -f compose.yaml -f compose.prod.yaml down || true
-            docker pull ${DOCKERHUB_USERNAME}/mohaemukzip:latest
+            docker pull ${DOCKERHUB_USERNAME}/mohaemukzip-api:latest
             
             docker-compose -f compose.yaml -f compose.prod.yaml up -d
         
