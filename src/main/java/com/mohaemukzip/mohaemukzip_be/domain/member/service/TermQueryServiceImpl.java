@@ -2,7 +2,6 @@ package com.mohaemukzip.mohaemukzip_be.domain.member.service;
 
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.TermResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Term;
-import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberTermRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.TermRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,7 +13,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TermQueryServiceImpl implements TermQueryService {
     private final TermRepository termRepository;
-    private final MemberTermRepository memberTermRepository;
 
     @Transactional(readOnly = true)
     public TermResponseDTO.TermListResponse getTerms() {

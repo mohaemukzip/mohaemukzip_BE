@@ -1,8 +1,12 @@
 package com.mohaemukzip.mohaemukzip_be.domain.member.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
+
+import java.util.List;
 
 public class AuthRequestDTO {
     @Schema(description = "로그인 요청")
@@ -32,6 +36,18 @@ public class AuthRequestDTO {
                     regexp = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*#?&]{10,}$",
                     message = "비밀번호는 영문과 숫자를 포함해 10자 이상 입력해 주세요."
             )
-            String password
+            String password,
+            @Schema(description = "약관 동의 목록",
+            example = """
+                [
+                  { "termId": 1, "isAgreed": true },
+                  { "termId": 2, "isAgreed": true },
+                  { "termId": 3, "isAgreed": true },
+                  { "termId": 4, "isAgreed": false }
+                ]
+                """)
+            @NotEmpty(message = "약관 동의는 필수입니다")
+            @Valid
+            List<TermRequestDTO.TermAgreementRequest> termAgreements
     ) { }
 }
