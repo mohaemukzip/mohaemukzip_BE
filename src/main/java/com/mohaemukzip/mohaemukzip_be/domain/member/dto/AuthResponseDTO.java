@@ -30,4 +30,8 @@ public class AuthResponseDTO {
         @Builder
         public TokenResponse {}
     }
+
+    public record LogoutResponse(
+            String message
+    ) { }
 }

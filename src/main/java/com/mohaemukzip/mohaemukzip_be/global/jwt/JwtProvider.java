@@ -16,6 +16,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import io.jsonwebtoken.security.SignatureException;
 
 import java.security.Key;
 import java.util.Date;
@@ -129,7 +130,10 @@ public class JwtProvider {
             Date expiration = claims.getExpiration();
             long now = new Date().getTime();
 
-            return (expiration.getTime() - now);
+            return Math.max(0L, expiration.getTime() - now);
+        } catch (ExpiredJwtException e) {
+            // 이미 만료된 토큰
+            return 0L;
         } catch (Exception e) {
             log.error("토큰 만료 시간 파싱 중 오류 발생: {}", e.getMessage());
             return 0L;
@@ -151,7 +155,15 @@ public class JwtProvider {
         }  catch (MalformedJwtException e) {
             throw new BusinessException(ErrorStatus.MALFORMED_TOKEN);
         } catch (SignatureException e) {
-        throw new BusinessException(ErrorStatus.INVALID_SIGNATURE);
+             throw new BusinessException(ErrorStatus.INVALID_SIGNATURE);
+        } catch (UnsupportedJwtException e) {
+            throw new BusinessException(ErrorStatus.UNSUPPORTED_TOKEN);
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException(ErrorStatus.ILLEGAL_ARGUMENT_TOKEN);
+        }  catch (JwtException e) {
+            throw new BusinessException(ErrorStatus.INVALID_TOKEN);
+        } catch (Exception e) {
+            throw new BusinessException(ErrorStatus.TOKEN_PARSING_ERROR);
         }
     }
 }
