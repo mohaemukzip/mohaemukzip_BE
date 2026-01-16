@@ -44,3 +44,7 @@ public class AuthResponseDTO {
         }
     }
 }
+    public record LogoutResponse(
+            String message
+    ) { }
+}
