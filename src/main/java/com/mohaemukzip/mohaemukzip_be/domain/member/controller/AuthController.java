@@ -52,10 +52,10 @@ public class AuthController {
 
     @Operation(summary = "로그아웃")
     @PostMapping("/logout")
-    public ApiResponse<Void> logout(
+    public ApiResponse<AuthResponseDTO.LogoutResponse> logout(
             @RequestHeader("Authorization") String accessToken) {
         String token = accessToken.substring(7);
-        authCommandService.logout(token);
-        return ApiResponse.onSuccess(null);
+        AuthResponseDTO.LogoutResponse response = authCommandService.logout(token);
+        return ApiResponse.onSuccess(response);
     }
 }
