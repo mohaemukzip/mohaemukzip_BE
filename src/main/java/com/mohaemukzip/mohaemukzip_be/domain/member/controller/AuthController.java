@@ -57,7 +57,8 @@ public class AuthController {
     @GetMapping("/terms")
     public ApiResponse<TermResponseDTO.TermListResponse> getTerms() {
         TermResponseDTO.TermListResponse response = termQueryService.getTerms();
-
+        return ApiResponse.onSuccess(response);
+    }
     @Operation(summary = "로그아웃")
     @PostMapping("/logout")
     public ApiResponse<AuthResponseDTO.LogoutResponse> logout(
