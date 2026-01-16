@@ -24,4 +24,8 @@ public class AuthConverter {
     public static AuthResponseDTO.LogoutResponse toLogoutResponseDTO() {
         return new AuthResponseDTO.LogoutResponse("로그아웃되었습니다.");
     }
+
+    public static AuthResponseDTO.WithdrawalResponse toWithdrawalResponseDTO() {
+        return new AuthResponseDTO.WithdrawalResponse("회원 탈퇴가 완료되었습니다.");
+    }
 }

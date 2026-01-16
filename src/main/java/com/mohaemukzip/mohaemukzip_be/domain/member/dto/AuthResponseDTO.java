@@ -47,4 +47,8 @@ public class AuthResponseDTO {
     public record LogoutResponse(
             String message
     ) { }
+
+    public record WithdrawalResponse(
+            String message
+    ) { }
 }

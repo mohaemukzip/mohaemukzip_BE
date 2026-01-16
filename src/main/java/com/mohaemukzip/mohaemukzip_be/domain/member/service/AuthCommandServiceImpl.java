@@ -55,8 +55,12 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     }
 
     public AuthResponseDTO.GetUserDTO login(AuthRequestDTO.LoginRequest request) {
-                Member member = memberRepository.findByLoginId(request.loginId())
+        Member member = memberRepository.findByLoginId(request.loginId())
                 .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
+
+        if (member.isInactive()) {
+            throw new BusinessException(ErrorStatus.ALREADY_WITHDRAWN_MEMBER);
+        }
 
         if (!passwordEncoder.matches(request.password(), member.getPassword())) {
             throw new BusinessException(ErrorStatus.INVALID_PASSWORD);
@@ -143,5 +147,21 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         tokenBlacklistService.addToBlacklist(accessToken, remainingExpiration);
 
         return AuthConverter.toLogoutResponseDTO();
+    }
+
+    @Transactional
+    public AuthResponseDTO.WithdrawalResponse withdrawal(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
+
+        if (member.isInactive()) {
+            throw new BusinessException(ErrorStatus.ALREADY_WITHDRAWN_MEMBER);
+        }
+        member.deactivate();
+
+        // Redis에서 Refresh Token 삭제
+        redisTemplate.delete(REFRESH_TOKEN_PREFIX + memberId);
+
+        return AuthConverter.toWithdrawalResponseDTO();
     }
 }
