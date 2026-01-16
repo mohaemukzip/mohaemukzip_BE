@@ -50,4 +50,12 @@ public class AuthRequestDTO {
             @Valid
             List<TermRequestDTO.TermAgreementRequest> termAgreements
     ) { }
+
+    public record CheckLoginIdRequest(
+            @Schema(description = "아이디", example = "test01")
+            @NotBlank(message = "아이디를 입력해주세요.")
+            @Pattern(regexp = "^(?=.*[A-Za-z])[A-Za-z\\d]{4,20}$",
+                    message = "아이디는 영문, 숫자 4-20자로 입력해주세요.")
+            String loginId
+    ) {}
 }
