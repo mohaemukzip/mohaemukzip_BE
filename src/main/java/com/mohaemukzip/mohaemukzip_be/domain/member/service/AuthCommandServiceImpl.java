@@ -9,9 +9,9 @@ import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.member.converter.AuthConverter;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.jwt.JwtProvider;
+import com.mohaemukzip.mohaemukzip_be.global.jwt.TokenBlacklistService;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -26,6 +26,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     private final JwtProvider jwtProvider;
     private final RedisTemplate<String, String> redisTemplate;
     private final PasswordEncoder passwordEncoder;
+    private final TokenBlacklistService tokenBlacklistService;
 
     private static final String REFRESH_TOKEN_PREFIX = "RT:";
 
@@ -84,10 +85,11 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     }
 
     private String getUserIdFromToken(String token) {
-        if (!jwtProvider.validateToken(token)) {
+        try {
+            return jwtProvider.getUserIdFromToken(token);
+        } catch (BusinessException e) {
             throw new BusinessException(ErrorStatus.INVALID_TOKEN);
         }
-        return jwtProvider.getUserIdFromToken(token);
     }
 
     private void validateRefreshToken(String memberId, String clientRefreshToken) {
@@ -126,4 +128,17 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         return AuthConverter.toTokenResponseDTO(newAccessToken, newRefreshToken);
     }
 
+    @Transactional
+    public AuthResponseDTO.LogoutResponse logout(String accessToken) {
+        String userId = getUserIdFromToken(accessToken);
+
+        // Redis에서 Refresh Token 삭제
+        redisTemplate.delete(REFRESH_TOKEN_PREFIX + userId);
+
+        // Access Token을 블랙리스트에 추가 (만료 시간만큼 유지)
+        long remainingExpiration = jwtProvider.getRemainingExpiration(accessToken);
+        tokenBlacklistService.addToBlacklist(accessToken, remainingExpiration);
+
+        return AuthConverter.toLogoutResponseDTO();
+    }
 }

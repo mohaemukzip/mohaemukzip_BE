@@ -2,6 +2,7 @@ package com.mohaemukzip.mohaemukzip_be.global.config;
 
 import com.mohaemukzip.mohaemukzip_be.global.jwt.JwtAuthenticationFilter;
 import com.mohaemukzip.mohaemukzip_be.global.jwt.JwtProvider;
+import com.mohaemukzip.mohaemukzip_be.global.jwt.TokenBlacklistChecker;
 import com.mohaemukzip.mohaemukzip_be.global.security.JwtAccessDeniedHandler;
 import com.mohaemukzip.mohaemukzip_be.global.security.JwtAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtProvider jwtProvider;
+    private final TokenBlacklistChecker tokenBlacklistChecker;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
@@ -48,9 +50,10 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .anyRequest().authenticated()
             )
-
-           .addFilterBefore(new JwtAuthenticationFilter(jwtProvider),
-                UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(
+                new JwtAuthenticationFilter(jwtProvider, tokenBlacklistChecker),
+                UsernamePasswordAuthenticationFilter.class
+            );
 
         return http.build();
     }

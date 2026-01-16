@@ -7,4 +7,5 @@ public interface AuthCommandService {
     AuthResponseDTO.GetUserDTO signup(AuthRequestDTO.SignUpRequest signUpRequest);
     AuthResponseDTO.GetUserDTO login(AuthRequestDTO.LoginRequest loginRequest);
     AuthResponseDTO.TokenResponse reissueToken(String refreshToken);
+    AuthResponseDTO.LogoutResponse logout(String accessToken);
 }

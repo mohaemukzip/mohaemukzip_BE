@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,13 +49,13 @@ public class AuthController {
         AuthResponseDTO.TokenResponse response = authCommandService.reissueToken(refreshToken);
         return ApiResponse.onSuccess(response);
     }
-//
-//    @Operation(summary = "로그아웃")
-//    @PostMapping("/logout")
-//    public ApiResponse<Void> logout(
-//            @RequestHeader("Authorization") String accessToken) {
-//        String token = accessToken.substring(7);
-//        authCommandService.logout(token);
-//        return ApiResponse.onSuccess(null);
-//    }
+
+    @Operation(summary = "로그아웃")
+    @PostMapping("/logout")
+    public ApiResponse<Void> logout(
+            @RequestHeader("Authorization") String accessToken) {
+        String token = accessToken.substring(7);
+        authCommandService.logout(token);
+        return ApiResponse.onSuccess(null);
+    }
 }
