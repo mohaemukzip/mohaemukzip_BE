@@ -70,8 +70,8 @@ public class AuthController {
         boolean isDuplicate = authQueryService.checkLoginIdDuplicate(request.loginId());
 
         AuthResponseDTO.CheckLoginIdResponse response = isDuplicate
-                ? AuthResponseDTO.CheckLoginIdResponse.notAvailable()
-                : AuthResponseDTO.CheckLoginIdResponse.available();
+                ? AuthResponseDTO.CheckLoginIdResponse.ofNotAvailable()
+                : AuthResponseDTO.CheckLoginIdResponse.ofAvailable();
 
         return ApiResponse.onSuccess(response);
     }
