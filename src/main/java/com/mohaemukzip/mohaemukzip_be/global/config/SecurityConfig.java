@@ -46,7 +46,11 @@ public class SecurityConfig {
                     .accessDeniedHandler(jwtAccessDeniedHandler)) // 403
 
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers( "/auth/signup",
+                        "/auth/login",
+                        "/auth/reissue",
+                        "/auth/check-loginid",
+                        "/auth/terms").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .anyRequest().authenticated()
             )
