@@ -28,7 +28,10 @@ public enum ErrorStatus implements BaseCode {
 
     // 멤버 관려 에러
     MEMBER_NOT_FOUND(HttpStatus.BAD_REQUEST, "MEMBER4001", "사용자가 없습니다."),
-    ;
+
+    //재료 관련 에러
+    INGREDIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "INGREDIENT4001", "해당 재료를 찾을 수 없습니다.");
+
     private final HttpStatus httpStatus;
     private final String code;
     private final String message;
