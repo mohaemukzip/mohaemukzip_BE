@@ -12,7 +12,13 @@ import java.time.LocalDate;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Table(
-        name = "member_term"
+        name = "member_term",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_member_term_member_term",
+                        columnNames = {"member_id", "term_id"}
+                )
+        }
 )
 public class MemberTerm extends BaseEntity {
     @Id

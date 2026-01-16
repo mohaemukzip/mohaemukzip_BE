@@ -27,5 +27,5 @@ public class Term extends BaseEntity {
     private boolean isRequired;
 
     @Column(name = "is_active", nullable = false)
-    private Boolean isActive;
+    private boolean isActive = true;
 }

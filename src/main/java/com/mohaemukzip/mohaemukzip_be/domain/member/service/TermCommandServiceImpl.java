@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -28,6 +29,7 @@ public class TermCommandServiceImpl implements TermCommandService {
      */
     @Transactional
     public void createMemberTerms(Member member, List<TermRequestDTO.TermAgreementRequest> termAgreements) {
+        validateDuplicateTermIds(termAgreements);
         // 필수 약관 체크
         validateRequiredTerms(termAgreements);
 
@@ -68,5 +70,17 @@ public class TermCommandServiceImpl implements TermCommandService {
             }
         }
 
+    }
+
+    private void validateDuplicateTermIds(List<TermRequestDTO.TermAgreementRequest> termAgreements) {
+        Set<Long> seen = new HashSet<>();
+        Set<Long> duplicates = termAgreements.stream()
+                .map(TermRequestDTO.TermAgreementRequest::termId)
+                .filter(id -> !seen.add(id))  // 이미 있는 id면 중복
+                .collect(Collectors.toSet());
+
+        if (!duplicates.isEmpty()) {
+            throw new BusinessException(ErrorStatus.DUPLICATE_TERM_ID); // 새 에러코드 정의 추천
+        }
     }
 }
