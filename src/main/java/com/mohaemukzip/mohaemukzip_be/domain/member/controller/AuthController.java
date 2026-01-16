@@ -27,7 +27,7 @@ public class AuthController {
 
     @Operation(summary = "회원가입 (일반)")
     @PostMapping("/signup")
-    public ApiResponse<AuthResponseDTO.GetUserDTO> createUser(@Valid @RequestBody AuthRequestDTO.SignUpRequest request) {
+    public ApiResponse<AuthResponseDTO.GetUserDTO> signup(@Valid @RequestBody AuthRequestDTO.SignUpRequest request) {
 
         AuthResponseDTO.GetUserDTO response = authCommandService.signup(request);
 
@@ -36,7 +36,7 @@ public class AuthController {
 
     @Operation(summary = "로그인 (일반)")
     @PostMapping("/login")
-    public ApiResponse<AuthResponseDTO.GetUserDTO> testLogin(@Valid @RequestBody AuthRequestDTO.LoginRequest request) {
+    public ApiResponse<AuthResponseDTO.GetUserDTO> Login(@Valid @RequestBody AuthRequestDTO.LoginRequest request) {
 
         AuthResponseDTO.GetUserDTO response = authCommandService.login(request);
 
