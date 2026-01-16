@@ -1,5 +1,6 @@
 package com.mohaemukzip.mohaemukzip_be.global.jwt;
 
+import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,6 +40,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // 3. 토큰이 유효할 경우, 토큰에서 Authentication 객체를 가져와 SecurityContext에 저장
                 try {
                     Authentication authentication = jwtProvider.getAuthentication(token);
+                    // 비활성화된 회원인지 확인
+                    if (authentication.getPrincipal() instanceof CustomUserDetails) {
+                        CustomUserDetails userDetails =
+                                (CustomUserDetails) authentication.getPrincipal();
+
+                        if (userDetails.getMember().isInactive()) {
+                            SecurityContextHolder.clearContext();
+                            filterChain.doFilter(request, response);
+                            return;
+                        }
+                    }
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 } catch (UsernameNotFoundException ex) {
                     SecurityContextHolder.clearContext();

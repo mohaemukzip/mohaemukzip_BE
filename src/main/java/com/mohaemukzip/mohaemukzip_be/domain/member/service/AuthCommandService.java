@@ -8,4 +8,5 @@ public interface AuthCommandService {
     AuthResponseDTO.GetUserDTO login(AuthRequestDTO.LoginRequest loginRequest);
     AuthResponseDTO.TokenResponse reissueToken(String refreshToken);
     AuthResponseDTO.LogoutResponse logout(String accessToken);
+    AuthResponseDTO.WithdrawalResponse withdrawal(Long memberId);
 }

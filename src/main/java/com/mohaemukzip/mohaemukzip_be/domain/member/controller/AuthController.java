@@ -6,12 +6,16 @@ import com.mohaemukzip.mohaemukzip_be.domain.member.dto.TermResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.service.AuthCommandService;
 import com.mohaemukzip.mohaemukzip_be.domain.member.service.AuthQueryService;
 import com.mohaemukzip.mohaemukzip_be.domain.member.service.TermQueryService;
+import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.jwt.JwtProvider;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
+import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
+import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -80,6 +84,18 @@ public class AuthController {
             @RequestHeader("Authorization") String accessToken) {
         String token = accessToken.substring(7);
         AuthResponseDTO.LogoutResponse response = authCommandService.logout(token);
+        return ApiResponse.onSuccess(response);
+    }
+
+    @Operation(summary = "회원탈퇴")
+    @DeleteMapping("/withdrawal")
+    public ApiResponse<AuthResponseDTO.WithdrawalResponse> withdrawal(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
+        }
+        Long memberId = userDetails.getMember().getId();
+        AuthResponseDTO.WithdrawalResponse response = authCommandService.withdrawal(memberId);
         return ApiResponse.onSuccess(response);
     }
 }
