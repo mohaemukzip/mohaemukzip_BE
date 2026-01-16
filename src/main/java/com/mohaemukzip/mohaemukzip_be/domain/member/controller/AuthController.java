@@ -2,7 +2,9 @@ package com.mohaemukzip.mohaemukzip_be.domain.member.controller;
 
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.AuthResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.AuthRequestDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.member.dto.TermResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.service.AuthCommandService;
+import com.mohaemukzip.mohaemukzip_be.domain.member.service.TermQueryService;
 import com.mohaemukzip.mohaemukzip_be.global.jwt.JwtProvider;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +23,7 @@ public class AuthController {
 
     private final AuthCommandService authCommandService;
     private final JwtProvider jwtProvider;
+    private final TermQueryService termQueryService;
 
     @Operation(summary = "회원가입 (일반)")
     @PostMapping("/signup")
@@ -49,7 +52,13 @@ public class AuthController {
         AuthResponseDTO.TokenResponse response = authCommandService.reissueToken(refreshToken);
         return ApiResponse.onSuccess(response);
     }
-
+  
+    @Operation(summary="약관 목록 조회")
+    @GetMapping("/terms")
+    public ApiResponse<TermResponseDTO.TermListResponse> getTerms() {
+        TermResponseDTO.TermListResponse response = termQueryService.getTerms();
+        return ApiResponse.onSuccess(response);
+    }
     @Operation(summary = "로그아웃")
     @PostMapping("/logout")
     public ApiResponse<AuthResponseDTO.LogoutResponse> logout(

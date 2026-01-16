@@ -13,9 +13,10 @@ import com.mohaemukzip.mohaemukzip_be.global.jwt.TokenBlacklistService;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 
 import java.util.concurrent.TimeUnit;
 
@@ -26,6 +27,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     private final JwtProvider jwtProvider;
     private final RedisTemplate<String, String> redisTemplate;
     private final PasswordEncoder passwordEncoder;
+    private final TermCommandService termCommandService;
     private final TokenBlacklistService tokenBlacklistService;
 
     private static final String REFRESH_TOKEN_PREFIX = "RT:";
@@ -46,7 +48,8 @@ public class AuthCommandServiceImpl implements AuthCommandService {
                 .level(0)
                 .score(0)
                 .build();
-        memberRepository.save(member);
+        Member savedMember = memberRepository.save(member);
+        termCommandService.createMemberTerms(savedMember, request.termAgreements());
 
         return generateAndSaveTokens(member, true);
     }
