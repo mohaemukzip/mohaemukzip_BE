@@ -4,6 +4,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.member.dto.AuthResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.AuthRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.TermResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.service.AuthCommandService;
+import com.mohaemukzip.mohaemukzip_be.domain.member.service.AuthQueryService;
 import com.mohaemukzip.mohaemukzip_be.domain.member.service.TermQueryService;
 import com.mohaemukzip.mohaemukzip_be.global.jwt.JwtProvider;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/auth")
-@Tag(name = "Auth")
+@Tag(name = "Auth" , description = "인증 관련 API")
 @Validated
 public class AuthController {
 
@@ -65,6 +66,7 @@ public class AuthController {
                 ? AuthResponseDTO.CheckLoginIdResponse.ofNotAvailable()
                 : AuthResponseDTO.CheckLoginIdResponse.ofAvailable();
 
+        return ApiResponse.onSuccess(response);
     }
     @Operation(summary="약관 목록 조회")
     @GetMapping("/terms")

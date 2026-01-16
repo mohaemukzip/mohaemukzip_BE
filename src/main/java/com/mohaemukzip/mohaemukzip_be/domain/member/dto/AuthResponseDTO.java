@@ -43,7 +43,7 @@ public class AuthResponseDTO {
             return new CheckLoginIdResponse(false, "이미 사용중인 아이디예요. 다른 아이디를 입력해 주세요.");
         }
     }
-}
+
     public record LogoutResponse(
             String message
     ) { }
