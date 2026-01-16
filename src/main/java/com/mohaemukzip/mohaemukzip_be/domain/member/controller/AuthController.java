@@ -52,20 +52,18 @@ public class AuthController {
         AuthResponseDTO.TokenResponse response = authCommandService.reissueToken(refreshToken);
         return ApiResponse.onSuccess(response);
     }
-//
-//    @Operation(summary = "로그아웃")
-//    @PostMapping("/logout")
-//    public ApiResponse<Void> logout(
-//            @RequestHeader("Authorization") String accessToken) {
-//        String token = accessToken.substring(7);
-//        authCommandService.logout(token);
-//        return ApiResponse.onSuccess(null);
-//    }
-
+  
     @Operation(summary="약관 목록 조회")
     @GetMapping("/terms")
     public ApiResponse<TermResponseDTO.TermListResponse> getTerms() {
         TermResponseDTO.TermListResponse response = termQueryService.getTerms();
+
+    @Operation(summary = "로그아웃")
+    @PostMapping("/logout")
+    public ApiResponse<AuthResponseDTO.LogoutResponse> logout(
+            @RequestHeader("Authorization") String accessToken) {
+        String token = accessToken.substring(7);
+        AuthResponseDTO.LogoutResponse response = authCommandService.logout(token);
         return ApiResponse.onSuccess(response);
     }
 }

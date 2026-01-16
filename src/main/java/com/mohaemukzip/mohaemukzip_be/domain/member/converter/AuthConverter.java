@@ -20,4 +20,8 @@ public class AuthConverter {
                 .refreshToken(refreshToken)
                 .build();
     }
+
+    public static AuthResponseDTO.LogoutResponse toLogoutResponseDTO() {
+        return new AuthResponseDTO.LogoutResponse("로그아웃되었습니다.");
+    }
 }
