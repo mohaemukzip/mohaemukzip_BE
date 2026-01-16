@@ -36,7 +36,7 @@ public class AuthController {
 
     @Operation(summary = "로그인 (일반)")
     @PostMapping("/login")
-    public ApiResponse<AuthResponseDTO.GetUserDTO> Login(@Valid @RequestBody AuthRequestDTO.LoginRequest request) {
+    public ApiResponse<AuthResponseDTO.GetUserDTO> login(@Valid @RequestBody AuthRequestDTO.LoginRequest request) {
 
         AuthResponseDTO.GetUserDTO response = authCommandService.login(request);
 
@@ -70,8 +70,8 @@ public class AuthController {
         boolean isDuplicate = authQueryService.checkLoginIdDuplicate(request.loginId());
 
         AuthResponseDTO.CheckLoginIdResponse response = isDuplicate
-                ? AuthResponseDTO.CheckLoginIdResponse.notAvailable(request.loginId())
-                : AuthResponseDTO.CheckLoginIdResponse.available(request.loginId());
+                ? AuthResponseDTO.CheckLoginIdResponse.notAvailable()
+                : AuthResponseDTO.CheckLoginIdResponse.available();
 
         return ApiResponse.onSuccess(response);
     }
