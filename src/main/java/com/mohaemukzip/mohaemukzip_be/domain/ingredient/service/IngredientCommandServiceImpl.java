@@ -8,6 +8,8 @@ import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.IngredientRep
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberIngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
+import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
+import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,11 +29,11 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
 
         // 회원 조회
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다. id=" + memberId));
+                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
 
         // 재료 조회
         Ingredient ingredient = ingredientRepository.findById(request.getIngredientId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 재료입니다. id=" + request.getIngredientId()));
+                .orElseThrow(() -> new BusinessException(ErrorStatus.INGREDIENT_NOT_FOUND));
 
         //엔티티 생성
         MemberIngredient memberIngredient = MemberIngredient.builder()
