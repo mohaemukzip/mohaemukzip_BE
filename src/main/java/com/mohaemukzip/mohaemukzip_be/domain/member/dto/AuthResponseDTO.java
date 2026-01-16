@@ -30,4 +30,17 @@ public class AuthResponseDTO {
         @Builder
         public TokenResponse {}
     }
+
+    public record CheckLoginIdResponse(
+            boolean available,
+            String message
+    ) {
+        public static CheckLoginIdResponse available(String loginId) {
+            return new CheckLoginIdResponse(true, "사용 가능한 아이디입니다.");
+        }
+
+        public static CheckLoginIdResponse notAvailable(String loginId) {
+            return new CheckLoginIdResponse(false, "이미 사용중인 아이디입니다.");
+        }
+    }
 }

@@ -3,6 +3,7 @@ package com.mohaemukzip.mohaemukzip_be.domain.member.controller;
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.AuthResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.AuthRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.service.AuthCommandService;
+import com.mohaemukzip.mohaemukzip_be.domain.member.service.AuthQueryService;
 import com.mohaemukzip.mohaemukzip_be.global.jwt.JwtProvider;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthCommandService authCommandService;
+    private final AuthQueryService authQueryService;
     private final JwtProvider jwtProvider;
 
     @Operation(summary = "회원가입 (일반)")
@@ -59,4 +61,18 @@ public class AuthController {
 //        authCommandService.logout(token);
 //        return ApiResponse.onSuccess(null);
 //    }
+
+    @Operation(summary = "아이디 중복 확인")
+    @PostMapping("/check-loginid")
+    public ApiResponse<AuthResponseDTO.CheckLoginIdResponse> checkLoginId(
+            @Valid @RequestBody AuthRequestDTO.CheckLoginIdRequest request) {
+
+        boolean isDuplicate = authQueryService.checkLoginIdDuplicate(request.loginId());
+
+        AuthResponseDTO.CheckLoginIdResponse response = isDuplicate
+                ? AuthResponseDTO.CheckLoginIdResponse.notAvailable(request.loginId())
+                : AuthResponseDTO.CheckLoginIdResponse.available(request.loginId());
+
+        return ApiResponse.onSuccess(response);
+    }
 }
