@@ -50,13 +50,15 @@ public class IngredientResponseDTO {
 
         // 엔티티 -> DTO 변환 메서드
         public static FridgeIngredient from(MemberIngredient entity) {
+            Ingredient ingredient = entity.getIngredient();
+
             return FridgeIngredient.builder()
                     .memberIngredientId(entity.getId())
-                    .name(entity.getIngredient().getName())
-                    .storageType(entity.getStorageType().toString())
+                    .name(ingredient != null ? ingredient.getName() : null)
+                    .storageType(entity.getStorageType() != null ? entity.getStorageType().toString() : null)
                     .expiryDate(entity.getExpireDate())
                     .weight(entity.getWeight())
-                    .unit(entity.getIngredient().getUnit().getLabel())
+                    .unit(ingredient != null && ingredient.getUnit() != null ? ingredient.getUnit().getLabel() : null)
                     .build();
         }
     }
