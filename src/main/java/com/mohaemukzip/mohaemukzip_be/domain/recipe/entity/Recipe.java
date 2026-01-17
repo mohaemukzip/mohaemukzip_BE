@@ -31,16 +31,10 @@ public class Recipe extends BaseEntity {
     private Integer ratingCount = 0;
 
     @Column(name = "time")
-    private String time; // "10:54" (영상 길이)
-
-    @Column(name = "cooking_time")
-    private Integer cookingTime;  // 15 (조리 시간, 분 단위)
+    private Integer time;
 
     @Column(name = "channel")
     private String channel;
-
-    @Column(name = "channel_id")
-    private String channelId;
 
     @Column(name = "views")
     private Long views;
