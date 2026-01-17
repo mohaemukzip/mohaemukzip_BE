@@ -23,11 +23,21 @@ public class Recipe extends BaseEntity {
     @Column(name = "level")
     private Integer level;
 
+    @Column(name = "rating_count")
+    @Builder.Default
+    private Integer ratingCount = 0;
+
     @Column(name = "time")
-    private Integer time;
+    private String time; // "10:54" (영상 길이)
+
+    @Column(name = "cooking_time")
+    private Integer cookingTime;  // 15 (조리 시간, 분 단위)
 
     @Column(name = "channel")
     private String channel;
+
+    @Column(name = "channel_id")
+    private String channelId;
 
     @Column(name = "views")
     private Integer views;
@@ -38,4 +48,22 @@ public class Recipe extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "category")
     private Category category;
+
+    @Column(name = "video_id", nullable = false)
+    private String videoId;
+
+    @Column(name = "video_url", nullable = false)
+    private String videoUrl;
+
+    public void addRating(Integer newRating) {
+        if (newRating == null || newRating < 1 || newRating > 5) {
+            throw new IllegalArgumentException("난이도는 1부터 5 사이의 값입니다.");
+        }
+
+        Integer totalRating = (this.level * this.ratingCount) + newRating;
+        this.ratingCount += 1;
+        this.level = totalRating / this.ratingCount;
+    }
+
+
 }
