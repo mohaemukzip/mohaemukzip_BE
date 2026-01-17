@@ -26,12 +26,4 @@ public class MemberMission extends BaseEntity {
     @JoinColumn(name = "mission_id", nullable = false)
     private Mission mission;
 
-    @Column(name = "is_completed", nullable = false)
-    @Builder.Default
-    private Boolean isCompleted = false;
-
-    // 퀘스트 완료 메서드
-    public void complete() {
-        this.isCompleted = true;
-    }
 }
