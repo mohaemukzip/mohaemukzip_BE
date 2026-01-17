@@ -1,4 +1,4 @@
-package com.mohaemukzip.mohaemukzip_be.domain.mission.entity;
+package com.mohaemukzip.mohaemukzip_be.domain.recipe.entity;
 
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.global.entity.BaseEntity;
@@ -10,12 +10,12 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
-@Table(name = "member_missions")
-public class MemberMission extends BaseEntity {
+@Table(name = "cooking_records")
+public class CookingRecord extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "member_mission_id")
+    @Column(name = "cooking_record_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -23,15 +23,9 @@ public class MemberMission extends BaseEntity {
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "mission_id", nullable = false)
-    private Mission mission;
+    @JoinColumn(name = "recipe_id", nullable = false)
+    private Recipe recipe;
 
-    @Column(name = "is_completed", nullable = false)
-    @Builder.Default
-    private Boolean isCompleted = false;
-
-    // 퀘스트 완료 메서드
-    public void complete() {
-        this.isCompleted = true;
-    }
+    @Column(name = "rating", nullable = false)
+    private Integer rating; // 1~5 (필수)
 }
