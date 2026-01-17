@@ -42,6 +42,7 @@ public class HomeResponseDTO {
         private String title;
         private String description;
         private Integer reward;
+        private Boolean isCompleted;
     }
 
     @Getter

@@ -3,7 +3,9 @@ package com.mohaemukzip.mohaemukzip_be.domain.home.service;
 import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
+import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.MemberMission;
 import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.Mission;
+import com.mohaemukzip.mohaemukzip_be.domain.mission.repository.MemberMissionRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.mission.repository.MissionRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.CookingRecord;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
@@ -19,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,6 +33,7 @@ public class HomeService {
     private final CookingRecordRepository cookingRecordRepository;
     private final MissionRepository missionRepository;
     private final RecipeRepository recipeRepository;
+    private final MemberMissionRepository memberMissionRepository;
 
     private static final Map<Integer, Integer> LEVEL_SCORE_MAP = Map.of(
             0, 8,
@@ -170,20 +174,29 @@ public class HomeService {
     // 오늘의 미션 (현재는 도전완료까지 진행 안한 미션 중 하나를 랜덤하게 보여줌. 같은 날짜, 같은 사용자에겐 하루동안 지속하고
     // 사용자마다 동일하지않음.
     private HomeResponseDTO.TodayMissionDto getTodayMission(Long memberId) {
-        // 날짜 시드 (사용자별로 다르게)
-        int seed = LocalDate.now().getDayOfYear() + memberId.intValue();
 
-        Mission mission = missionRepository.findDailyMissionForMember(memberId, seed).orElse(null);
+        // 1. 전체 미션 조회
+        List<Mission> allMissions = missionRepository.findAll();
 
-        if (mission == null) {
-            return null; // 모든 미션 완료
-        }
+        if (allMissions.isEmpty()) return null;
+
+        // 2. 날짜 + 멤버ID 기반 시드
+        long seed = LocalDate.now().toEpochDay() + memberId;
+        Random random = new Random(seed);
+
+        // 3. 전체 미션 중 하나 선택
+        int index = random.nextInt(allMissions.size());
+        Mission mission = allMissions.get(index);
+
+        // 4. 선택된 미션이 완료되었는지 여부 DTO에 담아 보내기 (완료된 미션은 프론트에서 따로 표시해야하기 떄문에 추가함)
+        boolean isDone = memberMissionRepository.existsByMemberIdAndMissionIdAndIsCompletedTrue(memberId, mission.getId());
 
         return HomeResponseDTO.TodayMissionDto.builder()
                 .missionId(mission.getId())
                 .title(mission.getTitle())
                 .description(mission.getDescription())
                 .reward(mission.getReward())
+                .isCompleted(isDone)
                 .build();
     }
 
