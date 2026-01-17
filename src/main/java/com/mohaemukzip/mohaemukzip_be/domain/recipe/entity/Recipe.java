@@ -28,7 +28,10 @@ public class Recipe extends BaseEntity {
     private Integer ratingCount = 0;
 
     @Column(name = "time")
-    private Integer time;
+    private String time; // "10:54" (영상 길이)
+
+    @Column(name = "cooking_time")
+    private Integer cookingTime;  // 15 (조리 시간, 분 단위)
 
     @Column(name = "channel")
     private String channel;
@@ -61,4 +64,6 @@ public class Recipe extends BaseEntity {
         this.ratingCount += 1;
         this.level = totalRating / this.ratingCount;
     }
+
+
 }

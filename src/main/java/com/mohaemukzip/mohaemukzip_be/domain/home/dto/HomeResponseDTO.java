@@ -52,9 +52,12 @@ public class HomeResponseDTO {
         private Long recipeId;
         private String title;
         private String videoId;
+        private String videoUrl;
         private String imageUrl;
         private String channel;
+        private String channelId;
         private Integer views;
-        private Integer time;
+        private String time; // "10:54" (영상 길이)
+        private Integer cookingTime; // 15 (조리 시간, 분 단위)
     }
 }

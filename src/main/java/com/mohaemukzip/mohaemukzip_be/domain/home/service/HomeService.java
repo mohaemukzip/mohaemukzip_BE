@@ -200,6 +200,7 @@ public class HomeService {
                         .channel(recipe.getChannel())
                         .views(recipe.getViews())
                         .time(recipe.getTime())
+                        .cookingTime(recipe.getCookingTime())
                         .build())
                         .collect(Collectors.toList());
     }
