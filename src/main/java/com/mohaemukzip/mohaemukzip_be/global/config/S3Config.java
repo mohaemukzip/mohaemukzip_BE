@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 @Getter
 public class S3Config {
     private S3Presigner presigner;
+    private S3Client s3Client;
 
     @Value("${cloud.aws.region.static}")
     private String region;
@@ -48,12 +49,12 @@ public class S3Config {
     public S3Client s3Client() {
         AwsCredentialsProvider credentialsProvider = createCredentialsProvider();
 
-        S3Client client = S3Client.builder()
+        s3Client = S3Client.builder()
                 .region(Region.of(region))
                 .credentialsProvider(credentialsProvider)
                 .build();
 
-        return client;
+        return s3Client;
     }
 
     private AwsCredentialsProvider createCredentialsProvider() {
@@ -78,6 +79,9 @@ public class S3Config {
     public void cleanup() {
         if (presigner != null) {
             presigner.close();
+        }
+        if (s3Client != null) {
+            s3Client.close();
         }
     }
 }

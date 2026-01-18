@@ -29,7 +29,7 @@ public enum ErrorStatus implements BaseCode {
     ILLEGAL_ARGUMENT_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH4011", "토큰의 인수가 올바르지 않습니다."),
     TOKEN_PARSING_ERROR(HttpStatus.UNAUTHORIZED, "AUTH4012", "토큰 파싱 중 오류가 발생했습니다."),
 
-    // 멤버 관려 에러
+    // 멤버 관련 에러
     MEMBER_NOT_FOUND(HttpStatus.BAD_REQUEST, "MEMBER4001", "사용자가 없습니다."),
     ALREADY_WITHDRAWN_MEMBER(HttpStatus.BAD_REQUEST, "MEMBER4002", "이미 탈퇴한 회원입니다."),
     INVALID_PROFILE_IMAGE_KEY(HttpStatus.BAD_REQUEST, "MEMBER4003", "유효하지 않은 프로필 이미지 키입니다."),
