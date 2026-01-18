@@ -104,4 +104,11 @@ public class IngredientResponseDTO {
     public static class FridgeIngredientList {
         private List<FridgeIngredient> fridgeList;
     }
+
+    //4. 냉장고 재료 삭제
+    @Getter
+    @Builder
+    public static class DeleteFridgeIngredient {
+        private Long memberIngredientId;
+    }
 }

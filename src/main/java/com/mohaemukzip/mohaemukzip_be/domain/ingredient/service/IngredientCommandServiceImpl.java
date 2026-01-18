@@ -52,4 +52,17 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
                 .build();
 
     }
+
+    @Override
+    public IngredientResponseDTO.DeleteFridgeIngredient deleteIngredient(Long memberIngredientId) {
+
+        MemberIngredient memberIngredient = memberIngredientRepository.findById(memberIngredientId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.INGREDIENT_NOT_FOUND));
+
+        memberIngredientRepository.delete(memberIngredient);
+
+        return IngredientResponseDTO.DeleteFridgeIngredient.builder()
+                .memberIngredientId(memberIngredient.getId())
+                .build();
+    }
 }

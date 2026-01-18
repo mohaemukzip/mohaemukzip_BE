@@ -51,4 +51,15 @@ public class FridgeController {
 
         return ApiResponse.onSuccess(result);
     }
+
+    @Operation(summary = "냉장고 재료 삭제")
+    @DeleteMapping("/ingredients/{id}")
+    public ApiResponse<IngredientResponseDTO.DeleteFridgeIngredient> deleteFridgeIngredient(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @PathVariable(name = "id") Long ingredientId
+    ) {
+        IngredientResponseDTO.DeleteFridgeIngredient result = ingredientCommandService.deleteIngredient(ingredientId);
+
+        return ApiResponse.onSuccess(result);
+    }
 }
