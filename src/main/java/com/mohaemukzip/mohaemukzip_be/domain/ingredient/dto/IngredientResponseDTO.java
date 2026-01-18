@@ -106,9 +106,8 @@ public class IngredientResponseDTO {
     }
 
     //4. 냉장고 재료 삭제
-    @Getter
+
     @Builder
-    public static class DeleteFridgeIngredient {
-        private Long memberIngredientId;
+    public record DeleteFridgeIngredient(Long memberIngredientId) {
     }
 }

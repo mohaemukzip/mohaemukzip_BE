@@ -9,5 +9,5 @@ public interface IngredientCommandService {
     IngredientResponseDTO.AddFridgeResult addFridgeIngredient(Long memberId, IngredientRequestDTO.AddFridge request);
 
     // 냉장고 재료 삭제
-    IngredientResponseDTO.DeleteFridgeIngredient  deleteIngredient(Long memberIngredientId);
+    IngredientResponseDTO.DeleteFridgeIngredient  deleteIngredient(Long memberIngredientId, Long memberId);
 }
