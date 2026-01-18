@@ -71,24 +71,42 @@ public class S3Service {
 
     // 3. 이미지 삭제
     public void deleteFile(String key) {
-        s3Client.deleteObject(DeleteObjectRequest.builder()
+        try {
+            s3Client.deleteObject(DeleteObjectRequest.builder()
                 .bucket(bucket)
                 .key(key)
                 .build());
+        } catch (Exception e) { }
     }
 
-    // 4. URL → Key 추출
+    // 4. S3 URL에서 Key 추출
     public String extractKeyFromUrl(String url) {
         if (!StringUtils.hasText(url)) return null;
 
-        int idx = url.indexOf(".amazonaws.com/");
-        if (idx == -1) throw new IllegalArgumentException("유효하지 않은 S3 URL");
+        if (!url.contains("amazonaws.com")) { return url; }
+        try {
+            int idx = url.indexOf(".amazonaws.com/");
+            if (idx == -1) {
+                throw new IllegalArgumentException("잘못된 S3 URL 형식입니다");
+            }
 
-        String afterDomain = url.substring(idx + ".amazonaws.com/".length());
-        if (afterDomain.startsWith(bucket + "/")) {
-            afterDomain = afterDomain.substring(bucket.length() + 1);
+            String afterDomain = url.substring(idx + ".amazonaws.com/".length());
+
+            // bucket 이름이 있으면 제거
+            if (afterDomain.startsWith(bucket + "/")) {
+                afterDomain = afterDomain.substring(bucket.length() + 1);
+            }
+
+            // 쿼리 파라미터 제거 (presigned URL 파라미터)
+            int queryIdx = afterDomain.indexOf('?');
+            if (queryIdx != -1) {
+                afterDomain = afterDomain.substring(0, queryIdx);
+            }
+
+            return afterDomain;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("URL에서 key 추출 실패: " + url, e);
         }
-        return afterDomain;
     }
 
     // 5. 프로필 이미지 URL 생성
