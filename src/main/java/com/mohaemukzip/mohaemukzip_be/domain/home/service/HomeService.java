@@ -11,6 +11,9 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.CookingRecord;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.CookingRecordRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
+import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
+import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
+import com.mohaemukzip.mohaemukzip_be.global.service.LevelService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.*;
@@ -34,28 +37,13 @@ public class HomeService {
     private final MissionRepository missionRepository;
     private final RecipeRepository recipeRepository;
     private final MemberMissionRepository memberMissionRepository;
+    private final LevelService levelService;
 
-    private static final Map<Integer, Integer> LEVEL_SCORE_MAP = Map.of(
-            0, 8,
-            1, 20,
-            2, 40,
-            3, 70,
-            4, 0  // 최고 레벨 ( 추후 레벨별 필요 점수 수정 예정)
-    );
-
-    private static final Map<Integer, String> LEVEL_TITLE_MAP = Map.of(
-            0, "집밥 왕초보",
-            1, "집밥 입문자",
-            2, "집밥 적응 중",
-            3, "집밥 루티너",
-            4, "집밥계의 고수"
-    );
 
     public HomeResponseDTO getHome(Long memberId) {
         // 1. Member 조회
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
-
+                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
         // 2. 이달의 집밥 횟수
         Long monthlyCooking = cookingRecordRepository.countMonthlyCooking(memberId);
 
@@ -72,17 +60,14 @@ public class HomeService {
         List<HomeResponseDTO.RecommendedRecipeDto> recommendedRecipes = getRecommendedRecipes();
 
         // 7. 다음 레벨까지 필요한 점수
-        Integer nextLevelScore = LEVEL_SCORE_MAP.getOrDefault(member.getLevel(), 0);
-
-        // 8. 칭호
-        String title = LEVEL_TITLE_MAP.getOrDefault(member.getLevel(), "집밥 왕초보");
+        LevelService.LevelProgressDto levelProgress = levelService.calculateLevelProgress(member.getScore());
 
         return HomeResponseDTO.builder()
-                .level(member.getLevel())
-                .title(title)
+                .level(levelProgress.currentLevel())
+                .title(levelProgress.title())
                 .monthlyCooking(monthlyCooking.intValue())
                 .score(member.getScore())
-                .nextLevelScore(nextLevelScore)
+                .nextLevelScore(levelProgress.nextLevelScore())
                 .consecutiveDays(consecutiveDays)
                 .weeklyCooking(weeklyCooking)
                 .todayMission(todayMission)

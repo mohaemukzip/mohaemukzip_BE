@@ -40,6 +40,10 @@ public enum ErrorStatus implements BaseCode {
     
     //재료 관련 에러
     INGREDIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "INGREDIENT4001", "해당 재료를 찾을 수 없습니다."),
+
+    //점수 관련 에러
+    INVALID_SCORE(HttpStatus.BAD_REQUEST, "SCORE4001", "유효하지 않은 점수입니다."),
+    INVALID_LEVEL(HttpStatus.BAD_REQUEST, "SCORE4002", "유효하지 않은 레벨입니다."),
     ;
 
     private final HttpStatus httpStatus;

@@ -55,9 +55,6 @@ public class Member extends BaseEntity {
     @Column(name = "oauth_id", unique = true)
     private Long oauthId;
 
-    @Column(name = "level")
-    private Integer level;
-
     @Column(name = "score")
     private Integer score;
 
