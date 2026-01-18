@@ -55,16 +55,19 @@ public class Member extends BaseEntity {
     @Column(name = "oauth_id", unique = true)
     private Long oauthId;
 
-    @Column(name = "level")
-    private Integer level;
-
     @Column(name = "score")
     private Integer score;
+
+    @Column(name = "profile_image_key", length = 500)
+    private String profileImageKey;
 
     public void deactivate() {
         if (this.inactiveDate == null) {
             this.inactiveDate = LocalDate.now();
         }
+    }
+    public void updateProfileImageKey(String profileImageKey) {
+        this.profileImageKey = profileImageKey;
     }
 
     public void reactivate() {
@@ -72,4 +75,8 @@ public class Member extends BaseEntity {
     }
 
     public boolean isInactive() { return this.inactiveDate != null; }
+
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
 }

@@ -45,7 +45,6 @@ public class AuthCommandServiceImpl implements AuthCommandService {
                 .password(passwordEncoder.encode(request.password()))
                 .role(Role.ROLE_USER)
                 .loginType(LoginType.GENERAL)
-                .level(0)
                 .score(0)
                 .build();
         Member savedMember = memberRepository.save(member);
