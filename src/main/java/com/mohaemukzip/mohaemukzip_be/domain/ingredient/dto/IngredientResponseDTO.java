@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 public class IngredientResponseDTO {
@@ -60,7 +61,7 @@ public class IngredientResponseDTO {
 
             // (1) D-day 계산
             if (entity.getExpireDate() != null) {
-                LocalDate today = LocalDate.now();
+                LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
                 LocalDate expireDate = entity.getExpireDate();
 
                 long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(today, expireDate);
