@@ -8,4 +8,6 @@ import java.util.List;
 public interface RecipeRepository extends JpaRepository<Recipe,Long> {
 
     List<Recipe> findTop5ByOrderByViewsDesc();
+
+    List<Recipe> findByTitleContaining(String keyword);
 }
