@@ -131,6 +131,11 @@ public class IngredientResponseDTO {
 
             Ingredient ingredient = favorite.getIngredient();
 
+            if (ingredient == null) {
+                return FavoriteDetail.builder()
+                        .memberFavoriteId(favorite.getId())
+                        .build();
+            }
             return FavoriteDetail.builder()
                     .memberFavoriteId(favorite.getId())
                     .ingredientId(ingredient.getId())
