@@ -4,10 +4,12 @@ import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDT
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberFavorite;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberIngredient;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberRecentSearch;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Category;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.IngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberFavoriteRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberIngredientRepository;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberRecentSearchRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
@@ -17,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -25,6 +26,7 @@ import static java.util.stream.Collectors.toList;
 @RequiredArgsConstructor
 public class IngredientQueryServiceImpl implements IngredientQueryService {
 
+    private final MemberRecentSearchRepository memberRecentSearchRepository;
     private final MemberRepository memberRepository;
     private final IngredientRepository ingredientRepository;
     private final MemberIngredientRepository memberIngredientRepository;
@@ -92,6 +94,18 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
         return new IngredientResponseDTO.FavoriteList(detailList);
 
 
+    }
+
+    @Override
+    public IngredientResponseDTO.RecentSearchList getRecentSearch(Long memberId) {
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
+
+        List<MemberRecentSearch> recentSearches =
+                memberRecentSearchRepository.findAllByMemberOrderByCreatedAtDesc(member);
+
+        return IngredientResponseDTO.RecentSearchList.from(recentSearches);
     }
 
 

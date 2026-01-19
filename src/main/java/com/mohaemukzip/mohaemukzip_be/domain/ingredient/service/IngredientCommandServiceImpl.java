@@ -5,9 +5,11 @@ import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDT
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberFavorite;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberIngredient;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberRecentSearch;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.IngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberFavoriteRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberIngredientRepository;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberRecentSearchRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
@@ -16,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -23,6 +27,7 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
 
     private final IngredientRepository ingredientRepository;
     private final MemberRepository memberRepository;
+    private final MemberRecentSearchRepository memberRecentSearchRepository;
     private final MemberIngredientRepository memberIngredientRepository;
     private final MemberFavoriteRepository memberFavoriteRepository;
 
@@ -99,6 +104,33 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
 
         return new IngredientResponseDTO.DeleteFavorite(favorite.getId());
 
+    }
 
+    //최근 검색어 저장
+    @Override
+    public void saveRecentSearch(Long memberId, String keyword) {
+
+        if (keyword == null || keyword.isBlank()) {
+            return;
+        }
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
+
+
+        Optional<MemberRecentSearch> existingSearch =
+                memberRecentSearchRepository.findByMemberAndKeyword(member, keyword);
+
+        if (existingSearch.isPresent()) {
+            memberRecentSearchRepository.delete(existingSearch.get());
+            memberRecentSearchRepository.flush();
+        }
+
+        MemberRecentSearch newSearch = MemberRecentSearch.builder()
+                .member(member)
+                .keyword(keyword)
+                .build();
+
+        memberRecentSearchRepository.save(newSearch);
     }
 }

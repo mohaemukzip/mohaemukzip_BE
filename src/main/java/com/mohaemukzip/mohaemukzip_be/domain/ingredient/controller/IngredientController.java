@@ -30,9 +30,16 @@ public class IngredientController {
     @Operation(summary = "재료 검색")
     @GetMapping
     public ApiResponse<List<IngredientResponseDTO.Detail>> searchIngredients(
-      @RequestParam(name = "query", required = false) String query,
-      @RequestParam(name = "category", required = false) Category category
+
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @RequestParam(name = "query", required = false) String query,
+            @RequestParam(name = "category", required = false) Category category
     ) {
+
+        if (customUserDetails != null && query != null && !query.isBlank()) {
+            Long memberId = customUserDetails.getMember().getId();
+            ingredientCommandService.saveRecentSearch(memberId, query);
+        }
 
         List<IngredientResponseDTO.Detail> response = ingredientQueryService.getIngredients(query,category);
 
@@ -89,6 +96,22 @@ public class IngredientController {
         return ApiResponse.onSuccess(result);
 
 
+    }
+
+    @Operation(summary = "최근 재료 검색어")
+    @GetMapping("/recent-searches")
+    public ApiResponse<IngredientResponseDTO.RecentSearchList> getRecentSearch(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        if (customUserDetails == null) {
+            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
+        }
+        Long memberId = customUserDetails.getMember().getId();
+
+        IngredientResponseDTO.RecentSearchList result =
+                ingredientQueryService.getRecentSearch(memberId);
+
+        return ApiResponse.onSuccess(result);
     }
 }
 
