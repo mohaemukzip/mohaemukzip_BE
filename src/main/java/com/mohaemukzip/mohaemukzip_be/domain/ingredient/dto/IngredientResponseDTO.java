@@ -110,4 +110,9 @@ public class IngredientResponseDTO {
     @Builder
     public record DeleteFridgeIngredient(Long memberIngredientId) {
     }
+
+    //5. 재료 즐겨찾기 등록
+    @Builder
+    public record AddFavorite(Long memberFavoriteId, Long ingredientId) {
+    }
 }
