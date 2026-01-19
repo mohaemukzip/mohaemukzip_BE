@@ -64,6 +64,7 @@ public class TermCommandServiceImpl implements TermCommandService {
         Member member = memberRepository.findById(memberId)  // ← MemberRepository 주입!
                 .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
 
+        memberTermRepository.deleteAllByMember(member);
         // createMemberTerms 재사용 (termName, agreedAt 완벽)
         createMemberTerms(member, terms);
     }

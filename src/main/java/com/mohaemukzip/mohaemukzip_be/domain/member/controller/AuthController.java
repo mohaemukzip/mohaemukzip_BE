@@ -102,15 +102,15 @@ public class AuthController {
                     " { \"termId\": 4, \"isAgreed\": false }\n" +
                     " ]")
     @PostMapping("/terms/agree")
-    public ApiResponse<AuthResponseDTO.GetUserDTO> agreeTermsAfterSocialLogin(
+    public ApiResponse<Void> agreeTermsAfterSocialLogin(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody List<TermRequestDTO.TermAgreementRequest> terms) {
         if (userDetails == null) {
             throw new BusinessException(ErrorStatus.TOKEN_MISSING);
         }
         Long memberId = userDetails.getMember().getId();
-        AuthResponseDTO.GetUserDTO response = termCommandService.updateMemberTerms(memberId, terms);
-        return ApiResponse.onSuccess(response);
+        termCommandService.updateMemberTerms(memberId, terms);
+        return ApiResponse.onSuccess(null);
     }
 
     @Operation(summary = "로그아웃")

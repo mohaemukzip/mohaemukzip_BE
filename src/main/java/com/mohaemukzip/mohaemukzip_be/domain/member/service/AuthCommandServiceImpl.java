@@ -244,7 +244,8 @@ public class AuthCommandServiceImpl implements AuthCommandService {
                 throw new BusinessException(ErrorStatus.INVALID_KAKAO_TOKEN);
             }
             throw new BusinessException(ErrorStatus.KAKAO_API_ERROR);
-
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Kakao API Unexpected Error", e);
             throw new BusinessException(ErrorStatus.KAKAO_API_ERROR);

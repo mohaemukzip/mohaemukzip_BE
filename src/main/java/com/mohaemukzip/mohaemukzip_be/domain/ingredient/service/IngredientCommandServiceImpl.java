@@ -84,9 +84,9 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
                 .ingredient(ingredient)
                 .build();
 
-        memberFavoriteRepository.save(memberFavorite);
+        MemberFavorite saved = memberFavoriteRepository.save(memberFavorite);
 
-        return new IngredientResponseDTO.AddFavorite(memberFavorite.getId(), ingredient.getId());
+        return new IngredientResponseDTO.AddFavorite(saved.getId(), ingredient.getId());
     }
 
     @Override
