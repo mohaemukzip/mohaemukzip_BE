@@ -152,4 +152,7 @@ public class IngredientResponseDTO {
             List<FavoriteDetail> favoriteList
     ) {}
 
+    // 7. 즐겨찾기 재료 삭제
+    @Builder
+    public record DeleteFavorite(Long memberFavoriteId) {}
 }

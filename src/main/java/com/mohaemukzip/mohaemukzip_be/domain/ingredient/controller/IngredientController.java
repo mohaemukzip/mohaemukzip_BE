@@ -20,7 +20,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/ingredients")
-@Tag(name = "Ingredient", description = "재료 검색 관련 API")
+@Tag(name = "Ingredient", description = "재료 관련 API")
 @Validated
 public class IngredientController {
 
@@ -72,7 +72,24 @@ public class IngredientController {
         return ApiResponse.onSuccess(result);
     }
 
+    @Operation(summary = "즐겨찾기 재료 삭제")
+    @DeleteMapping("/favorites/{favoriteId}")
+    public ApiResponse<IngredientResponseDTO.DeleteFavorite> deleteFavorite(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @PathVariable Long favoriteId
+    ) {
+        if (customUserDetails == null) {
+            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
+        }
+        Long memberId = customUserDetails.getMember().getId();
 
+        IngredientResponseDTO.DeleteFavorite result =
+                ingredientCommandService.deleteFavorite(memberId, favoriteId);
+
+        return ApiResponse.onSuccess(result);
+
+
+    }
 }
 
 
