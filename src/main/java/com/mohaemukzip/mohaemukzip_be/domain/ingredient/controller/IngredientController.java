@@ -4,7 +4,9 @@ import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDT
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Category;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.service.IngredientCommandService;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.service.IngredientQueryService;
+import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
+import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -41,9 +43,12 @@ public class IngredientController {
     @PostMapping("/{ingredientId}/favorites")
     public ApiResponse<IngredientResponseDTO.AddFavorite> addFavorite(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
-            @PathVariable(name = "ingredientId") Long ingredientId
+            @PathVariable Long ingredientId
     ) {
 
+        if (customUserDetails == null) {
+            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
+        }
         Long memberId = customUserDetails.getMember().getId();
 
         IngredientResponseDTO.AddFavorite result =
