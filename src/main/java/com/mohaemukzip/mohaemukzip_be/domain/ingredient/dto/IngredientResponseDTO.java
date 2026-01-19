@@ -131,7 +131,7 @@ public class IngredientResponseDTO {
                     .ingredientId(ingredient.getId())
                     .name(ingredient.getName())
                     .weight(ingredient.getWeight())
-                    .unit(ingredient.getUnit().getLabel())
+                    .unit(ingredient.getUnit() != null ? ingredient.getUnit().getLabel() : null)
                     .build();
         }
     }
