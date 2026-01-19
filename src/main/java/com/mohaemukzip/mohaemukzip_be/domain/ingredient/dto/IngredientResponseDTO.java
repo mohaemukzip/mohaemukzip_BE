@@ -113,6 +113,6 @@ public class IngredientResponseDTO {
 
     //5. 재료 즐겨찾기 등록
     @Builder
-    public record AddFavorite(Long memberFavoriteId, Long IngredientId) {
+    public record AddFavorite(Long memberFavoriteId, Long ingredientId) {
     }
 }
