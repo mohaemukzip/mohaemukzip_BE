@@ -42,3 +42,81 @@ ON DUPLICATE KEY UPDATE
   is_required = VALUES(is_required),
   is_active = VALUES(is_active),
   updated_at = NOW();
+
+
+-- 가공/유제품
+INSERT INTO ingredients
+(name, category, unit, weight, created_at, updated_at)
+VALUES
+    ('가다랑어포', 'PROCESSED_DAIRY', 'GRAM', 0, NOW(), NOW()),
+    ('누텔라', 'PROCESSED_DAIRY', 'GRAM', 0, NOW(), NOW()),
+    ('단무지', 'PROCESSED_DAIRY', 'GRAM', 0, NOW(), NOW()),
+    ('돈까스', 'PROCESSED_DAIRY', 'EACH', 0, NOW(), NOW()),
+    ('두유', 'PROCESSED_DAIRY', 'ML', 0, NOW(), NOW()),
+    ('딸기잼', 'PROCESSED_DAIRY', 'GRAM', 0, NOW(), NOW()),
+    ('땅콩버터', 'PROCESSED_DAIRY', 'GRAM', 0, NOW(), NOW()),
+    ('땅콩잼', 'PROCESSED_DAIRY', 'GRAM', 0, NOW(), NOW()),
+    ('라이스페이퍼', 'PROCESSED_DAIRY', 'PIECE', 0, NOW(), NOW()),
+    ('만두', 'PROCESSED_DAIRY', 'EACH', 0, NOW(), NOW()),
+    ('맛살', 'PROCESSED_DAIRY', 'EACH', 0, NOW(), NOW()),
+    ('모짜렐라치즈', 'PROCESSED_DAIRY', 'GRAM', 0, NOW(), NOW()),
+    ('미트볼', 'PROCESSED_DAIRY', 'EACH', 0, NOW(), NOW()),
+    ('버터', 'PROCESSED_DAIRY', 'GRAM', 0, NOW(), NOW()),
+    ('부라타치즈', 'PROCESSED_DAIRY', 'GRAM', 0, NOW(), NOW()),
+    ('사과잼', 'PROCESSED_DAIRY', 'GRAM', 0, NOW(), NOW()),
+    ('생크림', 'PROCESSED_DAIRY', 'ML', 0, NOW(), NOW()),
+    ('아몬드우유', 'PROCESSED_DAIRY', 'ML', 0, NOW(), NOW()),
+    ('연유', 'PROCESSED_DAIRY', 'ML', 0, NOW(), NOW()),
+    ('요거트', 'PROCESSED_DAIRY', 'GRAM', 0, NOW(), NOW()),
+    ('요구르트', 'PROCESSED_DAIRY', 'ML', 0, NOW(), NOW()),
+    ('우유', 'PROCESSED_DAIRY', 'ML', 0, NOW(), NOW()),
+    ('체다치즈', 'PROCESSED_DAIRY', 'GRAM', 0, NOW(), NOW()),
+    ('초콜릿', 'PROCESSED_DAIRY', 'GRAM', 0, NOW(), NOW()),
+    ('치즈', 'PROCESSED_DAIRY', 'GRAM', 0, NOW(), NOW()),
+    ('크림치즈', 'PROCESSED_DAIRY', 'GRAM', 0, NOW(), NOW()),
+    ('통조림옥수수', 'PROCESSED_DAIRY', 'CAN', 0, NOW(), NOW()),
+    ('통조림참치', 'PROCESSED_DAIRY', 'CAN', 0, NOW(), NOW()),
+    ('통조림햄', 'PROCESSED_DAIRY', 'CAN', 0, NOW(), NOW()),
+    ('파마산치즈', 'PROCESSED_DAIRY', 'GRAM', 0, NOW(), NOW()),
+    ('피자', 'PROCESSED_DAIRY', 'PAN', 0, NOW(), NOW()),
+    ('핫도그', 'PROCESSED_DAIRY', 'EACH', 0, NOW(), NOW()),
+    ('휘핑크림', 'PROCESSED_DAIRY', 'ML', 0, NOW(), NOW());
+
+-- 육류/계란
+INSERT INTO ingredients
+(name, category, unit, weight, created_at, updated_at)
+VALUES
+    ('계란', 'MEAT_EGG', 'EACH', 0, NOW(), NOW()),
+    ('국거리소고기', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('다진돼지고기', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('다진소고기', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('닭가슴살', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('닭고기', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('닭날개', 'MEAT_EGG', 'EACH', 0, NOW(), NOW()),
+    ('닭다리', 'MEAT_EGG', 'EACH', 0, NOW(), NOW()),
+    ('대패삼겹살', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('돼지 갈매기살', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('돼지 뒷다리', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('돼지 등심', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('돼지 목살', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('돼지 앞다리살', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('돼지 항정상', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('베이컨', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('비엔나소세지', 'MEAT_EGG', 'EACH', 0, NOW(), NOW()),
+    ('삼겹살', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('소 등심', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('소 안심', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('소 채끝살', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('소고기', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('소고기 갈비', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('소고기 목살', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('소고기 사태', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('소고기 앞다리살', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('소고기 우둔', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('소세지', 'MEAT_EGG', 'EACH', 0, NOW(), NOW()),
+    ('양고기', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('잠봉', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('차돌박이', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('햄', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW()),
+    ('훈제오리', 'MEAT_EGG', 'GRAM', 0, NOW(), NOW());
+
