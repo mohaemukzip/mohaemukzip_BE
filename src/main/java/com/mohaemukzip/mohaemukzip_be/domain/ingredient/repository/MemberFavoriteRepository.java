@@ -9,5 +9,7 @@ import java.util.List;
 
 public interface MemberFavoriteRepository extends JpaRepository<MemberFavorite, Long> {
 
+    boolean existsByMemberAndIngredient(Member member, Ingredient ingredient);
+  
     List<MemberFavorite> findAllByMember(Member member);
 }
