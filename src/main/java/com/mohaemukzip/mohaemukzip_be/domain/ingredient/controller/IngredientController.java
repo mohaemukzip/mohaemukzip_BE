@@ -11,12 +11,14 @@ import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/ingredients")
@@ -38,7 +40,12 @@ public class IngredientController {
 
         if (customUserDetails != null && query != null && !query.isBlank()) {
             Long memberId = customUserDetails.getMember().getId();
-            ingredientCommandService.saveRecentSearch(memberId, query);
+
+            try {
+                ingredientCommandService.saveRecentSearch(memberId, query);
+            } catch (Exception e) {
+                log.warn("최근 검색어 저장 실패 - MemberId: {}, Query: {}, Error: {}", memberId, query, e.getMessage());
+            }
         }
 
         List<IngredientResponseDTO.Detail> response = ingredientQueryService.getIngredients(query,category);
