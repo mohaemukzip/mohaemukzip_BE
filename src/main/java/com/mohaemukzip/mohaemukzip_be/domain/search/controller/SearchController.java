@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/search/keywords")
-@Tag(name = "Search")
+@Tag(name = "Search", description = "통합 검색 API")
 @Validated
 public class SearchController {
 
