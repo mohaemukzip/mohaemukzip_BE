@@ -39,6 +39,19 @@ public class IngredientController {
         return ApiResponse.onSuccess(response);
     }
 
+    @Operation(summary = "즐겨찾기 재료 목록 조회")
+    @GetMapping("/favorites")
+    public ApiResponse<IngredientResponseDTO.FavoriteList> getFavoriteList(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        Long memberId = customUserDetails.getMember().getId();
+
+        IngredientResponseDTO.FavoriteList response = ingredientQueryService.getFavoriteList(memberId);
+
+        return ApiResponse.onSuccess(response);
+
+    }
+
 
 }
 
