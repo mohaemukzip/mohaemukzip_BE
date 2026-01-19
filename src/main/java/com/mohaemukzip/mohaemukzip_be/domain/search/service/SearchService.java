@@ -10,9 +10,12 @@ import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResultDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,18 +31,50 @@ public class SearchService {
     private final RecipeRepository recipeRepository;
     private final SummaryRepository summaryRepository;
 
+    @Qualifier("redisCacheTemplate")
+    private final RedisTemplate<String, Object> redisTemplate;
+
     public SearchResponseDTO search(String keyword) {
+        // 빈 키워드 방어 로직
+        if (keyword == null || keyword.isBlank()) {
+            return SearchResponseDTO.builder()
+                    .results(List.of())
+                    .build();
+        }
+
+        String cacheKey = "search::" + keyword;
+
+        // 1. Redis 캐시 조회
+        try {
+            SearchResponseDTO cachedData = (SearchResponseDTO) redisTemplate.opsForValue().get(cacheKey);
+            if (cachedData != null) {
+                return cachedData;
+            }
+        } catch (Exception e) {
+            // Redis 조회 실패 시 DB 조회 진행
+        }
+
+        // 2. DB 조회
         List<SearchResultDTO> results = new ArrayList<>();
 
-        // 1. 재료 검색
+        // 재료 검색
         results.addAll(searchIngredients(keyword));
 
-        // 2. 메뉴(레시피) 검색
+        // 메뉴(레시피) 검색
         results.addAll(searchRecipes(keyword));
 
-        return SearchResponseDTO.builder()
+        SearchResponseDTO response = SearchResponseDTO.builder()
                 .results(results)
                 .build();
+
+        // 3. Redis 캐시 저장 (TTL 30분)
+        try {
+            redisTemplate.opsForValue().set(cacheKey, response, Duration.ofMinutes(30));
+        } catch (Exception e) {
+            // Redis 저장 실패 시 무시
+        }
+
+        return response;
     }
 
     // 재료 검색 로직
