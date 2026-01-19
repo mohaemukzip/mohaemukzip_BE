@@ -1,9 +1,11 @@
 package com.mohaemukzip.mohaemukzip_be.domain.member.service;
 
+import com.mohaemukzip.mohaemukzip_be.domain.member.dto.AuthResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.TermRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.MemberTerm;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Term;
+import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberTermRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.TermRepository;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 public class TermCommandServiceImpl implements TermCommandService {
     private final TermRepository termRepository;
     private final MemberTermRepository memberTermRepository;
+    private final MemberRepository memberRepository;
 
     /**
      * 회원가입 시 약관 동의 처리
@@ -51,6 +54,19 @@ public class TermCommandServiceImpl implements TermCommandService {
                 .toList();
 
         memberTermRepository.saveAll(memberTerms);
+    }
+    @Transactional
+    public void updateMemberTerms(Long memberId, List<TermRequestDTO.TermAgreementRequest> terms) {
+        validateDuplicateTermIds(terms);
+        validateRequiredTerms(terms);
+
+        // Member 조회 (영속성 확보)
+        Member member = memberRepository.findById(memberId)  // ← MemberRepository 주입!
+                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
+
+        memberTermRepository.deleteAllByMember(member);
+        // createMemberTerms 재사용 (termName, agreedAt 완벽)
+        createMemberTerms(member, terms);
     }
 
     /**

@@ -1,7 +1,10 @@
 package com.mohaemukzip.mohaemukzip_be.domain.member.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 public class AuthResponseDTO {
 
@@ -51,4 +54,23 @@ public class AuthResponseDTO {
     public record WithdrawalResponse(
             String message
     ) { }
+
+    @Getter
+    @NoArgsConstructor
+    public static class GetKakaoUserInfoDTO {
+        private Long id;
+
+        @JsonProperty("kakao_account")
+        private KakaoAccount kakaoAccount;
+
+        @Getter @NoArgsConstructor
+        public static class KakaoAccount {
+            private Profile profile;
+        }
+
+        @Getter @NoArgsConstructor
+        public static class Profile {
+            private String nickname;
+        }
+    }
 }
