@@ -9,7 +9,6 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.SummaryRepository
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResultDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchType;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -23,16 +22,24 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class SearchService {
 
     private final IngredientRepository ingredientRepository;
     private final RecipeRepository recipeRepository;
     private final SummaryRepository summaryRepository;
-
-    @Qualifier("redisCacheTemplate")
     private final RedisTemplate<String, Object> redisTemplate;
+
+    public SearchService(
+            IngredientRepository ingredientRepository,
+            RecipeRepository recipeRepository,
+            SummaryRepository summaryRepository,
+            @Qualifier("redisCacheTemplate") RedisTemplate<String, Object> redisTemplate) {
+        this.ingredientRepository = ingredientRepository;
+        this.recipeRepository = recipeRepository;
+        this.summaryRepository = summaryRepository;
+        this.redisTemplate = redisTemplate;
+    }
 
     public SearchResponseDTO search(String keyword) {
         // 빈 키워드 방어 로직
