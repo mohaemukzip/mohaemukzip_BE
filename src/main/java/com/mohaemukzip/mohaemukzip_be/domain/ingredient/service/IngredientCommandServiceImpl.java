@@ -89,4 +89,16 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
         return new IngredientResponseDTO.AddFavorite(memberFavorite.getId(), ingredient.getId());
     }
 
+    @Override
+    public IngredientResponseDTO.DeleteFavorite deleteFavorite(Long memberId, Long favoriteId) {
+
+        MemberFavorite favorite = memberFavoriteRepository.findByIdAndMemberId(favoriteId, memberId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.FAVORITE_NOT_FOUND));
+
+        memberFavoriteRepository.delete(favorite);
+
+        return new IngredientResponseDTO.DeleteFavorite(favorite.getId());
+
+
+    }
 }
