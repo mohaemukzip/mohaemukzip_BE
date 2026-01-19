@@ -39,7 +39,22 @@ public class IngredientController {
         return ApiResponse.onSuccess(response);
     }
 
-    @Operation(summary = "재료 즐겨찾기 등록")
+    @Operation(summary = "즐겨찾기 재료 목록 조회")
+    @GetMapping("/favorites")
+    public ApiResponse<IngredientResponseDTO.FavoriteList> getFavoriteList(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        if (customUserDetails == null) {
+            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
+        }
+        Long memberId = customUserDetails.getMember().getId();
+
+        IngredientResponseDTO.FavoriteList response = ingredientQueryService.getFavoriteList(memberId);
+
+        return ApiResponse.onSuccess(response);
+    }
+
+    @Operation(summary = "즐겨찾기 재료 등록")
     @PostMapping("/{ingredientId}/favorites")
     public ApiResponse<IngredientResponseDTO.AddFavorite> addFavorite(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
