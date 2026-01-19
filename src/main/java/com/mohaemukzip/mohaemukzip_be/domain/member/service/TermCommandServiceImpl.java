@@ -56,7 +56,7 @@ public class TermCommandServiceImpl implements TermCommandService {
         memberTermRepository.saveAll(memberTerms);
     }
     @Transactional
-    public AuthResponseDTO.GetUserDTO updateMemberTerms(Long memberId, List<TermRequestDTO.TermAgreementRequest> terms) {
+    public void updateMemberTerms(Long memberId, List<TermRequestDTO.TermAgreementRequest> terms) {
         validateDuplicateTermIds(terms);
         validateRequiredTerms(terms);
 
@@ -66,7 +66,6 @@ public class TermCommandServiceImpl implements TermCommandService {
 
         // createMemberTerms 재사용 (termName, agreedAt 완벽)
         createMemberTerms(member, terms);
-        return null;
     }
 
     /**

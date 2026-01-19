@@ -221,7 +221,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
 
     private AuthResponseDTO.GetKakaoUserInfoDTO getKakaoUserInfo(String accessToken) {
         try {
-            log.info("Kakao API 호출 시작 - Token: {}...", accessToken.substring(0, Math.min(20, accessToken.length())));
+            log.info("Kakao API 호출 시작");
 
             AuthResponseDTO.GetKakaoUserInfoDTO userInfo = webClient.get()
                     .uri(KAKAO_USER_INFO_URI)

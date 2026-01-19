@@ -8,5 +8,5 @@ import java.util.List;
 
 public interface TermCommandService {
     void createMemberTerms(Member member, List<TermRequestDTO.TermAgreementRequest> termAgreements);
-    AuthResponseDTO.GetUserDTO updateMemberTerms(Long memberId, List<TermRequestDTO.TermAgreementRequest> terms);
+    void updateMemberTerms(Long memberId, List<TermRequestDTO.TermAgreementRequest> terms);
 }
