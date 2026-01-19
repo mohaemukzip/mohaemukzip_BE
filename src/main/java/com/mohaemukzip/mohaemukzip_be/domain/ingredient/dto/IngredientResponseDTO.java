@@ -1,6 +1,7 @@
 package com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto;
 
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberFavorite;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberIngredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.enums.IngredientStatus;
 import lombok.Builder;
@@ -110,4 +111,45 @@ public class IngredientResponseDTO {
     @Builder
     public record DeleteFridgeIngredient(Long memberIngredientId) {
     }
+  
+    //5. 재료 즐겨찾기 등록
+    @Builder
+    public record AddFavorite(Long memberFavoriteId, Long ingredientId) {
+    }
+
+    // 6-1. 즐겨찾기 재료 상세 조회
+    @Builder
+    public record FavoriteDetail(
+            Long memberFavoriteId,
+            Long ingredientId,
+            String name,
+            Double weight,
+            String unit
+    ) {
+
+        public static FavoriteDetail from(MemberFavorite favorite) {
+
+            Ingredient ingredient = favorite.getIngredient();
+
+            if (ingredient == null) {
+                return FavoriteDetail.builder()
+                        .memberFavoriteId(favorite.getId())
+                        .build();
+            }
+            return FavoriteDetail.builder()
+                    .memberFavoriteId(favorite.getId())
+                    .ingredientId(ingredient.getId())
+                    .name(ingredient.getName())
+                    .weight(ingredient.getWeight())
+                    .unit(ingredient.getUnit() != null ? ingredient.getUnit().getLabel() : null)
+                    .build();
+        }
+    }
+
+    // 6-2. 즐겨찾기 재료 리스트
+    @Builder
+    public record FavoriteList(
+            List<FavoriteDetail> favoriteList
+    ) {}
+
 }

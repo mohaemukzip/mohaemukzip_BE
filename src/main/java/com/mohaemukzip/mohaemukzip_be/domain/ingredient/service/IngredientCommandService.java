@@ -10,4 +10,8 @@ public interface IngredientCommandService {
 
     // 냉장고 재료 삭제
     IngredientResponseDTO.DeleteFridgeIngredient  deleteIngredient(Long memberIngredientId, Long memberId);
+
+    //재료 즐겨찾기
+    IngredientResponseDTO.AddFavorite addFavorite(Long memberId, Long ingredientId);
+
 }
