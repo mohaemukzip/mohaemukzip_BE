@@ -29,7 +29,7 @@ public class RecipeController {
     @GetMapping
     @Operation(summary = "세부 카테고리별 레시피 조회 API", description = "특정 세부 카테고리(categoryId)에 속하는 레시피 목록을 조회합니다.")
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "COMMON200", description = "OK, 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "OK"),
     })
     @Parameters({
             @Parameter(name = "categoryId", description = "세부 카테고리 ID", required = true),
