@@ -97,14 +97,13 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public IngredientResponseDTO.RecentSearchList getRecentSearch(Long memberId) {
 
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
 
         List<MemberRecentSearch> recentSearches =
-                memberRecentSearchRepository.findAllByMemberOrderByCreatedAtDesc(member);
+                memberRecentSearchRepository.findAllByMemberOrderByUpdatedAtDesc(member);
 
         return IngredientResponseDTO.RecentSearchList.from(recentSearches);
     }

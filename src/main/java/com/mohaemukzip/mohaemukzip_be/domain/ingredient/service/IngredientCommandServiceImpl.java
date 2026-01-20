@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -123,20 +124,22 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
                 memberRecentSearchRepository.findByMemberAndKeyword(member, keyword);
 
         if (existingSearch.isPresent()) {
-            memberRecentSearchRepository.updateCreatedAt(existingSearch.get().getId());
+            memberRecentSearchRepository.updateUpdatedAt(existingSearch.get().getId(), LocalDateTime.now());
             return;
         }
-            Long count = memberRecentSearchRepository.countByMember(member);
+            long count = memberRecentSearchRepository.countByMember(member);
 
-            if(count >= 20) {
+            while(count >= 20) {
                 MemberRecentSearch oldestSearch =
-                        memberRecentSearchRepository.findTopByMemberOrderByCreatedAtAsc(member);
+                        memberRecentSearchRepository.findTopByMemberOrderByUpdatedAtAsc(member);
 
-                if(oldestSearch !=null) {
-                    memberRecentSearchRepository.delete(oldestSearch);
-
+                if(oldestSearch == null) {
+                    break;
+                }
+                memberRecentSearchRepository.delete(oldestSearch);
+                count--;
             }
-        }
+
 
         MemberRecentSearch newSearch = MemberRecentSearch.builder()
                 .member(member)

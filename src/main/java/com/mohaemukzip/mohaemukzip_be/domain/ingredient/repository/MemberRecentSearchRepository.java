@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,14 +15,14 @@ public interface MemberRecentSearchRepository extends JpaRepository<MemberRecent
 
     Optional<MemberRecentSearch> findByMemberAndKeyword(Member member, String keyword);
 
-    List<MemberRecentSearch> findAllByMemberOrderByCreatedAtDesc(Member member);
+    List<MemberRecentSearch> findAllByMemberOrderByUpdatedAtDesc(Member member);
 
     Long countByMember(Member member);
 
-    //제일 오래된 검색어 한개 찾기 (삭제용)
-    MemberRecentSearch findTopByMemberOrderByCreatedAtAsc(Member member);
+
+    MemberRecentSearch findTopByMemberOrderByUpdatedAtAsc(Member member);
 
     @Modifying
-    @Query("UPDATE MemberRecentSearch m SET m.createdAt = CURRENT_TIMESTAMP WHERE m.id = :id")
-    void updateCreatedAt(@Param("id") Long id);
+    @Query("UPDATE MemberRecentSearch m SET m.updatedAt = :now WHERE m.id = :id")
+    void updateUpdatedAt(@Param("id") Long id, @Param("now") LocalDateTime now);
 }
