@@ -39,4 +39,3 @@ out/
 /nginx/
 /.env
 /src/main/resources/application-dev.yaml
-/src/main/resources/data-local.sql
