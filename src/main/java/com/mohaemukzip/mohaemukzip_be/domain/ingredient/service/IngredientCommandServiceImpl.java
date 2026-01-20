@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -31,6 +32,8 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
     private final MemberRecentSearchRepository memberRecentSearchRepository;
     private final MemberIngredientRepository memberIngredientRepository;
     private final MemberFavoriteRepository memberFavoriteRepository;
+
+    private static final int MAX_RECENT_SEARCH_COUNT = 20;
 
     @Override
     public IngredientResponseDTO.AddFridgeResult addFridgeIngredient(Long memberId, IngredientRequestDTO.AddFridge request) {
@@ -124,28 +127,30 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
                 memberRecentSearchRepository.findByMemberAndKeyword(member, keyword);
 
         if (existingSearch.isPresent()) {
-            memberRecentSearchRepository.updateUpdatedAt(existingSearch.get().getId(), LocalDateTime.now());
+            memberRecentSearchRepository.updateUpdatedAt(
+                    existingSearch.get().getId(),
+                    LocalDateTime.now()
+            );
             return;
         }
-            long count = memberRecentSearchRepository.countByMember(member);
-
-            while(count >= 20) {
-                MemberRecentSearch oldestSearch =
-                        memberRecentSearchRepository.findTopByMemberOrderByUpdatedAtAsc(member);
-
-                if(oldestSearch == null) {
-                    break;
-                }
-                memberRecentSearchRepository.delete(oldestSearch);
-                count--;
-            }
-
-
         MemberRecentSearch newSearch = MemberRecentSearch.builder()
                 .member(member)
                 .keyword(keyword)
                 .build();
 
         memberRecentSearchRepository.save(newSearch);
+
+        List<MemberRecentSearch> allSearches =
+                memberRecentSearchRepository.findAllByMemberOrderByUpdatedAtDesc(member);
+
+        if (allSearches.size() > MAX_RECENT_SEARCH_COUNT) {
+
+            List<MemberRecentSearch> searchesToDelete =
+                    allSearches.subList(MAX_RECENT_SEARCH_COUNT, allSearches.size());
+
+            memberRecentSearchRepository.deleteAllInBatch(searchesToDelete);
+
+        }
+
     }
 }
