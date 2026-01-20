@@ -48,7 +48,12 @@ public class SearchQueryServiceImpl implements SearchQueryService {
             return SearchConverter.toEmptySearchResponseDTO();
         }
 
-        String cacheKey = "search::" + keyword;
+        // 공백 제거된 키워드 생성 (DB 검색용)
+        String strippedKeyword = keyword.replace(" ", "");
+
+        // Redis 키는 원본 키워드 사용 (또는 strippedKeyword 사용 가능)
+        // 여기서는 원본 키워드를 사용하여 사용자 입력 그대로 캐싱
+        String cacheKey = "search::" + strippedKeyword; 
 
         // 1. Redis 캐시 조회
         try {
@@ -60,14 +65,14 @@ public class SearchQueryServiceImpl implements SearchQueryService {
             // Redis 조회 실패 시 DB 조회 진행
         }
 
-        // 2. DB 조회
+        // 2. DB 조회 (공백 제거된 키워드 사용)
         List<SearchResultDTO> results = new ArrayList<>();
 
         // 재료 검색
-        results.addAll(searchIngredients(keyword));
+        results.addAll(searchIngredients(strippedKeyword));
 
         // 메뉴(레시피) 검색
-        results.addAll(searchRecipes(keyword));
+        results.addAll(searchRecipes(strippedKeyword));
 
         SearchResponseDTO response = SearchConverter.toSearchResponseDTO(results);
 
