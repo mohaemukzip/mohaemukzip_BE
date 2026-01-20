@@ -97,6 +97,7 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public IngredientResponseDTO.RecentSearchList getRecentSearch(Long memberId) {
 
         Member member = memberRepository.findById(memberId)

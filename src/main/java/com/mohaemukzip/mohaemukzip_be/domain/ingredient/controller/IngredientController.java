@@ -44,7 +44,7 @@ public class IngredientController {
             try {
                 ingredientCommandService.saveRecentSearch(memberId, query);
             } catch (Exception e) {
-                log.warn("최근 검색어 저장 실패 - MemberId: {}, Query: {}, Error: {}", memberId, query, e.getMessage());
+                log.warn("최근 검색어 저장 실패 - MemberId: {}, Query: {}", memberId, query, e);
             }
         }
 

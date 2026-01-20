@@ -12,4 +12,9 @@ public interface MemberRecentSearchRepository extends JpaRepository<MemberRecent
     Optional<MemberRecentSearch> findByMemberAndKeyword(Member member, String keyword);
 
     List<MemberRecentSearch> findAllByMemberOrderByCreatedAtDesc(Member member);
+
+    Long countByMember(Member member);
+
+    //제일 오래된 검색어 한개 찾기 (삭제용)
+    MemberRecentSearch findTopByMemberOrderByCreatedAtAsc(Member member);
 }

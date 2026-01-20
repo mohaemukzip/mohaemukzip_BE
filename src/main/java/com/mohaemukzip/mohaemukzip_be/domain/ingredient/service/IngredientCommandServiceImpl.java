@@ -124,6 +124,18 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
         if (existingSearch.isPresent()) {
             memberRecentSearchRepository.delete(existingSearch.get());
             memberRecentSearchRepository.flush();
+        } else {
+            Long count = memberRecentSearchRepository.countByMember(member);
+
+            if(count >= 20) {
+                MemberRecentSearch oldestSearch =
+                        memberRecentSearchRepository.findTopByMemberOrderByCreatedAtAsc(member);
+
+                if(oldestSearch !=null) {
+                    memberRecentSearchRepository.delete(oldestSearch);
+                    memberRecentSearchRepository.flush();
+                }
+            }
         }
 
         MemberRecentSearch newSearch = MemberRecentSearch.builder()
