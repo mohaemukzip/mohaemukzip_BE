@@ -16,4 +16,7 @@ public interface IngredientCommandService {
 
     //재료 즐겨찾기 삭제
     IngredientResponseDTO.DeleteFavorite deleteFavorite(Long memberId, Long favoriteId);
+
+    //최근 검색어 저장
+    void saveRecentSearch(Long memberId, String keyword);
 }
