@@ -108,6 +108,7 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
 
     //최근 검색어 저장
     @Override
+    @Transactional
     public void saveRecentSearch(Long memberId, String keyword) {
 
         if (keyword == null || keyword.isBlank()) {
@@ -122,8 +123,7 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
                 memberRecentSearchRepository.findByMemberAndKeyword(member, keyword);
 
         if (existingSearch.isPresent()) {
-            memberRecentSearchRepository.delete(existingSearch.get());
-            memberRecentSearchRepository.flush();
+            memberRecentSearchRepository.updateCreatedAt(existingSearch.get().getId());
         } else {
             Long count = memberRecentSearchRepository.countByMember(member);
 
@@ -133,7 +133,6 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
 
                 if(oldestSearch !=null) {
                     memberRecentSearchRepository.delete(oldestSearch);
-                    memberRecentSearchRepository.flush();
                 }
             }
         }
