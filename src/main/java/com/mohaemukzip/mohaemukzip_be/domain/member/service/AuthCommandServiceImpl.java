@@ -12,14 +12,21 @@ import com.mohaemukzip.mohaemukzip_be.global.jwt.JwtProvider;
 import com.mohaemukzip.mohaemukzip_be.global.jwt.TokenBlacklistService;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthCommandServiceImpl implements AuthCommandService {
@@ -28,8 +35,10 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     private final RedisTemplate<String, String> redisTemplate;
     private final PasswordEncoder passwordEncoder;
     private final TermCommandService termCommandService;
+    private final WebClient webClient;
     private final TokenBlacklistService tokenBlacklistService;
 
+    private static final String KAKAO_USER_INFO_URI = "https://kapi.kakao.com/v2/user/me";
     private static final String REFRESH_TOKEN_PREFIX = "RT:";
 
     @Transactional
@@ -65,6 +74,52 @@ public class AuthCommandServiceImpl implements AuthCommandService {
             throw new BusinessException(ErrorStatus.INVALID_PASSWORD);
         }
         return generateAndSaveTokens(member, false);
+    }
+
+    @Transactional
+    public AuthResponseDTO.GetUserDTO kakaoLogin(AuthRequestDTO.KakaoLoginRequest kakaoLoginRequest){
+        AuthResponseDTO.GetKakaoUserInfoDTO kakaoUserInfo = getKakaoUserInfo(kakaoLoginRequest.kakaoAccessToken());
+
+        String nickname = extractNickname(kakaoUserInfo);
+
+        AtomicBoolean isNewMember = new AtomicBoolean(false);
+
+        Member member = memberRepository.findByOauthId(kakaoUserInfo.getId())
+                .orElseGet(() -> {
+                    isNewMember.set(true);
+                    return createKakaoMember(kakaoUserInfo.getId(), nickname);
+                });
+
+        if (member.isInactive()) {
+            log.warn("Withdrawn member attempted kakao login - memberId: {}", member.getId());
+            throw new BusinessException(ErrorStatus.ALREADY_WITHDRAWN_MEMBER);
+        }
+
+        return generateAndSaveTokens(member, isNewMember.get());
+    }
+
+    private String extractNickname(AuthResponseDTO.GetKakaoUserInfoDTO kakaoUserInfo) {
+        if (kakaoUserInfo.getKakaoAccount() != null
+                && kakaoUserInfo.getKakaoAccount().getProfile() != null
+                && kakaoUserInfo.getKakaoAccount().getProfile().getNickname() != null) {
+            return kakaoUserInfo.getKakaoAccount().getProfile().getNickname();
+        }
+
+        return "카카오 사용자_" + kakaoUserInfo.getId();
+    }
+
+    private Member createKakaoMember(Long kakaoId, String nickname) {
+        Member newMember = Member.builder()
+                .oauthId(kakaoId)
+                .nickname(nickname)
+                .loginType(LoginType.KAKAO)
+                .role(Role.ROLE_USER)
+                .score(0)
+                .build();
+
+        Member savedMember = memberRepository.save(newMember);
+
+        return savedMember;
     }
 
     private AuthResponseDTO.GetUserDTO generateAndSaveTokens(Member member, boolean isNewUser) {
@@ -162,5 +217,38 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         redisTemplate.delete(REFRESH_TOKEN_PREFIX + memberId);
 
         return AuthConverter.toWithdrawalResponseDTO();
+    }
+
+    private AuthResponseDTO.GetKakaoUserInfoDTO getKakaoUserInfo(String accessToken) {
+        try {
+            log.info("Kakao API 호출 시작");
+
+            AuthResponseDTO.GetKakaoUserInfoDTO userInfo = webClient.get()
+                    .uri(KAKAO_USER_INFO_URI)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                    .retrieve()
+                    .bodyToMono(AuthResponseDTO.GetKakaoUserInfoDTO.class)
+                    .block(Duration.ofSeconds(10));
+
+            if (userInfo == null || userInfo.getId() == null) {
+                log.error("Kakao UserInfo null - userInfo: {}", userInfo);
+                throw new BusinessException(ErrorStatus.KAKAO_API_ERROR);
+            }
+
+            return userInfo;
+
+        } catch (WebClientResponseException e) {
+            log.error("Kakao API WebClient Error - Status: {}, Body: {}",
+                    e.getStatusCode(), e.getResponseBodyAsString());
+            if (e.getStatusCode().value() == 401) {
+                throw new BusinessException(ErrorStatus.INVALID_KAKAO_TOKEN);
+            }
+            throw new BusinessException(ErrorStatus.KAKAO_API_ERROR);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Kakao API Unexpected Error", e);
+            throw new BusinessException(ErrorStatus.KAKAO_API_ERROR);
+        }
     }
 }

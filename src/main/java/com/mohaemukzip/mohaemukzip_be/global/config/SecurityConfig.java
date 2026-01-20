@@ -50,6 +50,7 @@ public class SecurityConfig {
                         "/auth/login",
                         "/auth/reissue",
                         "/auth/check-loginid",
+                        "/auth/kakao-login",
                         "/auth/terms").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .anyRequest().authenticated()

@@ -3,8 +3,10 @@ package com.mohaemukzip.mohaemukzip_be.domain.ingredient.service;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberFavorite;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberIngredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.IngredientRepository;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberFavoriteRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberIngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
@@ -22,7 +24,7 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
     private final IngredientRepository ingredientRepository;
     private final MemberRepository memberRepository;
     private final MemberIngredientRepository memberIngredientRepository;
-
+    private final MemberFavoriteRepository memberFavoriteRepository;
 
     @Override
     public IngredientResponseDTO.AddFridgeResult addFridgeIngredient(Long memberId, IngredientRequestDTO.AddFridge request) {
@@ -62,5 +64,41 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
         memberIngredientRepository.delete(memberIngredient);
 
         return new IngredientResponseDTO.DeleteFridgeIngredient(memberIngredient.getId());
+    }
+
+    @Override
+    public IngredientResponseDTO.AddFavorite addFavorite(Long memberId, Long ingredientId) {
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
+
+        Ingredient ingredient = ingredientRepository.findById(ingredientId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.INGREDIENT_NOT_FOUND));
+
+        if (memberFavoriteRepository.existsByMemberAndIngredient(member, ingredient)) {
+            throw new BusinessException(ErrorStatus.ALREADY_FAVORITE);
+        }
+
+        MemberFavorite memberFavorite = MemberFavorite.builder()
+                .member(member)
+                .ingredient(ingredient)
+                .build();
+
+        MemberFavorite saved = memberFavoriteRepository.save(memberFavorite);
+
+        return new IngredientResponseDTO.AddFavorite(saved.getId(), ingredient.getId());
+    }
+
+    @Override
+    public IngredientResponseDTO.DeleteFavorite deleteFavorite(Long memberId, Long favoriteId) {
+
+        MemberFavorite favorite = memberFavoriteRepository.findByIdAndMemberId(favoriteId, memberId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.FAVORITE_NOT_FOUND));
+
+        memberFavoriteRepository.delete(favorite);
+
+        return new IngredientResponseDTO.DeleteFavorite(favorite.getId());
+
+
     }
 }
