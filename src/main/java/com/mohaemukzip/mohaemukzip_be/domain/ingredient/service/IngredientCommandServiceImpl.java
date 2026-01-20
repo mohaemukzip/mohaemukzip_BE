@@ -124,7 +124,8 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
 
         if (existingSearch.isPresent()) {
             memberRecentSearchRepository.updateCreatedAt(existingSearch.get().getId());
-        } else {
+            return;
+        }
             Long count = memberRecentSearchRepository.countByMember(member);
 
             if(count >= 20) {
@@ -133,7 +134,7 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
 
                 if(oldestSearch !=null) {
                     memberRecentSearchRepository.delete(oldestSearch);
-                }
+
             }
         }
 
