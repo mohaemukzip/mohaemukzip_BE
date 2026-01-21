@@ -11,6 +11,7 @@ import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -126,7 +127,7 @@ public class IngredientController {
     @PostMapping("/requests")
     public ApiResponse<String> ingredientRequest(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
-            @RequestBody IngredientRequestDTO.IngredientReq request
+            @Valid @RequestBody IngredientRequestDTO.IngredientReq request
     ) {
         if (customUserDetails == null) {
             throw new BusinessException(ErrorStatus.TOKEN_MISSING);
