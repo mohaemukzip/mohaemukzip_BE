@@ -27,6 +27,12 @@ public class RecommendChatProcessor implements ChatProcessor {
     private final MemberIngredientRepository memberIngredientRepository;
     private final MemberCookHistoryRepository memberCookHistoryRepository;
     private final RecipeRepository recipeRepository;
+    private final OpenAiService openAiService;
+
+    private static final String SYSTEM_PROMPT = 
+            "너는 자취생을 위한 다정한 요리 도우미 '요선생'이야. " +
+            "친절하고, 이모티콘을 적절히 사용하며, 3문장 이내로 간결하게 답변해. " +
+            "요리나 식재료와 관련 없는 질문(정치, 코딩, 연애 등)에는 '저는 요리 이야기만 할 수 있어요 🍳'라고 정중히 거절해.";
 
     @Override
     public String analyzeIntent(String userMessage) {
@@ -38,68 +44,91 @@ public class RecommendChatProcessor implements ChatProcessor {
 
     @Override
     public ChatProcessorResult process(ChatRoom chatRoom, String userMessage, String intent) {
+        // 1. 일반 대화 처리 (요리 관련 질문 등)
         if (!"RECOMMENDATION".equals(intent)) {
+            String aiResponse = openAiService.generateChatResponse(SYSTEM_PROMPT, userMessage);
+            
+            // Fallback: 일반 대화에서 AI 실패 시
+            if (aiResponse == null) {
+                aiResponse = "죄송해요, 잠시 연결이 불안정해요 😢 '냉장고 파먹기'나 '메뉴 추천'이라고 말씀해 주시면 레시피를 찾아드릴게요!";
+            }
+
             return ChatProcessorResult.builder()
-                    .message("안녕하세요! 무엇을 도와드릴까요? '냉장고 파먹기'나 '메뉴 추천'이라고 말씀해 주시면 도와드릴게요.")
+                    .message(aiResponse)
                     .recipes(Collections.emptyList())
                     .build();
         }
 
         Long memberId = chatRoom.getMemberId();
 
-        // Step 1. 사용자 냉장고 스캔 (유통기한 임박순)
+        // Step 1. 사용자 냉장고 스캔
         List<MemberIngredient> myIngredients = memberIngredientRepository.findAllByMemberIdOrderByExpireDateAsc(memberId);
         
-        if (myIngredients.isEmpty()) {
-            List<Recipe> randomRecipes = recipeRepository.findAll().stream().limit(5).collect(Collectors.toList());
-            return ChatProcessorResult.builder()
-                    .message("냉장고가 비어있네요. 요즘 인기 있는 레시피를 추천해 드릴게요.")
-                    .recipes(randomRecipes)
-                    .build();
-        }
-
-        // Step 2. 추천 후보군 선정 (재료 이름으로 레시피 제목 검색)
-        List<String> urgentIngredientNames = myIngredients.stream()
-                .limit(3)
-                .map(mi -> mi.getIngredient().getName())
-                .collect(Collectors.toList());
-
+        // Step 2. 추천 후보군 선정
         List<Recipe> candidateRecipes = new ArrayList<>();
-        for (String ingredientName : urgentIngredientNames) {
-            List<Recipe> recipes = recipeRepository.findByTitleContaining(ingredientName);
-            candidateRecipes.addAll(recipes);
+        List<String> urgentIngredientNames = new ArrayList<>();
+
+        if (!myIngredients.isEmpty()) {
+            urgentIngredientNames = myIngredients.stream()
+                    .limit(3)
+                    .map(mi -> mi.getIngredient().getName())
+                    .collect(Collectors.toList());
+
+            for (String ingredientName : urgentIngredientNames) {
+                candidateRecipes.addAll(recipeRepository.findByTitleContaining(ingredientName));
+            }
         }
 
-        // 검색된 레시피가 없으면 인기 레시피 추천
         if (candidateRecipes.isEmpty()) {
-             List<Recipe> randomRecipes = recipeRepository.findAll().stream().limit(5).collect(Collectors.toList());
-             return ChatProcessorResult.builder()
-                    .message("가진 재료로 만들만한 레시피를 찾지 못했어요. 대신 인기 레시피는 어떠세요?")
-                    .recipes(randomRecipes)
-                    .build();
+             candidateRecipes = recipeRepository.findAll().stream().limit(5).collect(Collectors.toList());
         }
 
-        // Step 3. 중복 추천 필터링 (최근 7일 이내 요리한 레시피 제외)
+        // Step 3. 중복 추천 필터링
         LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
         List<MemberCookHistory> histories = memberCookHistoryRepository.findAllByMemberIdAndCookedAtAfter(memberId, sevenDaysAgo);
-        
-        Set<Long> cookedRecipeIds = histories.stream()
-                .map(history -> history.getRecipe().getId())
-                .collect(Collectors.toSet());
+        Set<Long> cookedRecipeIds = histories.stream().map(h -> h.getRecipe().getId()).collect(Collectors.toSet());
 
         List<Recipe> finalRecipes = candidateRecipes.stream()
-                .filter(recipe -> !cookedRecipeIds.contains(recipe.getId()))
+                .filter(r -> !cookedRecipeIds.contains(r.getId()))
                 .distinct()
                 .limit(5)
                 .collect(Collectors.toList());
-        
-        // 최종 메시지 생성
-        String mainIngredient = urgentIngredientNames.get(0);
-        String message = String.format("유통기한이 임박한 '%s' 등을 활용할 수 있는 레시피를 찾아봤어요!", mainIngredient);
+
+        // Step 4. AI 멘트 생성 (RAG)
+        String userPrompt = buildUserPrompt(userMessage, urgentIngredientNames, finalRecipes);
+        String aiResponse = openAiService.generateChatResponse(SYSTEM_PROMPT, userPrompt);
+
+        // Fallback: 추천 로직에서 AI 실패 시 (DB 데이터 활용)
+        if (aiResponse == null) {
+            String mainIngredient = urgentIngredientNames.isEmpty() ? "재료" : urgentIngredientNames.get(0);
+            String mainRecipe = finalRecipes.isEmpty() ? "인기 요리" : finalRecipes.get(0).getTitle();
+            
+            aiResponse = String.format(
+                "죄송해요, 잠시 요선생의 연결이 불안정해요 😢 하지만 유통기한이 임박한 **%s** 등으로 만들 수 있는 **%s** 레시피를 찾아왔어요!", 
+                mainIngredient, mainRecipe
+            );
+        }
 
         return ChatProcessorResult.builder()
-                .message(message)
+                .message(aiResponse)
                 .recipes(finalRecipes)
                 .build();
+    }
+
+    private String buildUserPrompt(String userMessage, List<String> ingredients, List<Recipe> recipes) {
+        String ingredientStr = ingredients.isEmpty() ? "없음" : String.join(", ", ingredients);
+        String recipeStr = recipes.stream().map(Recipe::getTitle).collect(Collectors.joining(", "));
+
+        return String.format(
+                "[사용자 정보]\n" +
+                "- 임박한 재료: [%s]\n" +
+                "- 추천 레시피 후보: [%s]\n\n" +
+                "[사용자 질문]\n" +
+                "\"%s\"\n\n" +
+                "[요청]\n" +
+                "위 정보를 바탕으로 사용자에게 자연스럽게 추천 멘트를 작성해줘. " +
+                "레시피 목록을 나열하지 말고, '이런 요리는 어떠세요?' 식으로 제안해줘.",
+                ingredientStr, recipeStr, userMessage
+        );
     }
 }
