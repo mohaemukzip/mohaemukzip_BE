@@ -1,5 +1,6 @@
 package com.mohaemukzip.mohaemukzip_be.domain.ingredient.controller;
 
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Category;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.service.IngredientCommandService;
@@ -120,6 +121,23 @@ public class IngredientController {
 
         return ApiResponse.onSuccess(result);
     }
+
+    @Operation(summary = "재료 추가 요청")
+    @PostMapping("/requests")
+    public ApiResponse<String> ingredientRequest(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @RequestBody IngredientRequestDTO.IngredientReq request
+    ) {
+        if (customUserDetails == null) {
+            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
+        }
+        Long memberId = customUserDetails.getMember().getId();
+
+        ingredientCommandService.createIngredientRequest(memberId, request);
+
+        return ApiResponse.onSuccess("소중한 의견 감사합니다 *.* ");
+    }
+
 }
 
 
