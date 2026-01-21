@@ -11,7 +11,16 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
-@Table(name = "ingredient_request")
+@Table(
+        name = "ingredient_request",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_ingredient_request_member_name",
+                columnNames = {"member_id", "ingredient_name"}
+        ),
+        indexes = {
+                @Index(name = "idx_ingredient_request_member_name", columnList = "member_id, ingredient_name")
+        }
+        )
 public class IngredientRequest extends BaseEntity {
 
     @Id
@@ -23,6 +32,6 @@ public class IngredientRequest extends BaseEntity {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @Column(nullable = false)
+    @Column(name = "ingredient_name", nullable = false)
     private String ingredientName;
 }
