@@ -19,4 +19,9 @@ public interface IngredientCommandService {
 
     //최근 검색어 저장
     void saveRecentSearch(Long memberId, String keyword);
+
+    // 최근 검색어 삭제
+    void deleteRecentSearch(Long memberId, Long recentSearchId);
+
+
 }

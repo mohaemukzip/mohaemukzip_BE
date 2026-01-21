@@ -153,4 +153,24 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
         }
 
     }
+
+    @Override
+    @Transactional
+    public void deleteRecentSearch(Long memberId, Long recentSearchId) {
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
+
+        MemberRecentSearch search = memberRecentSearchRepository.findById(recentSearchId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.SEARCH_NOT_FOUND));
+
+
+        if (!search.getMember().getId().equals(member.getId())) {
+            throw new BusinessException(ErrorStatus.MEMBER_NOT_MATCH);
+            // 💡 남의 걸 지우려고 할 때 띄울 에러 (FORBIDDEN 관련)
+        }
+
+        memberRecentSearchRepository.delete(search);
+
+    }
 }
