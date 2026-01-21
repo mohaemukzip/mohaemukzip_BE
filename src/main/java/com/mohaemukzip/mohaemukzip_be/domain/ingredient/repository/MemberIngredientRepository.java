@@ -16,4 +16,8 @@ public interface MemberIngredientRepository extends JpaRepository<MemberIngredie
 
     @Query("SELECT mi FROM MemberIngredient mi WHERE mi.id = :id AND mi.member.id = :memberId")
     Optional<MemberIngredient> findByIdAndMemberId(@Param("id") Long memberIngredientId, @Param("memberId") Long memberId);
+
+    // 챗봇 추천용: 유통기한 임박한 순서로 조회
+    @Query("SELECT mi FROM MemberIngredient mi JOIN FETCH mi.ingredient WHERE mi.member.id = :memberId ORDER BY mi.expireDate ASC")
+    List<MemberIngredient> findAllByMemberIdOrderByExpireDateAsc(@Param("memberId") Long memberId);
 }
