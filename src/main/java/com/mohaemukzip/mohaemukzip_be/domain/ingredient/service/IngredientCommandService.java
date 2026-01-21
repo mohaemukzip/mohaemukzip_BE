@@ -24,4 +24,7 @@ public interface IngredientCommandService {
     void deleteRecentSearch(Long memberId, Long recentSearchId);
 
 
+
+    //재료 요청하기
+    void createIngredientRequest(Long memberId, IngredientRequestDTO.IngredientReq request);
 }
