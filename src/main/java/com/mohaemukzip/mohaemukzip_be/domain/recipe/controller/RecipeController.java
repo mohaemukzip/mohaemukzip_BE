@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,8 +36,8 @@ public class RecipeController {
             @Parameter(name = "page", description = "페이지 번호 (0부터 시작)")
     })
     public ApiResponse<RecipeResponseDTO.RecipePreviewListDTO> getRecipes(
-            @RequestParam(name = "categoryId") Long categoryId,
-            @RequestParam(name = "page", defaultValue = "0") Integer page
+            @RequestParam(name = "categoryId") @Positive Long categoryId,
+            @RequestParam(name = "page", defaultValue = "0") @PositiveOrZero Integer page
     ) {
         return ApiResponse.onSuccess(recipeQueryService.getRecipesByCategoryId(categoryId, page));
     }
