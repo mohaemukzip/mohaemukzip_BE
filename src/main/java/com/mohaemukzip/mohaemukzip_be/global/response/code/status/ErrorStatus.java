@@ -44,6 +44,8 @@ public enum ErrorStatus implements BaseCode {
     INGREDIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "INGREDIENT4001", "해당 재료를 찾을 수 없습니다."),
     ALREADY_FAVORITE(HttpStatus.CONFLICT, "FAVORITE4091", "이미 즐겨찾기에 등록된 재료입니다."),
     FAVORITE_NOT_FOUND(HttpStatus.NOT_FOUND, "FAVORITE4001", "해당 즐겨찾기 재료를 찾을 수 없습니다."),
+    SEARCH_NOT_FOUND(HttpStatus.NOT_FOUND, "SEARCH4001", "존재하지 않는 검색어입니다."),
+    MEMBER_NOT_MATCH(HttpStatus.FORBIDDEN, "MEMBER4004", "해당 검색어를 삭제할 권한이 없습니다."),
 
     //점수 관련 에러
     INVALID_SCORE(HttpStatus.BAD_REQUEST, "SCORE4001", "유효하지 않은 점수입니다."),
@@ -52,6 +54,9 @@ public enum ErrorStatus implements BaseCode {
     // 이미지 관련 에러
     INVALID_IMAGE_EXTENSION(HttpStatus.BAD_REQUEST, "IMAGE4001", "유효하지 않은 이미지 확장자입니다."),
     UNSUPPORTED_IMAGE_FORMAT(HttpStatus.BAD_REQUEST, "IMAGE4002", "지원하지 않는 이미지 형식입니다."),
+
+    // 카테고리 관련 에러
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CATEGORY4001", "해당 카테고리를 찾을 수 없습니다."),
     ;
     private final HttpStatus httpStatus;
     private final String code;

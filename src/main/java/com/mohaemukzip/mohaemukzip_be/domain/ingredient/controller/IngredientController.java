@@ -138,7 +138,24 @@ public class IngredientController {
 
         return ApiResponse.onSuccess("소중한 의견 감사합니다 *.* ");
     }
+  
+    @Operation(summary = "최근 재료 검색어 삭제")
+    @DeleteMapping("/recent-searches/{recentSearchId}")
+    public ApiResponse<String> deleteRecentSearch(
 
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @PathVariable(name = "recentSearchId") Long recentSearchId
+    ) {
+        if (customUserDetails == null) {
+            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
+        }
+
+        Long memberId = customUserDetails.getMember().getId();
+
+        ingredientCommandService.deleteRecentSearch(memberId, recentSearchId);
+
+        return ApiResponse.onSuccess("최근 검색어가 삭제되었습니다.");
+    }
 }
 
 
