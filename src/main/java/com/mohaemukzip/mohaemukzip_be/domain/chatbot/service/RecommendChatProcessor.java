@@ -28,15 +28,19 @@ public class RecommendChatProcessor implements ChatProcessor {
     private final RecipeRepository recipeRepository;
     private final GeminiService geminiService;
 
-    private static final String SYSTEM_PROMPT = 
+    // 일반 대화용 프롬프트 (페르소나만 유지)
+    private static final String GENERAL_SYSTEM_PROMPT = 
             "너는 자취생을 위한 다정한 요리 도우미 '요선생'이야. " +
             "친절하고, 이모티콘을 적절히 사용하며, 3문장 이내로 간결하게 답변해. " +
-            "요리나 식재료와 관련 없는 질문(정치, 코딩, 연애 등)에는 '저는 요리 이야기만 할 수 있어요 🍳'라고 정중히 거절해. " +
-            "**중요: 반드시 아래 제공된 [추천 후보 리스트] 중에서 사용자의 질문 의도와 상황에 가장 잘 맞는 메뉴를 하나 골라 추천해야 해. 리스트에 없는 요리는 절대 언급하지 마.**";
+            "요리나 식재료와 관련 없는 질문(정치, 코딩, 연애 등)에는 '저는 요리 이야기만 할 수 있어요 🍳'라고 정중히 거절해.";
+
+    // 추천 전용 프롬프트 (리스트 제약 포함)
+    private static final String RECOMMEND_SYSTEM_PROMPT = 
+            GENERAL_SYSTEM_PROMPT + 
+            " **중요: 반드시 아래 제공된 [추천 후보 리스트] 중에서 사용자의 질문 의도와 상황에 가장 잘 맞는 메뉴를 하나 골라 추천해야 해. 리스트에 없는 요리는 절대 언급하지 마.**";
 
     @Override
     public String analyzeIntent(String userMessage) {
-        // 키워드 확장: 구체적인 메뉴 요청이나 식욕 표현도 추천 의도로 파악
         if (userMessage.contains("추천") || userMessage.contains("뭐 먹지") || userMessage.contains("냉장고") || 
             userMessage.contains("배고파") || userMessage.contains("메뉴") || userMessage.contains("요리") ||
             userMessage.contains("먹고 싶어") || userMessage.contains("먹을래") || userMessage.contains("땡겨") ||
@@ -48,11 +52,13 @@ public class RecommendChatProcessor implements ChatProcessor {
 
     @Override
     public ChatProcessorResult process(ChatRoom chatRoom, String userMessage, String intent) {
-        log.info("ChatProcessor 처리 시작 - Intent: {}, UserMessage: {}", intent, userMessage);
+        // 로그 마스킹: 사용자 메시지 길이만 출력
+        log.info("ChatProcessor 처리 시작 - Intent: {}, UserMessage Length: {}", intent, userMessage.length());
 
         // 1. 일반 대화 처리
         if (!"RECOMMENDATION".equals(intent)) {
-            String aiResponse = geminiService.generateChatResponse(SYSTEM_PROMPT, userMessage);
+            // 일반 대화용 프롬프트 사용
+            String aiResponse = geminiService.generateChatResponse(GENERAL_SYSTEM_PROMPT, userMessage);
             
             if (aiResponse == null) {
                 log.warn("GENERAL 의도 처리 중 AI 응답 실패 -> Fallback 메시지 반환");
@@ -68,15 +74,15 @@ public class RecommendChatProcessor implements ChatProcessor {
         Long memberId = chatRoom.getMemberId();
         Set<Recipe> candidateSet = new HashSet<>();
 
-        // Step 1. Context 검색 (사용자 메시지 키워드 기반)
+        // Step 1. Context 검색
         String[] keywords = userMessage.split("\\s+");
         for (String keyword : keywords) {
-            if (keyword.length() > 1) { // 2글자 이상만 검색
+            if (keyword.length() > 1) {
                 candidateSet.addAll(recipeRepository.findByTitleContaining(keyword));
             }
         }
 
-        // Step 2. 냉장고 재료 검색 (유통기한 임박순)
+        // Step 2. 냉장고 재료 검색
         List<MemberIngredient> myIngredients = memberIngredientRepository.findAllByMemberIdOrderByExpireDateAsc(memberId);
         List<String> urgentIngredientNames = new ArrayList<>();
 
@@ -91,7 +97,7 @@ public class RecommendChatProcessor implements ChatProcessor {
             }
         }
 
-        // Step 3. 중복 추천 필터링 (최근 7일 이내 요리한 레시피 제외)
+        // Step 3. 중복 추천 필터링
         LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
         List<MemberCookHistory> histories = memberCookHistoryRepository.findAllByMemberIdAndCookedAtAfter(memberId, sevenDaysAgo);
         Set<Long> cookedRecipeIds = histories.stream().map(h -> h.getRecipe().getId()).collect(Collectors.toSet());
@@ -100,13 +106,14 @@ public class RecommendChatProcessor implements ChatProcessor {
                 .filter(r -> !cookedRecipeIds.contains(r.getId()))
                 .collect(Collectors.toList());
 
-        // Step 4. 안전장치 (Fallback) - 후보가 5개 미만이면 인기 레시피 등으로 채움
-        if (filteredRecipes.size() < 5) {
-            List<Recipe> allRecipes = recipeRepository.findAll(); 
-            Collections.shuffle(allRecipes); 
+        // Step 4. 안전장치 (Fallback) - DB 랜덤 조회로 성능 최적화
+        int neededCount = 5 - filteredRecipes.size();
+        if (neededCount > 0) {
+            // 부족한 개수만큼만 랜덤 조회 (이미 뽑힌 것과 중복될 수 있으나, 확률이 낮고 5개를 채우는 게 우선이므로 단순 추가)
+            // 더 정교하게 하려면 넉넉히(neededCount * 2) 가져와서 중복 제거 후 추가 가능
+            List<Recipe> randomRecipes = recipeRepository.findRandomRecipes(neededCount);
             
-            for (Recipe r : allRecipes) {
-                if (filteredRecipes.size() >= 5) break;
+            for (Recipe r : randomRecipes) {
                 if (!cookedRecipeIds.contains(r.getId()) && !filteredRecipes.contains(r)) {
                     filteredRecipes.add(r);
                 }
@@ -116,9 +123,9 @@ public class RecommendChatProcessor implements ChatProcessor {
         // 최종 후보 5개 선정
         List<Recipe> finalRecipes = filteredRecipes.stream().limit(5).collect(Collectors.toList());
 
-        // Step 5. AI 멘트 생성 (RAG)
+        // Step 5. AI 멘트 생성 (RAG) - 추천 전용 프롬프트 사용
         String userPrompt = buildUserPrompt(userMessage, urgentIngredientNames, finalRecipes);
-        String aiResponse = geminiService.generateChatResponse(SYSTEM_PROMPT, userPrompt);
+        String aiResponse = geminiService.generateChatResponse(RECOMMEND_SYSTEM_PROMPT, userPrompt);
 
         if (aiResponse == null) {
             log.warn("RECOMMENDATION 의도 처리 중 AI 응답 실패 -> Fallback 메시지 반환");

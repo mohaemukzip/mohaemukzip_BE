@@ -7,6 +7,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.chatbot.entity.enums.ChatState;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.entity.enums.SenderType;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -37,7 +38,7 @@ public class ChatConverter {
                 .senderType(chatMessage.getSenderType())
                 .message(chatMessage.getMessage())
                 .createdAt(chatMessage.getCreatedAt())
-                .formattedTime(chatMessage.getCreatedAt().format(TIME_FORMATTER))
+                .formattedTime(formatTime(chatMessage.getCreatedAt())) // Null-safe 처리 적용
                 .build();
     }
 
@@ -51,7 +52,7 @@ public class ChatConverter {
                 .senderType(chatMessage.getSenderType())
                 .message(chatMessage.getMessage())
                 .createdAt(chatMessage.getCreatedAt())
-                .formattedTime(chatMessage.getCreatedAt().format(TIME_FORMATTER))
+                .formattedTime(formatTime(chatMessage.getCreatedAt())) // Null-safe 처리 적용
                 .recommendRecipes(recipeCards)
                 .build();
     }
@@ -62,5 +63,10 @@ public class ChatConverter {
                 .title(recipe.getTitle())
                 .imageUrl(recipe.getImageUrl())
                 .build();
+    }
+
+    // Null-safe 포맷팅 헬퍼 메서드
+    private static String formatTime(LocalDateTime dateTime) {
+        return dateTime != null ? dateTime.format(TIME_FORMATTER) : null;
     }
 }
