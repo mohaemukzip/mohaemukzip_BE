@@ -1,6 +1,7 @@
 package com.mohaemukzip.mohaemukzip_be.domain.chatbot.converter;
 
-import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.ChatResponseDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.response.ChatRecipeResponse;
+import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.response.ChatResponse;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.entity.ChatMessage;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.entity.ChatRoom;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.entity.enums.ChatState;
@@ -32,40 +33,39 @@ public class ChatConverter {
                 .build();
     }
 
-    public static ChatResponseDTO.ChatResultDto toChatResultDto(ChatMessage chatMessage) {
-        return ChatResponseDTO.ChatResultDto.builder()
+    public static ChatResponse toChatResponse(ChatMessage chatMessage) {
+        return ChatResponse.builder()
                 .id(chatMessage.getId())
                 .senderType(chatMessage.getSenderType())
                 .message(chatMessage.getMessage())
                 .createdAt(chatMessage.getCreatedAt())
-                .formattedTime(formatTime(chatMessage.getCreatedAt())) // Null-safe 처리 적용
+                .formattedTime(formatTime(chatMessage.getCreatedAt()))
                 .build();
     }
 
-    public static ChatResponseDTO.ChatResultDto toChatResultDto(ChatMessage chatMessage, List<Recipe> recipes) {
-        List<ChatResponseDTO.RecipeCardDto> recipeCards = recipes.stream()
-                .map(ChatConverter::toRecipeCardDto)
+    public static ChatResponse toChatResponse(ChatMessage chatMessage, List<Recipe> recipes) {
+        List<ChatRecipeResponse> recipeCards = recipes.stream()
+                .map(ChatConverter::toChatRecipeResponse)
                 .collect(Collectors.toList());
 
-        return ChatResponseDTO.ChatResultDto.builder()
+        return ChatResponse.builder()
                 .id(chatMessage.getId())
                 .senderType(chatMessage.getSenderType())
                 .message(chatMessage.getMessage())
                 .createdAt(chatMessage.getCreatedAt())
-                .formattedTime(formatTime(chatMessage.getCreatedAt())) // Null-safe 처리 적용
+                .formattedTime(formatTime(chatMessage.getCreatedAt()))
                 .recommendRecipes(recipeCards)
                 .build();
     }
 
-    public static ChatResponseDTO.RecipeCardDto toRecipeCardDto(Recipe recipe) {
-        return ChatResponseDTO.RecipeCardDto.builder()
+    public static ChatRecipeResponse toChatRecipeResponse(Recipe recipe) {
+        return ChatRecipeResponse.builder()
                 .recipeId(recipe.getId())
                 .title(recipe.getTitle())
                 .imageUrl(recipe.getImageUrl())
                 .build();
     }
 
-    // Null-safe 포맷팅 헬퍼 메서드
     private static String formatTime(LocalDateTime dateTime) {
         return dateTime != null ? dateTime.format(TIME_FORMATTER) : null;
     }

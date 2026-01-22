@@ -1,7 +1,7 @@
 package com.mohaemukzip.mohaemukzip_be.domain.chatbot.controller;
 
-import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.ChatRequestDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.ChatResponseDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.request.ChatPostRequest;
+import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.response.ChatResponse;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.service.ChatCommandService;
 import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,14 +42,13 @@ public class ChatController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @PostMapping
-    public ResponseEntity<ChatResponseDTO.ChatResultDto> processMessage(
+    public ResponseEntity<ChatResponse> processMessage(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Valid @RequestBody ChatRequestDTO.ChatMessageDto request) {
+            @Valid @RequestBody ChatPostRequest request) {
         
-        // 인증된 사용자 ID 추출
         Long memberId = userDetails.getMember().getId();
         
-        ChatResponseDTO.ChatResultDto response = chatCommandService.processMessage(memberId, request);
+        ChatResponse response = chatCommandService.processMessage(memberId, request);
         return ResponseEntity.ok(response);
     }
 }

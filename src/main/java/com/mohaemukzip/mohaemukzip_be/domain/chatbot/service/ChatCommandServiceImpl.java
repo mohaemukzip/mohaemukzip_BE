@@ -1,9 +1,9 @@
 package com.mohaemukzip.mohaemukzip_be.domain.chatbot.service;
 
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.converter.ChatConverter;
-import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.ChatProcessorResult;
-import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.ChatRequestDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.ChatResponseDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.request.ChatPostRequest;
+import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.response.ChatProcessorResult;
+import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.response.ChatResponse;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.entity.ChatMessage;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.entity.ChatRoom;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.entity.enums.ChatState;
@@ -27,8 +27,8 @@ public class ChatCommandServiceImpl implements ChatCommandService {
 
     @Override
     @Transactional
-    public ChatResponseDTO.ChatResultDto processMessage(Long memberId, ChatRequestDTO.ChatMessageDto request) {
-        // 1. 채팅방 조회 또는 생성 (인증된 memberId 사용)
+    public ChatResponse processMessage(Long memberId, ChatPostRequest request) {
+        // 1. 채팅방 조회 또는 생성
         ChatRoom chatRoom = chatRoomRepository.findByMemberIdAndState(memberId, ChatState.ING)
                 .orElseGet(() -> {
                     ChatRoom newChatRoom = ChatConverter.toChatRoom(memberId);
@@ -43,7 +43,6 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         String intent = chatProcessor.analyzeIntent(request.getMessage());
         ChatProcessorResult result = chatProcessor.process(chatRoom, request.getMessage(), intent);
 
-        // 방어적 코드 추가: Processor 결과가 null일 경우 기본 응답 처리
         if (result == null) {
             result = ChatProcessorResult.builder()
                     .message("죄송해요, 처리 중 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.")
@@ -55,7 +54,7 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         ChatMessage botMessage = ChatConverter.toChatMessage(chatRoom, SenderType.BOT, result.getMessage());
         chatMessageRepository.save(botMessage);
 
-        // 5. 최종 응답 DTO 변환 (레시피 리스트 포함)
-        return ChatConverter.toChatResultDto(botMessage, result.getRecipes());
+        // 5. 최종 응답 DTO 변환
+        return ChatConverter.toChatResponse(botMessage, result.getRecipes());
     }
 }

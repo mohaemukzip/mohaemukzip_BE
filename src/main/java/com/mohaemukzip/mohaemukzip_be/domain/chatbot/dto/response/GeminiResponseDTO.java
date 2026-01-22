@@ -1,4 +1,4 @@
-package com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto;
+package com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.response;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
