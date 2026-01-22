@@ -107,7 +107,7 @@ public class IngredientController {
 
     }
 
-    @Operation(summary = "최근 재료 검색어")
+    @Operation(summary = "최근 재료 검색어 조회")
     @GetMapping("/recent-searches")
     public ApiResponse<IngredientResponseDTO.RecentSearchList> getRecentSearch(
             @AuthenticationPrincipal CustomUserDetails customUserDetails
