@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -25,11 +27,11 @@ public class ChatCommandServiceImpl implements ChatCommandService {
 
     @Override
     @Transactional
-    public ChatResponseDTO.ChatResultDto processMessage(ChatRequestDTO.ChatMessageDto request) {
-        // 1. 채팅방 조회 또는 생성
-        ChatRoom chatRoom = chatRoomRepository.findByMemberIdAndState(request.getMemberId(), ChatState.ING)
+    public ChatResponseDTO.ChatResultDto processMessage(Long memberId, ChatRequestDTO.ChatMessageDto request) {
+        // 1. 채팅방 조회 또는 생성 (인증된 memberId 사용)
+        ChatRoom chatRoom = chatRoomRepository.findByMemberIdAndState(memberId, ChatState.ING)
                 .orElseGet(() -> {
-                    ChatRoom newChatRoom = ChatConverter.toChatRoom(request.getMemberId());
+                    ChatRoom newChatRoom = ChatConverter.toChatRoom(memberId);
                     return chatRoomRepository.save(newChatRoom);
                 });
 
@@ -39,8 +41,15 @@ public class ChatCommandServiceImpl implements ChatCommandService {
 
         // 3. Processor를 통해 의도 파악 및 로직 수행
         String intent = chatProcessor.analyzeIntent(request.getMessage());
-        // 수정됨: request.getMessage()를 userMessage 인자로 전달
         ChatProcessorResult result = chatProcessor.process(chatRoom, request.getMessage(), intent);
+
+        // 방어적 코드 추가: Processor 결과가 null일 경우 기본 응답 처리
+        if (result == null) {
+            result = ChatProcessorResult.builder()
+                    .message("죄송해요, 처리 중 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.")
+                    .recipes(Collections.emptyList())
+                    .build();
+        }
 
         // 4. 봇 메시지(멘트) 저장
         ChatMessage botMessage = ChatConverter.toChatMessage(chatRoom, SenderType.BOT, result.getMessage());

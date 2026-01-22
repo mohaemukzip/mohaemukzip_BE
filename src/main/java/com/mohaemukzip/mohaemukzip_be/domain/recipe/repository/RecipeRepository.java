@@ -7,10 +7,13 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface RecipeRepository extends JpaRepository<Recipe,Long> {
+public interface RecipeRepository extends JpaRepository<Recipe, Long> {
+    List<Recipe> findByTitleContaining(String keyword);
 
+    // 랜덤 레시피 조회 (MySQL 전용)
+    @Query(value = "SELECT * FROM recipes ORDER BY RAND() LIMIT :limit", nativeQuery = true)
+    List<Recipe> findRandomRecipes(@Param("limit") int limit);
+
+    // 조회수(views) 내림차순으로 상위 5개 조회 (HomeService 사용)
     List<Recipe> findTop5ByOrderByViewsDesc();
-
-    @Query("SELECT r FROM Recipe r WHERE REPLACE(r.title, ' ', '') LIKE CONCAT('%', :keyword, '%')")
-    List<Recipe> findByTitleContaining(@Param("keyword") String keyword);
 }
