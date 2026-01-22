@@ -9,34 +9,38 @@ import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberCookHistory
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
 @Primary
 @RequiredArgsConstructor
+@Slf4j
 public class RecommendChatProcessor implements ChatProcessor {
 
     private final MemberIngredientRepository memberIngredientRepository;
     private final MemberCookHistoryRepository memberCookHistoryRepository;
     private final RecipeRepository recipeRepository;
-    private final OpenAiService openAiService;
+    private final GeminiService geminiService;
 
     private static final String SYSTEM_PROMPT = 
             "너는 자취생을 위한 다정한 요리 도우미 '요선생'이야. " +
             "친절하고, 이모티콘을 적절히 사용하며, 3문장 이내로 간결하게 답변해. " +
-            "요리나 식재료와 관련 없는 질문(정치, 코딩, 연애 등)에는 '저는 요리 이야기만 할 수 있어요 🍳'라고 정중히 거절해.";
+            "요리나 식재료와 관련 없는 질문(정치, 코딩, 연애 등)에는 '저는 요리 이야기만 할 수 있어요 🍳'라고 정중히 거절해. " +
+            "**중요: 반드시 아래 제공된 [추천 후보 리스트] 중에서 사용자의 질문 의도와 상황에 가장 잘 맞는 메뉴를 하나 골라 추천해야 해. 리스트에 없는 요리는 절대 언급하지 마.**";
 
     @Override
     public String analyzeIntent(String userMessage) {
-        if (userMessage.contains("추천") || userMessage.contains("뭐 먹지") || userMessage.contains("냉장고")) {
+        // 키워드 확장: 구체적인 메뉴 요청이나 식욕 표현도 추천 의도로 파악
+        if (userMessage.contains("추천") || userMessage.contains("뭐 먹지") || userMessage.contains("냉장고") || 
+            userMessage.contains("배고파") || userMessage.contains("메뉴") || userMessage.contains("요리") ||
+            userMessage.contains("먹고 싶어") || userMessage.contains("먹을래") || userMessage.contains("땡겨") ||
+            userMessage.contains("당겨") || userMessage.contains("해줘") || userMessage.contains("할까")) {
             return "RECOMMENDATION";
         }
         return "GENERAL";
@@ -44,12 +48,14 @@ public class RecommendChatProcessor implements ChatProcessor {
 
     @Override
     public ChatProcessorResult process(ChatRoom chatRoom, String userMessage, String intent) {
-        // 1. 일반 대화 처리 (요리 관련 질문 등)
+        log.info("ChatProcessor 처리 시작 - Intent: {}, UserMessage: {}", intent, userMessage);
+
+        // 1. 일반 대화 처리
         if (!"RECOMMENDATION".equals(intent)) {
-            String aiResponse = openAiService.generateChatResponse(SYSTEM_PROMPT, userMessage);
+            String aiResponse = geminiService.generateChatResponse(SYSTEM_PROMPT, userMessage);
             
-            // Fallback: 일반 대화에서 AI 실패 시
             if (aiResponse == null) {
+                log.warn("GENERAL 의도 처리 중 AI 응답 실패 -> Fallback 메시지 반환");
                 aiResponse = "죄송해요, 잠시 연결이 불안정해요 😢 '냉장고 파먹기'나 '메뉴 추천'이라고 말씀해 주시면 레시피를 찾아드릴게요!";
             }
 
@@ -60,12 +66,18 @@ public class RecommendChatProcessor implements ChatProcessor {
         }
 
         Long memberId = chatRoom.getMemberId();
+        Set<Recipe> candidateSet = new HashSet<>();
 
-        // Step 1. 사용자 냉장고 스캔
+        // Step 1. Context 검색 (사용자 메시지 키워드 기반)
+        String[] keywords = userMessage.split("\\s+");
+        for (String keyword : keywords) {
+            if (keyword.length() > 1) { // 2글자 이상만 검색
+                candidateSet.addAll(recipeRepository.findByTitleContaining(keyword));
+            }
+        }
+
+        // Step 2. 냉장고 재료 검색 (유통기한 임박순)
         List<MemberIngredient> myIngredients = memberIngredientRepository.findAllByMemberIdOrderByExpireDateAsc(memberId);
-        
-        // Step 2. 추천 후보군 선정
-        List<Recipe> candidateRecipes = new ArrayList<>();
         List<String> urgentIngredientNames = new ArrayList<>();
 
         if (!myIngredients.isEmpty()) {
@@ -75,37 +87,45 @@ public class RecommendChatProcessor implements ChatProcessor {
                     .collect(Collectors.toList());
 
             for (String ingredientName : urgentIngredientNames) {
-                candidateRecipes.addAll(recipeRepository.findByTitleContaining(ingredientName));
+                candidateSet.addAll(recipeRepository.findByTitleContaining(ingredientName));
             }
         }
 
-        if (candidateRecipes.isEmpty()) {
-             candidateRecipes = recipeRepository.findAll().stream().limit(5).collect(Collectors.toList());
-        }
-
-        // Step 3. 중복 추천 필터링
+        // Step 3. 중복 추천 필터링 (최근 7일 이내 요리한 레시피 제외)
         LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
         List<MemberCookHistory> histories = memberCookHistoryRepository.findAllByMemberIdAndCookedAtAfter(memberId, sevenDaysAgo);
         Set<Long> cookedRecipeIds = histories.stream().map(h -> h.getRecipe().getId()).collect(Collectors.toSet());
 
-        List<Recipe> finalRecipes = candidateRecipes.stream()
+        List<Recipe> filteredRecipes = candidateSet.stream()
                 .filter(r -> !cookedRecipeIds.contains(r.getId()))
-                .distinct()
-                .limit(5)
                 .collect(Collectors.toList());
 
-        // Step 4. AI 멘트 생성 (RAG)
-        String userPrompt = buildUserPrompt(userMessage, urgentIngredientNames, finalRecipes);
-        String aiResponse = openAiService.generateChatResponse(SYSTEM_PROMPT, userPrompt);
-
-        // Fallback: 추천 로직에서 AI 실패 시 (DB 데이터 활용)
-        if (aiResponse == null) {
-            String mainIngredient = urgentIngredientNames.isEmpty() ? "재료" : urgentIngredientNames.get(0);
-            String mainRecipe = finalRecipes.isEmpty() ? "인기 요리" : finalRecipes.get(0).getTitle();
+        // Step 4. 안전장치 (Fallback) - 후보가 5개 미만이면 인기 레시피 등으로 채움
+        if (filteredRecipes.size() < 5) {
+            List<Recipe> allRecipes = recipeRepository.findAll(); 
+            Collections.shuffle(allRecipes); 
             
+            for (Recipe r : allRecipes) {
+                if (filteredRecipes.size() >= 5) break;
+                if (!cookedRecipeIds.contains(r.getId()) && !filteredRecipes.contains(r)) {
+                    filteredRecipes.add(r);
+                }
+            }
+        }
+
+        // 최종 후보 5개 선정
+        List<Recipe> finalRecipes = filteredRecipes.stream().limit(5).collect(Collectors.toList());
+
+        // Step 5. AI 멘트 생성 (RAG)
+        String userPrompt = buildUserPrompt(userMessage, urgentIngredientNames, finalRecipes);
+        String aiResponse = geminiService.generateChatResponse(SYSTEM_PROMPT, userPrompt);
+
+        if (aiResponse == null) {
+            log.warn("RECOMMENDATION 의도 처리 중 AI 응답 실패 -> Fallback 메시지 반환");
+            String mainRecipe = finalRecipes.isEmpty() ? "맛있는 요리" : finalRecipes.get(0).getTitle();
             aiResponse = String.format(
-                "죄송해요, 잠시 요선생의 연결이 불안정해요 😢 하지만 유통기한이 임박한 **%s** 등으로 만들 수 있는 **%s** 레시피를 찾아왔어요!", 
-                mainIngredient, mainRecipe
+                "죄송해요, 잠시 요선생의 연결이 불안정해요 😢 하지만 지금 상황에 딱 맞는 **%s** 레시피를 찾아왔어요!", 
+                mainRecipe
             );
         }
 
@@ -122,12 +142,12 @@ public class RecommendChatProcessor implements ChatProcessor {
         return String.format(
                 "[사용자 정보]\n" +
                 "- 임박한 재료: [%s]\n" +
-                "- 추천 레시피 후보: [%s]\n\n" +
+                "- 추천 후보 리스트: [%s]\n\n" +
                 "[사용자 질문]\n" +
                 "\"%s\"\n\n" +
                 "[요청]\n" +
-                "위 정보를 바탕으로 사용자에게 자연스럽게 추천 멘트를 작성해줘. " +
-                "레시피 목록을 나열하지 말고, '이런 요리는 어떠세요?' 식으로 제안해줘.",
+                "위 [추천 후보 리스트] 중에서 사용자의 질문 의도(키워드)와 냉장고 재료 상황을 고려하여 가장 적절한 메뉴 하나를 골라 추천해줘. " +
+                "이유도 간단히 설명해줘. (예: '냉장고에 있는 두부를 활용할 수 있어요', '말씀하신 파스타 요리예요')",
                 ingredientStr, recipeStr, userMessage
         );
     }
