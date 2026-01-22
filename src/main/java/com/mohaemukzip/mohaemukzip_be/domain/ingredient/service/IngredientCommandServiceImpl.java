@@ -163,6 +163,7 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
     }
 
     @Override
+    @Transactional
     public void createIngredientRequest(Long memberId, IngredientRequestDTO.IngredientReq request) {
 
         Member member = memberRepository.findById(memberId)
@@ -172,10 +173,11 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
                 ingredientRequestRepository.findByMemberAndIngredientName(member, request.getIngredientName());
 
         if (existingRequest.isPresent()) {
-            ingredientRequestRepository.updateUpdatedAt(
-                    existingRequest.get().getId(),
-                    LocalDateTime.now()
-            );
+            IngredientRequest updateRequest = existingRequest.get();
+
+            updateRequest.renewCreatedDate();
+            ingredientRequestRepository.save(updateRequest);
+
             return;
         }
 
