@@ -14,12 +14,16 @@ public class RecipeResponseDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class RecipePreviewDTO {
-        private Long recipeId;
+        private Long id;
         private String title;
-        private String imageUrl;
-        private Integer cookingTime;
-        private Integer level;
-        private Integer ratingCount;
+        private String channelName;
+        private Integer viewCount;
+        private String videoId;
+        private String channelId;
+        private String videoDuration;
+        private Integer cookingTimeMinutes;
+        private Integer difficulty;
+        private Boolean isBookmarked;
     }
 
     @Builder
