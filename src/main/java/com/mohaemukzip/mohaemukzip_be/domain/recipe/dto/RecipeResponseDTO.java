@@ -1,19 +1,21 @@
 package com.mohaemukzip.mohaemukzip_be.domain.recipe.dto;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.util.List;
 
 public class RecipeResponseDTO {
 
-    @Builder
+    @SuperBuilder
     @Getter
-    @NoArgsConstructor
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @AllArgsConstructor
-    public static class RecipePreviewDTO {
+    public static class RecipeCommonDTO {
         private Long id;
         private String title;
         private String channelName;
@@ -26,9 +28,16 @@ public class RecipeResponseDTO {
         private Boolean isBookmarked;
     }
 
+    @SuperBuilder
+    @Getter
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    public static class RecipePreviewDTO extends RecipeCommonDTO {
+        // 필드가 없으므로 @AllArgsConstructor 제거 (NoArgsConstructor와 충돌 방지)
+    }
+
     @Builder
     @Getter
-    @NoArgsConstructor
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @AllArgsConstructor
     public static class RecipePreviewListDTO {
         private List<RecipePreviewDTO> recipeList;
@@ -37,5 +46,14 @@ public class RecipeResponseDTO {
         private Long totalElements;
         private Boolean isFirst;
         private Boolean isLast;
+    }
+
+    @SuperBuilder
+    @Getter
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor
+    public static class RecipeDetailDTO extends RecipeCommonDTO {
+        private List<String> ingredients;
+        private List<String> instructions;
     }
 }

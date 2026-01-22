@@ -15,10 +15,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -45,5 +42,19 @@ public class RecipeController {
     ) {
         Member member = (userDetails != null) ? userDetails.getMember() : null;
         return ApiResponse.onSuccess(recipeQueryService.getRecipesByCategoryId(categoryId, page, member));
+    }
+
+    @GetMapping("/{recipeId}")
+    @Operation(summary = "레시피 상세 조회 API", description = "특정 레시피(recipeId)의 상세 정보를 조회합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "OK"),
+    })
+    @Parameter(name = "recipeId", description = "레시피 ID", required = true)
+    public ApiResponse<RecipeResponseDTO.RecipeDetailDTO> getRecipeDetail(
+            @PathVariable(name = "recipeId") @Positive Long recipeId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Member member = (userDetails != null) ? userDetails.getMember() : null;
+        return ApiResponse.onSuccess(recipeQueryService.getRecipeDetail(recipeId, member));
     }
 }
