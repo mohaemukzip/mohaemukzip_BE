@@ -47,4 +47,13 @@ public class RecipeResponseDTO {
         private Boolean isFirst;
         private Boolean isLast;
     }
+
+    @SuperBuilder
+    @Getter
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor
+    public static class RecipeDetailDTO extends RecipeCommonDTO {
+        private List<String> ingredients;
+        private List<String> instructions;
+    }
 }
