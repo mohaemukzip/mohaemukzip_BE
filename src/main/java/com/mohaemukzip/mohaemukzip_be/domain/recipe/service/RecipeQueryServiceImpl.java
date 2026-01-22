@@ -24,7 +24,8 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
     public RecipeResponseDTO.RecipePreviewListDTO getRecipesByCategoryId(Long categoryId, Integer page) {
         Page<Recipe> recipePage = recipeCategoryRepository.findRecipesByCategoryId(categoryId, PageRequest.of(page, PAGE_SIZE));
 
-        if (recipePage.isEmpty()) {
+        // 첫 페이지인데 데이터가 없다면 -> 존재하지 않는 카테고리로 간주
+        if (page == 0 && recipePage.isEmpty()) {
             throw new BusinessException(ErrorStatus.CATEGORY_NOT_FOUND);
         }
 
