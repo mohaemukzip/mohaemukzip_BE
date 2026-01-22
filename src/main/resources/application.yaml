@@ -6,11 +6,11 @@ spring:
     database: mysql
     properties:
         hibernate:
-            format_sql: true # SQL? ?? ?? ???
+            format_sql: true # SQL 로그 포맷팅
 
   profiles:
     active: dev
-    include: openai # openai 프로파일 포함
+    # include: openai  <-- 제거 (통합하므로 불필요)
 
 cloud:
   aws:
@@ -18,3 +18,9 @@ cloud:
       static: ap-northeast-2
     s3:
         bucket: mohaemukzip-s3
+
+# Gemini API 설정 통합
+gemini:
+  api-key: ${GEMINI_API_KEY} # 실행 시 환경 변수로 주입 필요
+  # 확인된 모델명 적용 (gemini-2.5-flash)
+  api-url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
