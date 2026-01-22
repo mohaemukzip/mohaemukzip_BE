@@ -1,4 +1,4 @@
-package com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto;
+package com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.request;
 
 import lombok.Builder;
 import lombok.Getter;

@@ -1,8 +1,8 @@
 package com.mohaemukzip.mohaemukzip_be.domain.chatbot.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.GeminiRequestDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.GeminiResponseDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.request.GeminiRequestDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.response.GeminiResponseDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -80,7 +80,6 @@ public class GeminiService {
                     .block();
 
             if (rawResponse != null) {
-                // 보안 강화: 전체 내용 대신 길이만 디버그 레벨로 출력
                 log.debug("Gemini Raw Response length: {}", rawResponse.length());
                 
                 GeminiResponseDTO response = objectMapper.readValue(rawResponse, GeminiResponseDTO.class);

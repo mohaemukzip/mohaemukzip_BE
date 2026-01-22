@@ -1,6 +1,6 @@
 package com.mohaemukzip.mohaemukzip_be.domain.chatbot.service;
 
-import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.ChatProcessorResult;
+import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.response.ChatProcessorResult;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.entity.ChatRoom;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
 import lombok.RequiredArgsConstructor;
