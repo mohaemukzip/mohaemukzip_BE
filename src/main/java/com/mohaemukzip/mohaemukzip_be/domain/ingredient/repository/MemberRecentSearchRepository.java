@@ -14,4 +14,6 @@ public interface MemberRecentSearchRepository extends JpaRepository<MemberRecent
     List<MemberRecentSearch> findAllByMemberOrderByUpdatedAtDesc(Member member);
 
 
+    Optional<MemberRecentSearch> findByIdAndMemberId(Long id, Long memberId);
+
 }

@@ -2,9 +2,11 @@ package com.mohaemukzip.mohaemukzip_be.domain.member.controller;
 
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.AuthResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.AuthRequestDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.member.dto.TermRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.TermResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.service.AuthCommandService;
 import com.mohaemukzip.mohaemukzip_be.domain.member.service.AuthQueryService;
+import com.mohaemukzip.mohaemukzip_be.domain.member.service.TermCommandService;
 import com.mohaemukzip.mohaemukzip_be.domain.member.service.TermQueryService;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.jwt.JwtProvider;
@@ -19,6 +21,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/auth")
@@ -30,6 +34,7 @@ public class AuthController {
     private final AuthQueryService authQueryService;
     private final JwtProvider jwtProvider;
     private final TermQueryService termQueryService;
+    private final TermCommandService termCommandService;
 
     @Operation(summary = "회원가입 (일반)")
     @PostMapping("/signup")
@@ -45,6 +50,16 @@ public class AuthController {
     public ApiResponse<AuthResponseDTO.GetUserDTO> login(@Valid @RequestBody AuthRequestDTO.LoginRequest request) {
 
         AuthResponseDTO.GetUserDTO response = authCommandService.login(request);
+
+        return ApiResponse.onSuccess(response);
+    }
+
+    @Operation(summary = "로그인 (카카오)")
+    @PostMapping("/login/kakao")
+    public ApiResponse<AuthResponseDTO.GetUserDTO> kakaoLogin(
+            @Valid @RequestBody AuthRequestDTO.KakaoLoginRequest request) {
+
+        AuthResponseDTO.GetUserDTO response =  authCommandService.kakaoLogin(request);
 
         return ApiResponse.onSuccess(response);
     }
@@ -78,6 +93,26 @@ public class AuthController {
         TermResponseDTO.TermListResponse response = termQueryService.getTerms();
         return ApiResponse.onSuccess(response);
     }
+
+    @Operation(summary = "소셜로그인 후 약관 동의",
+            description = "[\n" +
+                    " { \"termId\": 1, \"isAgreed\": true },\n" +
+                    " { \"termId\": 2, \"isAgreed\": true },\n" +
+                    " { \"termId\": 3, \"isAgreed\": true },\n" +
+                    " { \"termId\": 4, \"isAgreed\": false }\n" +
+                    " ]")
+    @PostMapping("/terms/agree")
+    public ApiResponse<Void> agreeTermsAfterSocialLogin(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody List<TermRequestDTO.TermAgreementRequest> terms) {
+        if (userDetails == null) {
+            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
+        }
+        Long memberId = userDetails.getMember().getId();
+        termCommandService.updateMemberTerms(memberId, terms);
+        return ApiResponse.onSuccess(null);
+    }
+
     @Operation(summary = "로그아웃")
     @PostMapping("/logout")
     public ApiResponse<AuthResponseDTO.LogoutResponse> logout(

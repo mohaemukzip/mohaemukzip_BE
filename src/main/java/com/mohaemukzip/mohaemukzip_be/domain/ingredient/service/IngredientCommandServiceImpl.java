@@ -93,9 +93,9 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
                 .ingredient(ingredient)
                 .build();
 
-        memberFavoriteRepository.save(memberFavorite);
+        MemberFavorite saved = memberFavoriteRepository.save(memberFavorite);
 
-        return new IngredientResponseDTO.AddFavorite(memberFavorite.getId(), ingredient.getId());
+        return new IngredientResponseDTO.AddFavorite(saved.getId(), ingredient.getId());
     }
 
     @Override
@@ -153,6 +153,19 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
             memberRecentSearchRepository.deleteAllInBatch(searchesToDelete);
 
         }
+
+    }
+
+    @Override
+    @Transactional
+    public void deleteRecentSearch(Long memberId, Long recentSearchId) {
+
+
+        MemberRecentSearch search = memberRecentSearchRepository.findByIdAndMemberId(recentSearchId, memberId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.SEARCH_NOT_FOUND));
+
+
+        memberRecentSearchRepository.delete(search);
 
     }
 }

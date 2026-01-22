@@ -3,13 +3,16 @@ package com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
 public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
 
-    //검색어로 조회
-    List<Ingredient> findByNameContaining(String name);
+    //검색어로 조회 (띄어쓰기 무시)
+    @Query("SELECT i FROM Ingredient i WHERE REPLACE(i.name, ' ', '') LIKE CONCAT('%', :name, '%')")
+    List<Ingredient> findByNameContaining(@Param("name") String name);
 
     //카테고리로 조회
     List<Ingredient> findByCategory(Category category);

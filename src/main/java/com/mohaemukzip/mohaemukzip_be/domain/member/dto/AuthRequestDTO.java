@@ -22,6 +22,7 @@ public class AuthRequestDTO {
 
     public record SignUpRequest(
             @Schema(description = "닉네임", example = "뭐해먹집")
+            @Pattern(regexp = "^.{1,15}$")
             @NotBlank(message = "닉네임은 필수입니다")
             String nickname,
 
@@ -46,7 +47,7 @@ public class AuthRequestDTO {
                   { "termId": 4, "isAgreed": false }
                 ]
                 """)
-            @NotEmpty(message = "약관 동의는 필수입니다")
+            @NotEmpty(message = "약관 동의 여부는 필수입니다")
             @Valid
             List<TermRequestDTO.TermAgreementRequest> termAgreements
     ) { }
@@ -57,5 +58,11 @@ public class AuthRequestDTO {
             @Pattern(regexp = "^(?=.*[A-Za-z])[A-Za-z\\d]{4,20}$",
                     message = "아이디는 영문, 숫자 4-20자로 입력해주세요.")
             String loginId
+    ) {}
+
+    public record KakaoLoginRequest(
+            @Schema(description = "카카오 액세스 토큰", example = "kakaoAccessToken")
+            @NotBlank(message = "카카오 액세스 토큰은 필수입니다.")
+            String kakaoAccessToken
     ) {}
 }
