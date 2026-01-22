@@ -17,12 +17,11 @@ public interface MemberRecentSearchRepository extends JpaRepository<MemberRecent
 
     List<MemberRecentSearch> findAllByMemberOrderByUpdatedAtDesc(Member member);
 
-    Long countByMember(Member member);
-
-
-    MemberRecentSearch findTopByMemberOrderByUpdatedAtAsc(Member member);
-
     @Modifying
     @Query("UPDATE MemberRecentSearch m SET m.updatedAt = :now WHERE m.id = :id")
     void updateUpdatedAt(@Param("id") Long id, @Param("now") LocalDateTime now);
+
+
+    Optional<MemberRecentSearch> findByIdAndMemberId(Long id, Long memberId);
+
 }
