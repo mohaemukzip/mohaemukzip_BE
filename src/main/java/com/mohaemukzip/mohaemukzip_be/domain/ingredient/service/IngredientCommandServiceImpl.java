@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -122,11 +122,11 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
                 memberRecentSearchRepository.findByMemberAndKeyword(member, keyword);
 
         if (existingSearch.isPresent()) {
-            MemberRecentSearch search = existingSearch.get();
 
-            search.renewCreatedDate();
-
-            memberRecentSearchRepository.save(search);
+            memberRecentSearchRepository.updateUpdatedAt(
+                    existingSearch.get().getId(),
+                    LocalDateTime.now()
+            );
 
             return;
         }
