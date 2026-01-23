@@ -57,6 +57,9 @@ public enum ErrorStatus implements BaseCode {
 
     // 카테고리 관련 에러
     CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CATEGORY4001", "해당 카테고리를 찾을 수 없습니다."),
+
+    // 레시피 관련 에러
+    RECIPE_NOT_FOUND(HttpStatus.NOT_FOUND, "RECIPE4001", "해당 레시피를 찾을 수 없습니다."),
     ;
     private final HttpStatus httpStatus;
     private final String code;

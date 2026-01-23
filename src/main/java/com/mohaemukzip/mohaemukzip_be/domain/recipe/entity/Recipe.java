@@ -61,7 +61,7 @@ public class Recipe extends BaseEntity {
             throw new IllegalArgumentException("난이도는 1부터 5 사이의 값입니다.");
         }
 
-        if (this.ratingCount == 0) {
+        if ( this.ratingCount == null || this.ratingCount == 0) {
             this.level = (double) newRating;
             this.ratingCount = 1;
             return;

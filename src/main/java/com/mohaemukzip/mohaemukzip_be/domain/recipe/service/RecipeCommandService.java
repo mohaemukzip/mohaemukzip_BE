@@ -8,5 +8,4 @@ public interface RecipeCommandService {
 
     RecipeCommandServiceImpl.SummaryCreateResult createSummary(Long recipeId);
 
-
 }

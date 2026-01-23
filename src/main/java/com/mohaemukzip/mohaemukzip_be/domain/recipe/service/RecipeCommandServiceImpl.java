@@ -122,10 +122,16 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
             ingredientRepository.findByName(ingredientData.name())
                     .ifPresentOrElse(ingredient -> {
 
+                        Double amount = null;
+                        try {
+                            amount = Double.valueOf(ingredientData.amount());
+                        } catch (NumberFormatException e) {
+                            log.warn("amount 파싱 실패: {}", ingredientData.amount());
+                        }
                         RecipeIngredient recipeIngredient = RecipeIngredient.builder()
                                 .recipe(recipe)
                                 .ingredient(ingredient)
-                                .amount(Double.valueOf(ingredientData.amount()))
+                                .amount(amount)
                                 .build();
 
                         recipeIngredientRepository.save(recipeIngredient);
@@ -142,6 +148,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
     }
 
     @Transactional
+    @Override
     public SummaryCreateResult createSummary(Long recipeId) {
 
         //  이미 요약 존재 → 멱등
@@ -225,6 +232,9 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         );
 
         ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new RuntimeException("Gemini 호출 실패: " + response.getStatusCode());
+         }
 
         JsonNode root;
         try {
@@ -233,9 +243,16 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
             throw new RuntimeException("Gemini 응답 파싱 실패", e);
         }
 
-        String rawText = root.path("candidates").get(0)
-                .path("content").path("parts").get(0)
-                .path("text").asText();
+        JsonNode candidates = root.path("candidates");
+        if (!candidates.isArray() || candidates.isEmpty()) {
+            throw new RuntimeException("Gemini candidates 결과가 비어있습니다.");
+        }
+        JsonNode textNode = candidates.get(0)
+                .path("content").path("parts").path(0).path("text");
+        if (textNode.isMissingNode()) {
+            throw new RuntimeException("Gemini text 결과가 비어있습니다.");
+        }
+        String rawText = textNode.asText();
 
         String cleanedJson = stripCodeBlock(rawText);
 
@@ -264,6 +281,9 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
             ));
         }
 
+        if (steps.size() > 10) {
+            steps = steps.subList(0, 10);
+        }
         return steps;
     }
 

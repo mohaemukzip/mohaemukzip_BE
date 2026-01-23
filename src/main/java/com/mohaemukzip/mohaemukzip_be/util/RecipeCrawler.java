@@ -198,9 +198,16 @@ public class RecipeCrawler {
 
         // 응답 파싱
         JsonNode root = objectMapper.readTree(response.getBody());
-        String rawText = root.path("candidates").get(0)
-                .path("content").path("parts").get(0)
-                .path("text").asText();
+
+        JsonNode candidates = root.path("candidates");
+        if (candidates.isEmpty() || candidates.get(0) == null) {
+            throw new RuntimeException("Gemini API 응답에 candidates가 없습니다");
+        }
+        JsonNode parts = candidates.get(0).path("content").path("parts");
+        if (parts.isEmpty() || parts.get(0) == null) {
+            throw new RuntimeException("Gemini API 응답에 parts가 없습니다");
+        }
+        String rawText = parts.get(0).path("text").asText();
 
         log.debug("Gemini raw text:\n{}", rawText);
 

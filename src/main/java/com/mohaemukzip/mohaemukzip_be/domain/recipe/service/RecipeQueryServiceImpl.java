@@ -51,7 +51,7 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
     @Override
     public RecipeDetailResponseDTO getRecipeDetail(Long recipeId, Long memberId) {
         Recipe recipe = recipeRepository.findById(recipeId)
-                .orElseThrow(() -> new IllegalArgumentException("레시피가 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorStatus.RECIPE_NOT_FOUND));
 
         List<RecipeIngredient> recipeIngredients =
                 recipeIngredientRepository.findAllByRecipeId(recipeId);
