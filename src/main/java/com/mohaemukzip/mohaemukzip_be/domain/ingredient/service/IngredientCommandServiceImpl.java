@@ -153,4 +153,17 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
         }
 
     }
+
+    @Override
+    @Transactional
+    public void deleteRecentSearch(Long memberId, Long recentSearchId) {
+
+
+        MemberRecentSearch search = memberRecentSearchRepository.findByIdAndMemberId(recentSearchId, memberId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.SEARCH_NOT_FOUND));
+
+
+        memberRecentSearchRepository.delete(search);
+
+    }
 }

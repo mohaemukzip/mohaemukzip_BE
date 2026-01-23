@@ -22,6 +22,7 @@ public class IngredientResponseDTO {
         private String name;
         private String category;
         private String unit;
+        private Double weight;
 
         // 엔티티 -> DTO 변환 메서드
         public static Detail from(Ingredient ingredient) {
@@ -30,6 +31,7 @@ public class IngredientResponseDTO {
                     .name(ingredient.getName())
                     .category(ingredient.getCategory() != null ? ingredient.getCategory().getLabel() : null)
                     .unit(ingredient.getUnit() != null ? ingredient.getUnit().getLabel() : null)
+                    .weight(ingredient.getWeight())
                     .build();
         }
     }
