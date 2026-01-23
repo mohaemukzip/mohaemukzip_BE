@@ -160,12 +160,7 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
                 ingredientRequestRepository.findByMemberAndIngredientName(member, request.getIngredientName());
 
         if (existingRequest.isPresent()) {
-            IngredientRequest updateRequest = existingRequest.get();
-
-            updateRequest.renewCreatedDate();
-            ingredientRequestRepository.save(updateRequest);
-
-            return;
+            throw new BusinessException(ErrorStatus.INGREDIENT_ALREADY_REQUESTED);
         }
 
         IngredientRequest newRequest = IngredientRequest.builder()

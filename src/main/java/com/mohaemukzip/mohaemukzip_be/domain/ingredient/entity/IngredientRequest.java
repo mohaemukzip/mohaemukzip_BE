@@ -34,4 +34,5 @@ public class IngredientRequest extends BaseEntity {
 
     @Column(name = "ingredient_name", nullable = false)
     private String ingredientName;
+
 }
