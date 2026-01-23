@@ -18,7 +18,7 @@ public class RecipeResponseDTO {
         private String title;
         private String imageUrl;
         private Integer cookingTime;
-        private Integer level;
+        private Double level;
         private Integer ratingCount;
     }
 
@@ -34,4 +34,16 @@ public class RecipeResponseDTO {
         private Boolean isFirst;
         private Boolean isLast;
     }
+
+    @Builder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RecipeCreateRequest {
+        private String videoId;
+    }
+
+    public static record RecipeCreateResponse(Long recipeId) {}
+
+
 }
