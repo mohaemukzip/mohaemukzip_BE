@@ -9,7 +9,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;import java.time.Duration;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -106,14 +110,17 @@ public class RecipeCrawler {
      * YouTube Data API v3 호출
      */
     private YouTubeData fetchYouTubeData(String videoId) throws Exception {
-        String url = String.format(
-                "https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=%s&key=%s",
-                videoId, youtubeApiKey
-        );
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl("https://www.googleapis.com/youtube/v3/videos")
+                .queryParam("part", "snippet,contentDetails,statistics")
+                .queryParam("id", videoId)
+                .queryParam("key", youtubeApiKey)
+                .build(true)
+                .toUri();
 
         log.debug("YouTube API 호출 - videoId: {}", videoId);
 
-        ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+        ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
         JsonNode root = objectMapper.readTree(response.getBody());
         JsonNode items = root.path("items");
 
@@ -225,6 +232,9 @@ public class RecipeCrawler {
         String category = resultNode.path("category").asText();
         Integer cookingTime = resultNode.path("cookingTime").asInt();
         JsonNode ingredientsNode = resultNode.path("ingredients");
+        if (!ingredientsNode.isArray()) {
+            throw new RuntimeException("Gemini 응답의 ingredients가 배열이 아닙니다");
+        }
 
         List<IngredientData> ingredients = new ArrayList<>();
         for (JsonNode node : ingredientsNode) {
