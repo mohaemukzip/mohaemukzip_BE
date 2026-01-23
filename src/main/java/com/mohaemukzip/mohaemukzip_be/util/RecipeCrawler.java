@@ -198,7 +198,7 @@ public class RecipeCrawler {
         ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
 
         log.info("Gemini status: {}", response.getStatusCode());
-        log.info("Gemini raw body:\n{}", response.getBody());
+        log.debug("Gemini raw body:\n{}", response.getBody());
 
         // 응답 파싱
         JsonNode root = objectMapper.readTree(response.getBody());
@@ -258,7 +258,7 @@ public class RecipeCrawler {
      * Gemini 프롬프트
      */
     private String buildPrompt(String title, String description, List<String> ingredientNames) {
-        String ingredientList = String.join(", ", ingredientNames);
+        String ingredientList = (ingredientNames == null) ? "" : String.join(", ", ingredientNames);
 
         return String.format("""
         다음은 우리 시스템의 재료 목록입니다.
