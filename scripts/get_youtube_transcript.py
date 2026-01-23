@@ -34,7 +34,9 @@ def main():
         sys.exit(3)
 
     except Exception as e:
-        print(f"Unknown error: {str(e)}", file=sys.stderr)
+        import traceback
+        print(f"Unknown error: {e!s}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
         sys.exit(99)
 
 

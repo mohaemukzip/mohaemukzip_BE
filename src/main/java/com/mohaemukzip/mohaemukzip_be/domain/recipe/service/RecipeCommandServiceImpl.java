@@ -95,6 +95,10 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
                 recipeCrawler.crawlRecipe(videoId, ingredientNames);
 
         // Recipe 저장
+        Category category = Arrays.stream(Category.values())
+                .filter(c -> c.name().equalsIgnoreCase(data.category()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 카테고리: " + data.category()));
         Recipe recipe = Recipe.builder()
                 .title(data.title())
                 .level(0.0)
@@ -105,7 +109,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
                 .channelId(data.channelId())
                 .views(data.viewCount())
                 .imageUrl(data.thumbnailUrl())
-                .category(Category.valueOf(data.category()))
+                .category(category)
                 .videoId(data.videoId())
                 .videoUrl(data.videoUrl())
                 .build();
