@@ -18,7 +18,6 @@ import java.util.Map;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class RecipeCrawler {
     @Value("${youtube.api.key}")
     private String youtubeApiKey;
@@ -28,6 +27,11 @@ public class RecipeCrawler {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+
+    public RecipeCrawler(RestTemplate restTemplate, ObjectMapper objectMapper) {
+        this.restTemplate = restTemplate;
+        this.objectMapper = objectMapper;
+    }
 
 
     @PostConstruct
