@@ -26,8 +26,8 @@ public class RecipeCrawler {
     @Value("${gemini.api.key}")
     private String geminiApiKey;
 
-    private final RestTemplate restTemplate = new RestTemplate();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
 
     @PostConstruct
@@ -107,7 +107,7 @@ public class RecipeCrawler {
                 videoId, youtubeApiKey
         );
 
-        log.debug("YouTube API 호출 - URL: {}", url);
+        log.debug("YouTube API 호출 - videoId: {}", videoId);
 
         ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
         JsonNode root = objectMapper.readTree(response.getBody());
@@ -134,7 +134,7 @@ public class RecipeCrawler {
                 snippet.path("thumbnails").path("medium").path("url").asText(),
                 snippet.path("channelTitle").asText(),
                 formattedTime,
-                statistics.path("viewCount").asInt()
+                statistics.path("viewCount").asLong()
         );
     }
 
@@ -330,7 +330,7 @@ public class RecipeCrawler {
             String channelTitle,
             String time,           // "10:54" (영상 길이)
             Integer cookingTime,   // 15 (조리 시간)
-            Integer viewCount,
+            Long viewCount,
             String category,       // "KOREAN", "CHINESE" 등
             List<IngredientData> ingredients
     ) {}
@@ -346,7 +346,7 @@ public class RecipeCrawler {
             String thumbnailUrl,
             String channelTitle,
             String time,
-            Integer viewCount
+            Long viewCount
     ) {}
 
     /**

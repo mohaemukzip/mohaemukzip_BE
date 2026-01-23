@@ -55,8 +55,8 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
     @Value("${gemini.api.key}")
     private String geminiApiKey;
 
-    private final RestTemplate restTemplate = new RestTemplate();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
 
 
@@ -110,7 +110,11 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
                 .videoUrl(data.videoUrl())
                 .build();
 
-        recipeRepository.save(recipe);
+        try {
+                recipeRepository.save(recipe);
+            } catch (DataIntegrityViolationException e) {
+                throw new IllegalStateException("이미 저장된 레시피입니다. videoId=" + videoId, e);
+            }
 
         // RecipeIngredient 저장
         for (RecipeCrawler.IngredientData ingredientData : data.ingredients()) {

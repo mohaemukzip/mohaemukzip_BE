@@ -41,7 +41,7 @@ public class Recipe extends BaseEntity {
     private String channelId;
 
     @Column(name = "views")
-    private Integer views;
+    private Long views;
 
     @Column(name = "image_url")
     private String imageUrl;
@@ -50,7 +50,7 @@ public class Recipe extends BaseEntity {
     @Column(name = "category")
     private Category category;
 
-    @Column(name = "video_id", nullable = false)
+    @Column(name = "video_id", nullable = false, unique = true)
     private String videoId;
 
     @Column(name = "video_url", nullable = false)

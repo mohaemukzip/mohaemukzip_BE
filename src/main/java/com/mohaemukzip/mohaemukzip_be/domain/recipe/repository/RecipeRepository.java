@@ -20,8 +20,8 @@ public interface RecipeRepository extends JpaRepository<Recipe,Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     // 2명이상 사용자가 한 레시피 동시 조회해서 addRating 하는거 방지용
-    @Query("select r from Recipe r where r.id = :id")
-    Recipe findByIdForUpdate(Long recipeId);
+    @Query("select r from Recipe r where r.id = :recipeId")
+    Recipe findByIdForUpdate(@Param("recipeId") Long recipeId);
 
     // videoId 중복 저장 방지용
     boolean existsByVideoId(String videoId);

@@ -5,7 +5,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -28,16 +32,22 @@ public class PythonTranscriptExecutor {
 
             Process process = pb.start();
 
+            CompletableFuture<String> outputFuture = CompletableFuture.supplyAsync(() -> {
+                try (InputStream is = process.getInputStream()) {
+                    return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+
             boolean finished = process.waitFor(15, TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
+                outputFuture.cancel(true);
                 throw new RuntimeException("Transcript script timeout");
             }
 
-            String output = new String(
-                    process.getInputStream().readAllBytes(),
-                    StandardCharsets.UTF_8
-            );
+            String output = outputFuture.get(1, TimeUnit.SECONDS);
 
             if (process.exitValue() != 0) {
                 throw new RuntimeException("Transcript script failed: " + output);

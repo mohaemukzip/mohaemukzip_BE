@@ -20,7 +20,7 @@ public class RecipeDetailResponseDTO {
     private String videoUrl;
     private String channel;
     private Integer cookingTime;
-    private Integer views;
+    private Long views;
     private String videoId;
 
     private Double level;
@@ -41,18 +41,6 @@ public class RecipeDetailResponseDTO {
         private String unit;      // ex) "g"
         private Boolean hasIngredient; // 유저가 가지고 있는 재료면 true
 
-        public static IngredientResponse from(RecipeIngredient ri) {
-            return IngredientResponse.builder()
-                    .ingredientId(ri.getIngredient().getId())
-                    .name(ri.getIngredient().getName())
-                    .amount(ri.getAmount())
-                    .unit(
-                            ri.getIngredient().getUnit() != null
-                                    ? ri.getIngredient().getUnit().name()
-                                    : null
-                    )
-                    .build();
-        }
     }
 
     @Builder
