@@ -21,7 +21,7 @@ public class RecipeConverter {
                 .channelId(recipe.getChannelId())
                 .videoDuration(TimeFormatter.formatDuration(recipe.getTime()))
                 .cookingTimeMinutes(recipe.getCookingTime())
-                .difficulty(recipe.getLevel())
+                .difficulty(recipe.getLevel()) // Recipe.level은 Integer이므로 자동 매핑됨. 만약 DB가 Double이라면 (int) Math.round() 필요하나 현재 Entity는 Integer임.
                 .isBookmarked(isBookmarked)
                 .build();
     }
@@ -38,23 +38,6 @@ public class RecipeConverter {
                 .totalElements(recipePage.getTotalElements())
                 .listSize(recipePreviewDTOList.size())
                 .recipeList(recipePreviewDTOList)
-                .build();
-    }
-
-    public static RecipeResponseDTO.RecipeDetailDTO toRecipeDetailDTO(Recipe recipe, boolean isBookmarked, List<String> ingredients, List<String> instructions) {
-        return RecipeResponseDTO.RecipeDetailDTO.builder()
-                .id(recipe.getId())
-                .title(recipe.getTitle())
-                .channelName(recipe.getChannel())
-                .viewCount(recipe.getViews())
-                .videoId(recipe.getVideoId())
-                .channelId(recipe.getChannelId())
-                .videoDuration(TimeFormatter.formatDuration(recipe.getTime()))
-                .cookingTimeMinutes(recipe.getCookingTime())
-                .difficulty(recipe.getLevel())
-                .isBookmarked(isBookmarked)
-                .ingredients(ingredients)
-                .instructions(instructions)
                 .build();
     }
 }
