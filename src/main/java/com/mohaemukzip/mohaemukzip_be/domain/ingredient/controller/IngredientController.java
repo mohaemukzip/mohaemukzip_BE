@@ -1,5 +1,6 @@
 package com.mohaemukzip.mohaemukzip_be.domain.ingredient.controller;
 
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Category;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.service.IngredientCommandService;
@@ -10,6 +11,7 @@ import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -121,6 +123,22 @@ public class IngredientController {
         return ApiResponse.onSuccess(result);
     }
 
+    @Operation(summary = "재료 추가 요청")
+    @PostMapping("/requests")
+    public ApiResponse<String> ingredientRequest(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @Valid @RequestBody IngredientRequestDTO.IngredientReq request
+    ) {
+        if (customUserDetails == null) {
+            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
+        }
+        Long memberId = customUserDetails.getMember().getId();
+
+        ingredientCommandService.createIngredientRequest(memberId, request);
+
+        return ApiResponse.onSuccess("소중한 의견 감사합니다 *.* ");
+    }
+  
     @Operation(summary = "최근 재료 검색어 삭제")
     @DeleteMapping("/recent-searches/{recentSearchId}")
     public ApiResponse<String> deleteRecentSearch(

@@ -2,14 +2,8 @@ package com.mohaemukzip.mohaemukzip_be.domain.ingredient.service;
 
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberFavorite;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberIngredient;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberRecentSearch;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.IngredientRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberFavoriteRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberIngredientRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberRecentSearchRepository;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.*;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.*;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
@@ -27,6 +21,7 @@ import java.util.Optional;
 @Transactional
 public class IngredientCommandServiceImpl implements IngredientCommandService {
 
+    private final IngredientRequestRepository  ingredientRequestRepository;
     private final IngredientRepository ingredientRepository;
     private final MemberRepository memberRepository;
     private final MemberRecentSearchRepository memberRecentSearchRepository;
@@ -154,6 +149,28 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
 
     }
 
+    @Override
+    @Transactional
+    public void createIngredientRequest(Long memberId, IngredientRequestDTO.IngredientReq request) {
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
+
+        Optional<IngredientRequest> existingRequest =
+                ingredientRequestRepository.findByMemberAndIngredientName(member, request.getIngredientName());
+
+        if (existingRequest.isPresent()) {
+            throw new BusinessException(ErrorStatus.INGREDIENT_ALREADY_REQUESTED);
+        }
+
+        IngredientRequest newRequest = IngredientRequest.builder()
+                .member(member)
+                .ingredientName(request.getIngredientName())
+                .build();
+
+        ingredientRequestRepository.save(newRequest);
+    }
+    
     @Override
     @Transactional
     public void deleteRecentSearch(Long memberId, Long recentSearchId) {
