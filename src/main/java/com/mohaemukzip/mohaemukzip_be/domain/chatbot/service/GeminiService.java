@@ -88,7 +88,11 @@ public class GeminiService {
                     GeminiResponseDTO.Candidate candidate = response.getCandidates().get(0);
                     if (candidate.getContent() != null && candidate.getContent().getParts() != null && !candidate.getContent().getParts().isEmpty()) {
                         String text = candidate.getContent().getParts().get(0).getText();
-                        log.info("Gemini 응답 텍스트 추출 성공: {}", text);
+                        
+                        // 보안 강화: 전체 내용은 DEBUG 레벨로, INFO 레벨에는 길이만 출력
+                        log.debug("Gemini 응답 텍스트: {}", text);
+                        log.info("Gemini 응답 텍스트 추출 성공 (length: {})", text.length());
+                        
                         return text;
                     }
                 } else {
