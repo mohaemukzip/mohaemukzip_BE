@@ -50,7 +50,8 @@ public class RecommendChatProcessor implements ChatProcessor {
 
     @Override
     public ChatProcessorResult process(ChatRoom chatRoom, String userMessage, String intent) {
-        log.info("ChatProcessor 처리 시작 - Intent: {}, UserMessage Length: {}", intent, userMessage.length());
+        // NPE 방지: userMessage가 null일 경우 0으로 처리
+        log.info("ChatProcessor 처리 시작 - Intent: {}, UserMessage Length: {}", intent, (userMessage != null ? userMessage.length() : 0));
 
         if (!"RECOMMENDATION".equals(intent)) {
             String aiResponse = geminiService.generateChatResponse(GENERAL_SYSTEM_PROMPT, userMessage);
