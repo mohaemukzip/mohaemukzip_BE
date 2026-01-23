@@ -251,7 +251,10 @@ public class RecipeCrawler {
      * Gemini 응답에서 ```json ``` 코드블록 제거
      */
     private String stripCodeBlock(String text) {
-        if (text == null) return null;
+        if (text == null || text.isBlank()) {
+            throw new RuntimeException("Gemini API 응답 텍스트가 비어있습니다");
+        }
+
 
         text = text.trim();
 
