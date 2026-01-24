@@ -11,6 +11,7 @@ import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,16 +30,12 @@ public class AdminController {
 
     private final IngredientQueryService ingredientQueryService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/ingredients/requests")
     @Operation(summary = "관리자용 재료 요청 목록 조회")
     public ApiResponse<List<IngredientResponseDTO.AdminRequestList>> getIngredientRequests(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        if (userDetails == null || userDetails.getMember().getRole() != Role.ROLE_ADMIN) {
-            // 관리자인지 확인
-            throw new BusinessException(ErrorStatus.MEMBER_FORBIDDEN);
-        }
-
         List<IngredientResponseDTO.AdminRequestList> result =
                 ingredientQueryService.getIngredientRequestList();
 
