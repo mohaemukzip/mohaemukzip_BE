@@ -77,7 +77,7 @@ public class GeminiService {
                         return Mono.justOrEmpty(null);
                     })
                     .doOnNext(res -> log.info("Gemini API Raw Response 수신 성공"))
-                    .block();
+                    .block(Duration.ofSeconds(30));
 
             if (rawResponse != null) {
                 log.debug("Gemini Raw Response length: {}", rawResponse.length());
