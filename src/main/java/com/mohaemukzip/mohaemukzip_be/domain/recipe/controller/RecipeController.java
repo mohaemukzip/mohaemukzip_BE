@@ -21,7 +21,8 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@Tag(name = "Search", description = "통합 검색 API")
+@RequestMapping("/recipes")
+@Tag(name = "Recipe" , description = "레시피 관련 API")
 @Validated
 @RequestMapping
 public class RecipeController {
@@ -29,39 +30,7 @@ public class RecipeController {
     private final RecipeQueryService recipeQueryService;
     private final RecipeCommandService recipeCommandService;
 
-    @GetMapping("/search/recipes")
-    @Operation(summary = "세부 카테고리별 레시피 조회 API", description = "특정 세부 카테고리(categoryId)에 속하는 레시피 목록을 조회합니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "OK"),
-    })
-    @Parameters({
-            @Parameter(name = "categoryId", description = "세부 카테고리 ID", required = true),
-            @Parameter(name = "page", description = "페이지 번호 (0부터 시작)")
-    })
-    public ApiResponse<RecipeResponseDTO.RecipePreviewListDTO> getRecipes(
-            @RequestParam(name = "categoryId") @Positive Long categoryId,
-            @RequestParam(name = "page", defaultValue = "0") @PositiveOrZero Integer page,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        Member member = (userDetails != null) ? userDetails.getMember() : null;
-        return ApiResponse.onSuccess(recipeQueryService.getRecipesByCategoryId(categoryId, page, member));
-    }
-
-    @GetMapping("/{recipeId}")
-    @Operation(summary = "레시피 상세 조회 API", description = "특정 레시피(recipeId)의 상세 정보를 조회합니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "OK"),
-    })
-    @Parameter(name = "recipeId", description = "레시피 ID", required = true)
-    public ApiResponse<RecipeResponseDTO.RecipeDetailDTO> getRecipeDetail(
-            @PathVariable(name = "recipeId") @Positive Long recipeId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        Member member = (userDetails != null) ? userDetails.getMember() : null;
-        return ApiResponse.onSuccess(recipeQueryService.getRecipeDetail(recipeId, member));
-    }
-
-    @PostMapping("/recipes")
+    @PostMapping
     @Operation(summary = "레시피 저장 API", description = "특정 video_id를 가진 유튜브 영상에 관한 레시피를 저장합니다.")
     public ApiResponse<RecipeResponseDTO.RecipeCreateResponse> createRecipe(
             @RequestBody RecipeResponseDTO.RecipeCreateRequest request

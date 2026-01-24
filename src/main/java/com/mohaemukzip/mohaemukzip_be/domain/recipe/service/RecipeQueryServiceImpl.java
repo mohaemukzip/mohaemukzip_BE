@@ -9,11 +9,8 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.RecipeConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeDetailResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Summary;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.MemberRecipeRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeCategoryRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.SummaryRepository;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
@@ -34,9 +31,6 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
 
     private final RecipeCategoryRepository recipeCategoryRepository;
     private final MemberRecipeRepository memberRecipeRepository;
-    private final RecipeRepository recipeRepository;
-    private final RecipeIngredientRepository recipeIngredientRepository;
-    private final SummaryRepository summaryRepository;
     private static final int PAGE_SIZE = 10;
     private final RecipeRepository recipeRepository;
     private final RecipeIngredientRepository recipeIngredientRepository;
