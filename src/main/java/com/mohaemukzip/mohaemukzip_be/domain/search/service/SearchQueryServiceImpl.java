@@ -105,16 +105,17 @@ public class SearchQueryServiceImpl implements SearchQueryService {
             recipeMap.put(recipe.getId(), SearchConverter.toSearchResultDTO(recipe));
         }
 
-        // 요약 레시피 제목 검색
-        List<Summary> summaries = summaryRepository.findByTitleContaining(keyword);
-        for (Summary summary : summaries) {
-            Recipe recipe = summary.getRecipe();
-            if (recipe != null) {
-                // 이미 존재하는 레시피는 건너뜀 (레시피 제목 검색 우선)
-                recipeMap.putIfAbsent(recipe.getId(), SearchConverter.toSearchResultDTO(recipe));
-            }
-        }
+//        // 요약 레시피 제목 검색
+//        List<Summary> summaries = summaryRepository.findByTitleContaining(keyword);
+//        for (Summary summary : summaries) {
+//            Recipe recipe = summary.getRecipe();
+//            if (recipe != null) {
+//                // 이미 존재하는 레시피는 건너뜀 (레시피 제목 검색 우선)
+//                recipeMap.putIfAbsent(recipe.getId(), SearchConverter.toSearchResultDTO(recipe));
+//            }
+//        }
 
-        return new ArrayList<>(recipeMap.values());
+//        return new ArrayList<>(recipeMap.values());
+        return null;
     }
 }
