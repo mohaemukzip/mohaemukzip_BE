@@ -46,4 +46,16 @@ public class RecipeResponseDTO {
     public static record RecipeCreateResponse(Long recipeId) {}
 
 
+    @Builder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CookingRecordCreateResponseDTO {
+
+        private Long cookingRecordId;
+        private Long recipeId;
+        private Integer rating;      // 사용자가 준 별점 (1~5)
+        private Double recipeLevel;  // 갱신된 레시피 난이도
+        private Integer ratingCount; // 갱신된 평가 수
+    }
 }

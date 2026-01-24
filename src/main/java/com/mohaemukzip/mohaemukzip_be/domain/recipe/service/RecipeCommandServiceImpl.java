@@ -19,6 +19,14 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeStepReposit
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.SummaryRepository;
 import com.mohaemukzip.mohaemukzip_be.util.PythonTranscriptExecutor;
 import com.mohaemukzip.mohaemukzip_be.util.RecipeCrawler;
+
+import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.CookingRecord;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
+import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
+import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
@@ -336,4 +344,37 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
     private record StepDraft(int stepNumber, String title, String description, Integer videoTime) {}
 
 
+
+    public RecipeResponseDTO.CookingRecordCreateResponseDTO createCookingRecord(
+            Long memberId,
+            Long recipeId,
+            int rating
+    ) {
+        if (rating < 1 || rating > 5) {
+            throw new BusinessException(ErrorStatus.INVALID_RATING);
+        }
+
+        Recipe recipe = recipeRepository.findByIdForUpdate(recipeId);
+        if (recipe == null) {
+            throw new BusinessException(ErrorStatus.RECIPE_NOT_FOUND);
+        }
+
+        recipe.addRating(rating); // level, ratingCount 내부에서 갱신
+
+        CookingRecord record = cookingRecordRepository.save(
+                CookingRecord.builder()
+                        .member(Member.builder().id(memberId).build())
+                        .recipe(recipe)
+                        .rating(rating)
+                        .build()
+        );
+
+        return RecipeResponseDTO.CookingRecordCreateResponseDTO.builder()
+                .cookingRecordId(record.getId())
+                .recipeId(recipe.getId())
+                .rating(rating)
+                .recipeLevel(recipe.getLevel())
+                .ratingCount(recipe.getRatingCount())
+                .build();
+    }
 }

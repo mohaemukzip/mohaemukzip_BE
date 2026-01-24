@@ -51,6 +51,7 @@ public enum ErrorStatus implements BaseCode {
     //점수 관련 에러
     INVALID_SCORE(HttpStatus.BAD_REQUEST, "SCORE4001", "유효하지 않은 점수입니다."),
     INVALID_LEVEL(HttpStatus.BAD_REQUEST, "SCORE4002", "유효하지 않은 레벨입니다."),
+    INVALID_RATING(HttpStatus.BAD_REQUEST, "SCORE4003", "유효하지 않은 평점입니다."),
 
     // 이미지 관련 에러
     INVALID_IMAGE_EXTENSION(HttpStatus.BAD_REQUEST, "IMAGE4001", "유효하지 않은 이미지 확장자입니다."),

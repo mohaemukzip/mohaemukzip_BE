@@ -43,7 +43,7 @@ public class RecipeController {
     ) {
         return ApiResponse.onSuccess(recipeQueryService.getRecipesByCategoryId(categoryId, page));
     }
-
+    
     @PostMapping("/recipes")
     @Operation(summary = "레시피 저장 API", description = "특정 video_id를 가진 유튜브 영상에 관한 레시피를 저장합니다.")
     public ApiResponse<RecipeResponseDTO.RecipeCreateResponse> createRecipe(
@@ -80,5 +80,19 @@ public class RecipeController {
             boolean summaryExists,
             int stepCount
     ) {}
-
+    
+    @PostMapping("/recipes/{recipeId}/complete")
+    public ApiResponse<RecipeResponseDTO.CookingRecordCreateResponseDTO> createCookingRecord(
+            @PathVariable Long recipeId,
+            @RequestParam int rating,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ApiResponse.onSuccess(
+                recipeCommandService.createCookingRecord(
+                        userDetails.getMember().getId(),
+                        recipeId,
+                        rating
+                )
+        );
+    }
 }
