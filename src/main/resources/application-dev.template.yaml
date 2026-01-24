@@ -27,3 +27,6 @@ cloud:
     credentials:
       access-key: YOUR_ACCESS_KEY
       secret-key: YOUR_SECRET_KEY
+
+gemini:
+  api-key: GEMINI_API_KEY
