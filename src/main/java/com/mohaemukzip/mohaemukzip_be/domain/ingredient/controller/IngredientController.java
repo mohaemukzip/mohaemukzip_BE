@@ -138,8 +138,7 @@ public class IngredientController {
 
         return ApiResponse.onSuccess("소중한 의견 감사합니다 *.* ");
     }
-
-
+  
     @Operation(summary = "최근 재료 검색어 삭제")
     @DeleteMapping("/recent-searches/{recentSearchId}")
     public ApiResponse<String> deleteRecentSearch(
