@@ -3,12 +3,11 @@ package com.mohaemukzip.mohaemukzip_be.domain.search.service;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.IngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Summary;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.SummaryRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.search.converter.SearchConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResultDTO;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -23,23 +22,13 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class SearchQueryServiceImpl implements SearchQueryService {
 
     private final IngredientRepository ingredientRepository;
     private final RecipeRepository recipeRepository;
-    private final SummaryRepository summaryRepository;
+    @Qualifier("redisCacheTemplate")
     private final RedisTemplate<String, Object> redisTemplate;
-
-    public SearchQueryServiceImpl(
-            IngredientRepository ingredientRepository,
-            RecipeRepository recipeRepository,
-            SummaryRepository summaryRepository,
-            @Qualifier("redisCacheTemplate") RedisTemplate<String, Object> redisTemplate) {
-        this.ingredientRepository = ingredientRepository;
-        this.recipeRepository = recipeRepository;
-        this.summaryRepository = summaryRepository;
-        this.redisTemplate = redisTemplate;
-    }
 
     @Override
     public SearchResponseDTO search(String keyword) {
@@ -53,7 +42,7 @@ public class SearchQueryServiceImpl implements SearchQueryService {
 
         // Redis 키는 원본 키워드 사용 (또는 strippedKeyword 사용 가능)
         // 여기서는 원본 키워드를 사용하여 사용자 입력 그대로 캐싱
-        String cacheKey = "search::" + strippedKeyword; 
+        String cacheKey = "search::" + keyword.trim();
 
         // 1. Redis 캐시 조회
         try {
@@ -103,16 +92,6 @@ public class SearchQueryServiceImpl implements SearchQueryService {
         List<Recipe> recipes = recipeRepository.findByTitleContaining(keyword);
         for (Recipe recipe : recipes) {
             recipeMap.put(recipe.getId(), SearchConverter.toSearchResultDTO(recipe));
-        }
-
-        // 요약 레시피 제목 검색
-        List<Summary> summaries = summaryRepository.findByTitleContaining(keyword);
-        for (Summary summary : summaries) {
-            Recipe recipe = summary.getRecipe();
-            if (recipe != null) {
-                // 이미 존재하는 레시피는 건너뜀 (레시피 제목 검색 우선)
-                recipeMap.putIfAbsent(recipe.getId(), SearchConverter.toSearchResultDTO(recipe));
-            }
         }
 
         return new ArrayList<>(recipeMap.values());

@@ -1,9 +1,6 @@
 package com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto;
 
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberFavorite;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberIngredient;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberRecentSearch;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.*;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.enums.IngredientStatus;
 import lombok.Builder;
 import lombok.Getter;
@@ -189,4 +186,23 @@ public class IngredientResponseDTO {
             return new RecentSearchList(dto);
         }
     }
+
+    @Builder
+    //9. 관리자용 재료 요청 목록 조회
+    public record AdminRequestList(
+            Long requestId,
+            Long requestMemberId,
+            String ingredientName,
+            LocalDate createdAt
+    ) {
+        public static AdminRequestList from(IngredientRequest entity) {
+            return AdminRequestList.builder()
+                    .requestId(entity.getId())
+                    .requestMemberId(entity.getMember() != null ? entity.getMember().getId() : null)
+                    .ingredientName(entity.getIngredientName())
+                    .createdAt(entity.getCreatedAt() != null ? entity.getCreatedAt().toLocalDate() : null)
+                    .build();
+        }
+    }
+
 }
