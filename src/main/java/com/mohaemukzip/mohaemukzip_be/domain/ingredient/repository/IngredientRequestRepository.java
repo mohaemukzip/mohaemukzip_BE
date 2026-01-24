@@ -5,6 +5,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.IngredientRequest
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface IngredientRequestRepository extends JpaRepository<IngredientRequest, Long> {
@@ -12,4 +13,5 @@ public interface IngredientRequestRepository extends JpaRepository<IngredientReq
 
     Optional<IngredientRequest> findByMemberAndIngredientName(Member member, String ingredientName);
 
+    List<IngredientRequest> findAllByOrderByCreatedAtDesc();
 }

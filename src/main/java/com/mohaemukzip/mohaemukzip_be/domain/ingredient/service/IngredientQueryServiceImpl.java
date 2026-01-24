@@ -1,15 +1,9 @@
 package com.mohaemukzip.mohaemukzip_be.domain.ingredient.service;
 
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberFavorite;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberIngredient;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberRecentSearch;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.*;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Category;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.IngredientRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberFavoriteRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberIngredientRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberRecentSearchRepository;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.*;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
@@ -26,6 +20,7 @@ import static java.util.stream.Collectors.toList;
 @RequiredArgsConstructor
 public class IngredientQueryServiceImpl implements IngredientQueryService {
 
+    private final IngredientRequestRepository ingredientRequestRepository;
     private final MemberRecentSearchRepository memberRecentSearchRepository;
     private final MemberRepository memberRepository;
     private final IngredientRepository ingredientRepository;
@@ -106,6 +101,15 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
                 memberRecentSearchRepository.findAllByMemberOrderByUpdatedAtDesc(member);
 
         return IngredientResponseDTO.RecentSearchList.from(recentSearches);
+    }
+
+    @Override
+    public List<IngredientResponseDTO.AdminRequestList> getIngredientRequestList() {
+        List<IngredientRequest> requests = ingredientRequestRepository.findAllByOrderByCreatedAtDesc();
+
+        return requests.stream()
+                .map(IngredientResponseDTO.AdminRequestList::from)
+                .toList();
     }
 
 
