@@ -253,8 +253,11 @@ public class RecipeCrawler {
         log.info("Gemini status: {}", response.getStatusCode());
         log.debug("Gemini raw body:\n{}", response.getBody());
 
-        // 응답 파싱
-        JsonNode root = objectMapper.readTree(response.getBody());
+        String body = response.getBody();
+        if (body == null || body.isBlank()) {
+            throw new RuntimeException("Gemini API 응답 바디가 비어있습니다");
+        }
+        JsonNode root = objectMapper.readTree(body);
 
         JsonNode candidates = root.path("candidates");
         if (candidates.isEmpty() || candidates.get(0) == null) {
