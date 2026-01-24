@@ -82,6 +82,7 @@ public class RecipeController {
     ) {}
     
     @PostMapping("/recipes/{recipeId}/complete")
+    @Operation(summary = "요리 완료 API", description = "특정 RecipeId에 속하는 레시피를 CookingRecord에 저장하고, 해당 레시피의 난이도를 갱신합니다.")
     public ApiResponse<RecipeResponseDTO.CookingRecordCreateResponseDTO> createCookingRecord(
             @PathVariable Long recipeId,
             @RequestParam int rating,
