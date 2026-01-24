@@ -1,4 +1,4 @@
-package com.mohaemukzip.mohaemukzip_be.util;
+package com.mohaemukzip.mohaemukzip_be.global.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

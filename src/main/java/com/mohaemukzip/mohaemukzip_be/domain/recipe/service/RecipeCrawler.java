@@ -1,4 +1,4 @@
-package com.mohaemukzip.mohaemukzip_be.util;
+package com.mohaemukzip.mohaemukzip_be.domain.recipe.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

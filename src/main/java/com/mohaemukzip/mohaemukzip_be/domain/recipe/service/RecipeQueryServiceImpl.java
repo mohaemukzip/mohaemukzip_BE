@@ -6,9 +6,11 @@ import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.RecipeIngredi
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.RecipeConverter;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.RecipeDetailConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeDetailResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.RecipeStep;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Summary;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.*;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
@@ -37,6 +39,7 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
     private final SummaryRepository summaryRepository;
     private final MemberIngredientRepository memberIngredientRepository;
     private final RecipeStepRepository recipeStepRepository;
+    private final RecipeDetailConverter recipeDetailConverter;
 
 
     @Override
@@ -85,69 +88,25 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
 
         boolean summaryExists = summaryRepository.existsByRecipeId(recipeId);
 
-        // summary 조회
-        Summary summary = summaryRepository.findByRecipeId(recipeId).orElse(null);
+        List<RecipeStep> steps = fetchRecipeSteps(recipeId);
 
-        List<RecipeDetailResponseDTO.RecipeStepResponse> steps = List.of();
-
-
-        if (summary != null) {
-            steps = recipeStepRepository
-                    .findAllBySummaryIdOrderByStepNumberAsc(summary.getId())
-                    .stream()
-                    .map(step -> RecipeDetailResponseDTO.RecipeStepResponse.builder()
-                            .stepNumber(step.getStepNumber())
-                            .title(step.getTitle())
-                            .description(step.getDescription())
-                            .videoTime(RecipeDetailResponseDTO.RecipeStepResponse
-                                    .formatVideoTime(step.getVideoTime()))
-                            .build()
-                    )
-                    .toList();
-        }
-
-        if (steps.size() > 10) {
-            steps = steps.subList(0, 10);
-        }
-
-        return RecipeDetailResponseDTO.builder()
-                .recipeId(recipe.getId())
-                .title(recipe.getTitle())
-                .imageUrl(recipe.getImageUrl())
-                .videoUrl(recipe.getVideoUrl())
-                .videoId(recipe.getVideoId())
-                .channel(recipe.getChannel())
-                .channelId(recipe.getChannelId())
-                .channelProfileImageUrl(recipe.getChannelProfileImageUrl())
-                .cookingTimeMinutes(recipe.getCookingTime())
-                .videoDuration(recipe.getTime())
-                .views(recipe.getViews())
-                .difficulty(recipe.getLevel())
-                .ratingCount(recipe.getRatingCount())
-                .ingredients(
-                        recipeIngredients.stream()
-                                .map(ri -> RecipeDetailResponseDTO.IngredientResponse.builder()
-                                        .ingredientId(ri.getIngredient().getId())
-                                        .name(ri.getIngredient().getName())
-                                        .amount(ri.getAmount())
-                                        .unit(
-                                                ri.getIngredient().getUnit() != null
-                                                        ? ri.getIngredient().getUnit().name()
-                                                        : null
-                                        )
-                                        .hasIngredient(
-                                                memberIngredientIds.contains(
-                                                        ri.getIngredient().getId()
-                                                )
-                                        )
-                                        .build()
-                                )
-                                .toList()
-                )
-                .summaryExists(summaryExists)
-                .steps(steps)
-                .isBookmarked(isBookmarked)
-                .build();
+        return recipeDetailConverter.toDTO(
+                recipe,
+                recipeIngredients,
+                memberIngredientIds,
+                summaryExists,
+                steps,
+                isBookmarked
+        );
     }
 
+    private List<RecipeStep> fetchRecipeSteps(Long recipeId) {
+        Summary summary = summaryRepository.findByRecipeId(recipeId).orElse(null);
+
+        if (summary == null) {
+            return List.of();
+        }
+
+        return recipeStepRepository.findAllBySummaryIdOrderByStepNumberAsc(summary.getId());
+    }
 }
