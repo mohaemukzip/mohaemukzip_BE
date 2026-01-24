@@ -7,6 +7,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.search.converter.SearchConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResultDTO;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -21,20 +22,13 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class SearchQueryServiceImpl implements SearchQueryService {
 
     private final IngredientRepository ingredientRepository;
     private final RecipeRepository recipeRepository;
+    @Qualifier("redisCacheTemplate")
     private final RedisTemplate<String, Object> redisTemplate;
-
-    public SearchQueryServiceImpl(
-            IngredientRepository ingredientRepository,
-            RecipeRepository recipeRepository,
-            @Qualifier("redisCacheTemplate") RedisTemplate<String, Object> redisTemplate) {
-        this.ingredientRepository = ingredientRepository;
-        this.recipeRepository = recipeRepository;
-        this.redisTemplate = redisTemplate;
-    }
 
     @Override
     public SearchResponseDTO search(String keyword) {
@@ -48,7 +42,7 @@ public class SearchQueryServiceImpl implements SearchQueryService {
 
         // Redis 키는 원본 키워드 사용 (또는 strippedKeyword 사용 가능)
         // 여기서는 원본 키워드를 사용하여 사용자 입력 그대로 캐싱
-        String cacheKey = "search::" + strippedKeyword; 
+        String cacheKey = "search::" + keyword.trim();
 
         // 1. Redis 캐시 조회
         try {
