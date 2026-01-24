@@ -11,6 +11,6 @@ import java.util.List;
 import java.util.Set;
 
 public interface MemberRecipeRepository extends JpaRepository<MemberRecipe,Long> {
-    @Query("SELECT mr.recipe.id FROM MemberRecipe mr WHERE mr.member = :member AND mr.recipe IN :recipes")
-    Set<Long> findBookmarkedRecipeIds(@Param("member") Member member, @Param("recipes") List<Recipe> recipes);
+    @Query("SELECT mr.recipe.id FROM MemberRecipe mr WHERE mr.member = :member AND mr.recipe.id IN :recipes")
+    Set<Long> findBookmarkedRecipeIds(@Param("member") Member member, @Param("recipeIds") List<Long> recipeIds);
 }

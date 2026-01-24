@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -45,7 +46,11 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
 
         Set<Long> bookmarkedRecipeIds = Collections.emptySet();
         if (member != null && !recipePage.isEmpty()) {
-            bookmarkedRecipeIds = memberRecipeRepository.findBookmarkedRecipeIds(member, recipePage.getContent());
+            List<Long> recipeIds = recipePage.getContent().stream()
+                    .map(Recipe::getId)
+                    .collect(Collectors.toList());
+            bookmarkedRecipeIds = memberRecipeRepository
+                    .findBookmarkedRecipeIds(member, recipeIds);
         }
 
         return RecipeConverter.toRecipePreviewListDTO(recipePage, bookmarkedRecipeIds);
