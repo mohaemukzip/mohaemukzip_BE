@@ -8,10 +8,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeDetailResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Summary;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeCategoryRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeStepRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.SummaryRepository;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.*;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +32,8 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
     private final SummaryRepository summaryRepository;
     private final MemberIngredientRepository memberIngredientRepository;
     private final RecipeStepRepository recipeStepRepository;
+    private final MemberRecipeRepository memberRecipeRepository;
+
 
     @Override
     public RecipeResponseDTO.RecipePreviewListDTO getRecipesByCategoryId(Long categoryId, Integer page) {
@@ -52,6 +51,9 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
     public RecipeDetailResponseDTO getRecipeDetail(Long recipeId, Long memberId) {
         Recipe recipe = recipeRepository.findById(recipeId)
                 .orElseThrow(() -> new BusinessException(ErrorStatus.RECIPE_NOT_FOUND));
+
+        boolean isBookmarked =
+                memberRecipeRepository.existsByMember_IdAndRecipe_Id(memberId, recipeId);
 
         List<RecipeIngredient> recipeIngredients =
                 recipeIngredientRepository.findAllByRecipeId(recipeId);
@@ -102,9 +104,12 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
                 .videoUrl(recipe.getVideoUrl())
                 .videoId(recipe.getVideoId())
                 .channel(recipe.getChannel())
-                .cookingTime(recipe.getCookingTime())
+                .channelId(recipe.getChannelId())
+                .channelProfileImageUrl(recipe.getChannelProfileImageUrl())
+                .cookingTimeMinutes(recipe.getCookingTime())
+                .videoDuration(recipe.getTime())
                 .views(recipe.getViews())
-                .level(recipe.getLevel())
+                .difficulty(recipe.getLevel())
                 .ratingCount(recipe.getRatingCount())
                 .ingredients(
                         recipeIngredients.stream()
@@ -128,6 +133,7 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
                 )
                 .summaryExists(summaryExists)
                 .steps(steps)
+                .isBookmarked(isBookmarked)
                 .build();
     }
 

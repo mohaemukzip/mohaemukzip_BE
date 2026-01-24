@@ -19,12 +19,18 @@ public class RecipeDetailResponseDTO {
     private String imageUrl;
     private String videoUrl;
     private String channel;
-    private Integer cookingTime;
+    private String channelId;
+    private Integer cookingTimeMinutes;
+    private String videoDuration;
     private Long views;
     private String videoId;
 
-    private Double level;
+    private Double difficulty;
     private Integer ratingCount;
+
+    private String channelProfileImageUrl;
+    private Boolean isBookmarked;
+
 
     private List<IngredientResponse> ingredients;
     private boolean summaryExists;

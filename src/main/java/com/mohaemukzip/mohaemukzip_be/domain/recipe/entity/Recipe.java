@@ -24,7 +24,7 @@ public class Recipe extends BaseEntity {
     @Builder.Default
     private Double level = 0.0;
 
-    @Column(name = "rating_count")
+    @Column(name = "rating_count", nullable = false)
     @Builder.Default
     private Integer ratingCount = 0;
 
@@ -55,6 +55,9 @@ public class Recipe extends BaseEntity {
 
     @Column(name = "video_url", nullable = false)
     private String videoUrl;
+
+    @Column(name = "channel_profile_image_url",  nullable = false)
+    private String channelProfileImageUrl;
 
     public void addRating(int newRating) {
         if (newRating < 1 || newRating > 5) {

@@ -56,6 +56,15 @@ public class RecipeCrawler {
             YouTubeData youtubeData = fetchYouTubeData(videoId);
             log.info("YouTube 데이터 조회 성공 - title: {}", youtubeData.title());
 
+            String channelProfileImageUrl = null;
+            try {
+                channelProfileImageUrl = fetchChannelProfileImageUrl(youtubeData.channelId());
+            } catch (Exception e) {
+                // 채널 프로필은 부가 정보라 실패해도 전체 플로우를 깨지 않도록
+                log.warn("채널 프로필 이미지 조회 실패 - channelId: {}, err: {}",
+                        youtubeData.channelId(), e.getMessage());
+            }
+
             // 2. Gemini API로 카테고리 + 조리시간 + 재료 추출
             RecipeAnalysis analysis = extractRecipeData(
                     youtubeData.title(),
@@ -81,7 +90,8 @@ public class RecipeCrawler {
                     analysis.cookingTime(),
                     youtubeData.viewCount(),
                     analysis.category(),
-                    analysis.ingredients()
+                    analysis.ingredients(),
+                    channelProfileImageUrl
             );
 
             log.info("크롤링 성공 - videoId: {}", videoId);
@@ -147,6 +157,42 @@ public class RecipeCrawler {
                 formattedTime,
                 statistics.path("viewCount").asLong()
         );
+    }
+
+    private String fetchChannelProfileImageUrl(String channelId) throws Exception {
+        if (channelId == null || channelId.isBlank()) return null;
+
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl("https://www.googleapis.com/youtube/v3/channels")
+                .queryParam("part", "snippet")
+                .queryParam("id", channelId)
+                .queryParam("key", youtubeApiKey)
+                .build(true)
+                .toUri();
+
+        log.debug("YouTube Channel API 호출 - channelId: {}", channelId);
+
+        ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
+        JsonNode root = objectMapper.readTree(response.getBody());
+        JsonNode items = root.path("items");
+
+        if (items.isEmpty()) {
+            log.warn("Channel not found or no items - channelId: {}", channelId);
+            return null;
+        }
+
+        JsonNode thumbnails = items.get(0).path("snippet").path("thumbnails");
+
+        String high = thumbnails.path("high").path("url").asText(null);
+        if (high != null && !high.isBlank()) return high;
+
+        String medium = thumbnails.path("medium").path("url").asText(null);
+        if (medium != null && !medium.isBlank()) return medium;
+
+        String def = thumbnails.path("default").path("url").asText(null);
+        if (def != null && !def.isBlank()) return def;
+
+        return null;
     }
 
     /**
@@ -356,7 +402,8 @@ public class RecipeCrawler {
             Integer cookingTime,   // 15 (조리 시간)
             Long viewCount,
             String category,       // "KOREAN", "CHINESE" 등
-            List<IngredientData> ingredients
+            List<IngredientData> ingredients,
+            String channelProfileImageUrl
     ) {}
 
     /**

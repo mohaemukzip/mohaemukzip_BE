@@ -110,6 +110,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
                 .views(data.viewCount())
                 .imageUrl(data.thumbnailUrl())
                 .category(category)
+                .channelProfileImageUrl(data.channelProfileImageUrl())
                 .videoId(data.videoId())
                 .videoUrl(data.videoUrl())
                 .build();
