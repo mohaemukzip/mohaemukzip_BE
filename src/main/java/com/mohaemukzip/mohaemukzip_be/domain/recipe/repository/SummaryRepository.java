@@ -9,6 +9,6 @@ import java.util.List;
 
 public interface SummaryRepository extends JpaRepository<Summary,Long> {
     
-    @Query("SELECT s FROM Summary s JOIN FETCH s.recipe WHERE REPLACE(s.title, ' ', '') LIKE CONCAT('%', :keyword, '%')")
+    @Query("SELECT s FROM Summary s JOIN FETCH s.recipe WHERE REPLACE(s.title, ' ', '') LIKE CONCAT('%', REPLACE(:keyword, ' ', ''), '%')")
     List<Summary> findByTitleContaining(@Param("keyword") String keyword);
 }
