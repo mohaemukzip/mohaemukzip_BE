@@ -1,6 +1,7 @@
 package com.mohaemukzip.mohaemukzip_be.domain.recipe.controller;
 
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeDetailResponseDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.RecipeCommandService;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.RecipeQueryService;
@@ -39,9 +40,25 @@ public class RecipeController {
     })
     public ApiResponse<RecipeResponseDTO.RecipePreviewListDTO> getRecipes(
             @RequestParam(name = "categoryId") @Positive Long categoryId,
-            @RequestParam(name = "page", defaultValue = "0") @PositiveOrZero Integer page
+            @RequestParam(name = "page", defaultValue = "0") @PositiveOrZero Integer page,
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        return ApiResponse.onSuccess(recipeQueryService.getRecipesByCategoryId(categoryId, page));
+        Member member = (userDetails != null) ? userDetails.getMember() : null;
+        return ApiResponse.onSuccess(recipeQueryService.getRecipesByCategoryId(categoryId, page, member));
+    }
+
+    @GetMapping("/{recipeId}")
+    @Operation(summary = "레시피 상세 조회 API", description = "특정 레시피(recipeId)의 상세 정보를 조회합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "OK"),
+    })
+    @Parameter(name = "recipeId", description = "레시피 ID", required = true)
+    public ApiResponse<RecipeResponseDTO.RecipeDetailDTO> getRecipeDetail(
+            @PathVariable(name = "recipeId") @Positive Long recipeId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Member member = (userDetails != null) ? userDetails.getMember() : null;
+        return ApiResponse.onSuccess(recipeQueryService.getRecipeDetail(recipeId, member));
     }
 
     @PostMapping("/recipes")

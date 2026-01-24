@@ -9,7 +9,13 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
-@Table(name = "recipe_categories")
+@Table(name = "recipe_categories",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_recipe_category",
+                        columnNames = {"recipe_id", "category_id"}
+                )
+        })
 public class RecipeCategory extends BaseEntity {
 
     @Id

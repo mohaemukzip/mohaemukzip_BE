@@ -12,15 +12,19 @@ import java.util.Optional;
 public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
 
     //검색어로 조회 (띄어쓰기 무시)
-    @Query("SELECT i FROM Ingredient i WHERE REPLACE(i.name, ' ', '') LIKE CONCAT('%', :name, '%')")
+    @Query("SELECT i FROM Ingredient i " +
+            "WHERE REPLACE(i.name, ' ', '') LIKE CONCAT('%', REPLACE(:name, ' ', ''), '%')")
     List<Ingredient> findByNameContaining(@Param("name") String name);
 
     //카테고리로 조회
     List<Ingredient> findByCategory(Category category);
 
     //검색어로 조회 + 카테고리로 조회 (동시에)
-    List<Ingredient> findByNameContainingAndCategory(String name, Category category);
-
+    @Query("SELECT i FROM Ingredient i " +
+            "WHERE REPLACE(i.name, ' ', '') LIKE CONCAT('%', REPLACE(:name, ' ', ''), '%') " +
+            "AND i.category = :category")
+    List<Ingredient> findByNameContainingAndCategory(@Param("name") String name,
+                                                     @Param("category") Category category);
     // 모든 재료 이름 조회 (Gemini 프롬프트용)
     @Query("SELECT i.name FROM Ingredient i")
     List<String> findAllNames();

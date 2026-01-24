@@ -6,22 +6,19 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-
+import java.time.LocalDateTime;
 public interface MemberRecentSearchRepository extends JpaRepository<MemberRecentSearch, Long> {
 
     Optional<MemberRecentSearch> findByMemberAndKeyword(Member member, String keyword);
 
     List<MemberRecentSearch> findAllByMemberOrderByUpdatedAtDesc(Member member);
 
-    @Modifying
-    @Query("UPDATE MemberRecentSearch m SET m.updatedAt = :now WHERE m.id = :id")
-    void updateUpdatedAt(@Param("id") Long id, @Param("now") LocalDateTime now);
-
 
     Optional<MemberRecentSearch> findByIdAndMemberId(Long id, Long memberId);
 
+    @Modifying
+    @Query("UPDATE MemberRecentSearch m SET m.updatedAt = :now WHERE m.id = :id")
+    void updateUpdatedAt(@Param("id") Long id, @Param("now") LocalDateTime now);
 }

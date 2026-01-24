@@ -10,9 +10,12 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface RecipeRepository extends JpaRepository<Recipe,Long> {
+public interface RecipeRepository extends JpaRepository<Recipe, Long> {
+    List<Recipe> findByTitleContaining(String keyword);
 
-    List<Recipe> findTop5ByOrderByViewsDesc();
+    // 랜덤 레시피 조회 (MySQL 전용)
+    @Query(value = "SELECT * FROM recipes ORDER BY RAND() LIMIT :limit", nativeQuery = true)
+    List<Recipe> findRandomRecipes(@Param("limit") int limit);
 
     @Query("SELECT r FROM Recipe r WHERE REPLACE(r.title, ' ', '') LIKE CONCAT('%', :keyword, '%')")
     List<Recipe> findByTitleContaining(@Param("keyword") String keyword);
@@ -26,4 +29,6 @@ public interface RecipeRepository extends JpaRepository<Recipe,Long> {
     // videoId 중복 저장 방지용
     boolean existsByVideoId(String videoId);
 
+    // 조회수(views) 내림차순으로 상위 5개 조회 (HomeService 사용)
+    List<Recipe> findTop5ByOrderByViewsDesc();
 }
