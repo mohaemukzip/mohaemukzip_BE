@@ -3,22 +3,19 @@ package com.mohaemukzip.mohaemukzip_be.domain.chatbot.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.request.GeminiRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.response.GeminiResponseDTO;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
-import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
-import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class GeminiService {
 
@@ -28,10 +25,14 @@ public class GeminiService {
     @Value("${gemini.api-url}")
     private String apiUrl;
 
-    @Value("${gemini.api-key}")
-    private String apiKey;
-
     private static final String MODEL_NAME = "gemini-2.5-flash";
+
+    public GeminiService(
+            @Qualifier("geminiWebClient") WebClient geminiWebClient,
+            ObjectMapper objectMapper) {
+        this.geminiWebClient = geminiWebClient;
+        this.objectMapper = objectMapper;
+    }
 
     public String generateChatResponse(String systemPrompt, String userPrompt) {
         GeminiRequestDTO request = GeminiRequestDTO.builder()
@@ -44,15 +45,9 @@ public class GeminiService {
                 .build();
 
         try {
-            URI uri = UriComponentsBuilder.fromHttpUrl(apiUrl)
-                    .queryParam("key", apiKey)
-                    .build()
-                    .toUri();
-
             log.info("Gemini API 요청 시작 (Model: {}): {}", MODEL_NAME, apiUrl);
             
             String rawResponse = geminiWebClient.post()
-                    .uri(uri)
                     .bodyValue(request)
                     .retrieve()
                     .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
