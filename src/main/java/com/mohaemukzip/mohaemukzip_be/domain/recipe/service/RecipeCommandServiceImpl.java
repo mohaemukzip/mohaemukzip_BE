@@ -13,6 +13,11 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.RecipeStep;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Summary;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.enums.Category;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.builder.GeminiPromptBuilder;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.GeminiResponseConverter;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.RecipeConverter;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.RecipeIngredientConverter;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.RecipeStepConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.CookingRecordRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeStepRepository;
@@ -39,7 +44,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.*;
 
@@ -50,33 +56,34 @@ import java.util.*;
 @Slf4j
 public class RecipeCommandServiceImpl implements RecipeCommandService {
 
+    private static final int MAX_RECIPE_STEPS = 10;
+
+    @Qualifier("geminiSummaryWebClient")
+    private final WebClient geminiSummaryWebClient;
     private final RecipeRepository recipeRepository;
     private final CookingRecordRepository cookingRecordRepository;
     private final IngredientRepository ingredientRepository;
     private final RecipeIngredientRepository recipeIngredientRepository;
-    private final RecipeCrawler recipeCrawler;
-
-    private final PythonTranscriptExecutor transcriptExecutor;
     private final RecipeStepRepository recipeStepRepository;
     private final SummaryRepository summaryRepository;
-
-    @Value("${gemini.api.key}")
-    private String geminiApiKey;
-
-    private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper;
+    private final PythonTranscriptExecutor transcriptExecutor;
 
 
+    private final RecipeConverter recipeConverter;
+    private final RecipeIngredientConverter recipeIngredientConverter;
+    private final GeminiResponseConverter geminiResponseConverter;
+    private final RecipeStepConverter recipeStepConverter;
+    private final GeminiPromptBuilder geminiPromptBuilder;
+    private final RecipeCrawler recipeCrawler;
 
+    public record SummaryCreateResult(boolean summaryExists, int stepCount) {}
+
+    @Override
     public void rateRecipe(Long memberId, Long recipeId, int rating) {
-        if (rating < 1 || rating > 5) {
-            throw new BusinessException(ErrorStatus.INVALID_RATING);
-        }
         Recipe recipe = recipeRepository.findByIdForUpdate(recipeId);
         if (recipe == null) {
-            throw new BusinessException(ErrorStatus.RECIPE_NOT_FOUND);
+            throw new IllegalArgumentException("레시피가 존재하지 않습니다.");
         }
-
         recipe.addRating(rating);
 
         CookingRecord record = CookingRecord.builder()
@@ -106,61 +113,8 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         RecipeCrawler.RecipeData data =
                 recipeCrawler.crawlRecipe(videoId, ingredientNames);
 
-        // Recipe 저장
-        Category category = Arrays.stream(Category.values())
-                .filter(c -> c.name().equalsIgnoreCase(data.category()))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 카테고리: " + data.category()));
-        Recipe recipe = Recipe.builder()
-                .title(data.title())
-                .level(0.0)
-                .ratingCount(0)
-                .time(data.time())
-                .cookingTime(data.cookingTime())
-                .channel(data.channelTitle())
-                .channelId(data.channelId())
-                .views(data.viewCount())
-                .imageUrl(data.thumbnailUrl())
-                .category(category)
-                .channelProfileImageUrl(data.channelProfileImageUrl())
-                .videoId(data.videoId())
-                .videoUrl(data.videoUrl())
-                .build();
-
-        try {
-                recipeRepository.save(recipe);
-            } catch (DataIntegrityViolationException e) {
-                throw new BusinessException(ErrorStatus.RECIPE_ALREADY_EXISTS);
-            }
-
-        // RecipeIngredient 저장
-        for (RecipeCrawler.IngredientData ingredientData : data.ingredients()) {
-
-            ingredientRepository.findByName(ingredientData.name())
-                    .ifPresentOrElse(ingredient -> {
-
-                        Double amount = null;
-                        try {
-                            amount = Double.valueOf(ingredientData.amount());
-                        } catch (NumberFormatException e) {
-                            log.warn("amount 파싱 실패: {}", ingredientData.amount());
-                        }
-                        RecipeIngredient recipeIngredient = RecipeIngredient.builder()
-                                .recipe(recipe)
-                                .ingredient(ingredient)
-                                .amount(amount)
-                                .build();
-
-                        recipeIngredientRepository.save(recipeIngredient);
-
-                    }, () -> {
-                        log.warn("❌ 재료 매칭 실패 - DB에 없음: {}", ingredientData.name());
-                    });
-        }
-
-        log.info("레시피 저장 완료 - recipeId={}, videoId={}",
-                recipe.getId(), videoId);
-
+        Recipe recipe = saveRecipe(data);
+        saveRecipeIngredients(recipe, data.ingredients());
         return recipe.getId();
     }
 
@@ -186,51 +140,70 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
                 transcriptExecutor.fetchTranscriptJson(recipe.getVideoId());
 
         // Summary 생성
-        Summary summary;
-        try {
-            summary = summaryRepository.save(
-                    Summary.builder()
-                            .recipe(recipe)
-                            .build()
-            );
-        } catch (DataIntegrityViolationException e) {
-            // 동시에 다른 요청이 summary 만든 경우
-            Summary raced = summaryRepository.findByRecipeId(recipeId)
-                    .orElseThrow(() -> e);
-            int count = recipeStepRepository
-                    .findAllBySummaryIdOrderByStepNumberAsc(raced.getId())
-                    .size();
-            return new SummaryCreateResult(true, count);
-        }
+        Summary summary = createSummaryWithRaceConditionHandling(recipe, recipeId);
 
         // Gemini → step draft
-        List<StepDraft> steps =
+        List<GeminiResponseConverter.StepDraft> steps =
                 generateStepsFromGemini(recipe.getTitle(), transcriptJson);
 
         //  Step 저장
-        List<RecipeStep> entities = steps.stream()
-                .map(s -> RecipeStep.builder()
-                        .summary(summary)
-                        .stepNumber(s.stepNumber())
-                        .title(s.title())
-                        .description(s.description())
-                        .videoTime(s.videoTime())
-                        .build()
-                )
-                .toList();
+        List<RecipeStep> entities = recipeStepConverter.toEntities(summary, steps);
 
         recipeStepRepository.saveAll(entities);
 
         return new SummaryCreateResult(true, entities.size());
     }
 
-    private List<StepDraft> generateStepsFromGemini(String recipeTitle, String transcriptJson) {
+    private Recipe saveRecipe(RecipeCrawler.RecipeData data) {
+        Recipe recipe = recipeConverter.toEntity(data);
 
-        String prompt = buildStepPrompt(recipeTitle, transcriptJson);
+        try {
+            return recipeRepository.save(recipe);
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalStateException("이미 저장된 레시피입니다. videoId=" + data.videoId(), e);
+        }
+    }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+    private void saveRecipeIngredients(Recipe recipe, List<RecipeCrawler.IngredientData> ingredientDataList) {
+        ingredientDataList.forEach(ingredientData ->
+                ingredientRepository.findByName(ingredientData.name())
+                        .ifPresentOrElse(
+                                ingredient -> saveRecipeIngredient(recipe, ingredient, ingredientData),
+                                () -> log.warn("재료 매칭 실패 - DB에 없음: {}", ingredientData.name())
+                        )
+        );
+    }
 
+    private void saveRecipeIngredient(
+            Recipe recipe,
+            Ingredient ingredient,
+            RecipeCrawler.IngredientData ingredientData
+    ) {
+        RecipeIngredient recipeIngredient = recipeIngredientConverter.toEntity(recipe, ingredient, ingredientData);
+        recipeIngredientRepository.save(recipeIngredient);
+    }
+
+    private Summary createSummaryWithRaceConditionHandling(Recipe recipe, Long recipeId) {
+        try {
+            return summaryRepository.save(
+                    Summary.builder()
+                            .recipe(recipe)
+                            .build()
+            );
+        } catch (DataIntegrityViolationException e) {
+            return summaryRepository.findByRecipeId(recipeId)
+                    .orElseThrow(() -> new RuntimeException("Race condition handling failed", e));
+        }
+    }
+
+
+    private List<GeminiResponseConverter.StepDraft> generateStepsFromGemini(String recipeTitle, String transcriptJson) {
+        String prompt = geminiPromptBuilder.buildRecipeStepPrompt(recipeTitle, transcriptJson);
+        String responseBody = callGeminiApi(prompt);
+        return geminiResponseConverter.convertToStepDrafts(responseBody, MAX_RECIPE_STEPS);
+    }
+
+    private String callGeminiApi(String prompt) {
         Map<String, Object> requestBody = Map.of(
                 "contents", List.of(
                         Map.of(
@@ -241,144 +214,11 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
                 )
         );
 
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
-
-        String url = String.format(
-                "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=%s",
-                geminiApiKey
-        );
-
-        ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            throw new RuntimeException("Gemini 호출 실패: " + response.getStatusCode());
-         }
-
-        JsonNode root;
-        try {
-            root = objectMapper.readTree(response.getBody());
-        } catch (Exception e) {
-            throw new RuntimeException("Gemini 응답 파싱 실패", e);
-        }
-
-        JsonNode candidates = root.path("candidates");
-        if (!candidates.isArray() || candidates.isEmpty()) {
-            throw new RuntimeException("Gemini candidates 결과가 비어있습니다.");
-        }
-        JsonNode textNode = candidates.get(0)
-                .path("content").path("parts").path(0).path("text");
-        if (textNode.isMissingNode()) {
-            throw new RuntimeException("Gemini text 결과가 비어있습니다.");
-        }
-        String rawText = textNode.asText();
-
-        String cleanedJson = stripCodeBlock(rawText);
-
-        JsonNode resultNode;
-        try {
-            resultNode = objectMapper.readTree(cleanedJson);
-        } catch (Exception e) {
-            log.error("Gemini cleaned json:\n{}", cleanedJson);
-            throw new RuntimeException("Gemini JSON 파싱 실패", e);
-        }
-
-        JsonNode stepsNode = resultNode.path("steps");
-        if (!stepsNode.isArray() || stepsNode.isEmpty()) {
-            throw new RuntimeException("Gemini steps 결과가 비어있습니다.");
-        }
-
-        List<StepDraft> steps = new ArrayList<>();
-        for (JsonNode node : stepsNode) {
-            steps.add(new StepDraft(
-                    node.path("stepNumber").asInt(),
-                    node.path("title").asText(),
-                    node.path("description").asText(),
-                    node.path("videoTime").isMissingNode() || node.path("videoTime").isNull()
-                            ? null
-                            : node.path("videoTime").asInt()
-            ));
-        }
-
-        if (steps.size() > 10) {
-            steps = steps.subList(0, 10);
-        }
-        return steps;
+        return geminiSummaryWebClient.post()
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
     }
 
-    private String stripCodeBlock(String text) {
-        if (text == null) return null;
-        text = text.trim();
-
-        if (text.startsWith("```")) {
-            text = text.replaceFirst("^```[a-zA-Z]*", "");
-            text = text.replaceFirst("```$", "");
-        }
-        return text.trim();
-    }
-
-    private String buildStepPrompt(String recipeTitle, String transcriptJson) {
-        return String.format("""
-    너는 요리 레시피 요약 어시스턴트다.
-    
-    레시피 제목: %s
-    
-    다음은 유튜브 영상 자막이다. JSON 배열이며, 각 원소는 text/start/duration을 가진다:
-    %s
-    
-    자막을 기반으로 '요약 레시피 STEP 목록'을 만들어라.
-    
-    규칙:
-    - steps는 시간 순으로 정렬
-    - stepNumber는 1부터 연속 정수
-    - 각 step은 title(짧고 행동 중심), description(자막 기반 요약) 포함
-    - videoTime은 해당 step이 시작되는 대표 시점을 '초' 단위 정수로 넣어라.
-      start 값을 참고해서 정수로 반올림/내림해서 넣어라. 정말 판단 불가능하면 null.
-    - JSON만 출력(마크다운/코드블럭/설명 금지)
-    - step은 최대 10개까지만 생성하라. 자막이 길더라도 가장 중요한 단계 10개만 선택하라.
-    
-    출력 스키마:
-    {
-      "steps": [
-        {"stepNumber": 1, "title": "고기와 기본 재료 준비하기", "description": "…", "videoTime": 304}
-      ]
-    }
-    """, recipeTitle, transcriptJson);
-    }
-
-    public record SummaryCreateResult(boolean summaryExists, int stepCount) {}
-    private record StepDraft(int stepNumber, String title, String description, Integer videoTime) {}
-
-
-
-    public RecipeResponseDTO.CookingRecordCreateResponseDTO createCookingRecord(
-            Long memberId,
-            Long recipeId,
-            int rating
-    ) {
-        if (rating < 1 || rating > 5) {
-            throw new BusinessException(ErrorStatus.INVALID_RATING);
-        }
-
-        Recipe recipe = recipeRepository.findByIdForUpdate(recipeId);
-        if (recipe == null) {
-            throw new BusinessException(ErrorStatus.RECIPE_NOT_FOUND);
-        }
-
-        recipe.addRating(rating); // level, ratingCount 내부에서 갱신
-
-        CookingRecord record = cookingRecordRepository.save(
-                CookingRecord.builder()
-                        .member(Member.builder().id(memberId).build())
-                        .recipe(recipe)
-                        .rating(rating)
-                        .build()
-        );
-
-        return RecipeResponseDTO.CookingRecordCreateResponseDTO.builder()
-                .cookingRecordId(record.getId())
-                .recipeId(recipe.getId())
-                .rating(rating)
-                .recipeLevel(recipe.getLevel())
-                .ratingCount(recipe.getRatingCount())
-                .build();
-    }
 }

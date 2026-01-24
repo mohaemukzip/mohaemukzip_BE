@@ -26,5 +26,4 @@ public interface IngredientCommandService {
   // 최근 검색어 삭제
     void deleteRecentSearch(Long memberId, Long recentSearchId);
 
-
 }

@@ -9,7 +9,8 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
-@Table(name = "summaries")
+@Table(name = "summaries", uniqueConstraints = {
+        @UniqueConstraint(columnNames = "recipe_id")})
 public class Summary extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
