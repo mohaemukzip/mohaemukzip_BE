@@ -8,6 +8,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${DB_DATABASE}?serverTimezone=Asia/Seoul
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     depends_on:
       mysql:
         condition: service_healthy
