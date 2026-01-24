@@ -14,25 +14,44 @@ import java.time.Duration;
 @Configuration
 public class GeminiConfig {
 
-    @Value("${gemini.api-key}")
-    private String apiKey;
+    @Value("${gemini.recipe.api-url}")
+    private String recipeApiUrl;
 
-    @Value("${gemini.timeout.connect:10}")
+    @Value("${gemini.recipe.api-key}")
+    private String recipeApiKey;
+
+    @Value("${gemini.summary.api-url}")
+    private String summaryApiUrl;
+
+    @Value("${gemini.summary.api-key}")
+    private String summaryApiKey;
+
+    @Value("${gemini.recipe.timeout.connect:10}")
     private int connectTimeout;
 
-    @Value("${gemini.timeout.response:30}")
+    @Value("${gemini.recipe.timeout.response:30}")
     private int responseTimeout;
 
-    @Bean
-    public WebClient geminiWebClient() {
+    @Bean(name = "geminiRecipeWebClient")
+    public WebClient geminiRecipeWebClient() {
+        return createWebClient(recipeApiUrl, recipeApiKey);
+    }
+
+    @Bean(name = "geminiSummaryWebClient")
+    public WebClient geminiSummaryWebClient() {
+        return createWebClient(summaryApiUrl, summaryApiKey);
+    }
+
+    private WebClient createWebClient(String baseUrl, String apiKey) {
         HttpClient httpClient = HttpClient.create()
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout * 1000)
                 .responseTimeout(Duration.ofSeconds(responseTimeout));
 
         return WebClient.builder()
+                .baseUrl(baseUrl)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .defaultHeader("x-goog-api-key", apiKey) // Gemini API 인증 헤더
+                .defaultHeader("x-goog-api-key", apiKey)
                 .build();
     }
 }

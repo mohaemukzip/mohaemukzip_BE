@@ -18,15 +18,13 @@ public class RecipeResponseDTO {
     public static class RecipeCommonDTO {
         private Long id;
         private String title;
-        private String imageUrl;
-        private Integer cookingTime;
-        private Double level;
-        private Integer ratingCount;
         private String channelName;
-        private Integer viewCount;
+        private Long viewCount;
         private String videoId;
         private String channelId;
         private String videoDuration;
+        private Integer cookingTimeMinutes;
+        private Double difficulty;
         private Boolean isBookmarked;
     }
 

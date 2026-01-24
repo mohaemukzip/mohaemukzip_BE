@@ -16,10 +16,27 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class PythonTranscriptExecutor {
 
-    @Value("${transcript.script-path:/app/scripts/get_youtube_transcript.py}")
+    @Value("${transcript.script-path}")
     private String scriptPath;
 
+    @Value("${spring.profiles.active:dev}")
+    private String activeProfile;
+
     public String fetchTranscriptJson(String videoId) {
+        if (!"prod".equals(activeProfile)) {
+            return """
+            [
+              {"text":"재료를 준비합니다","start":0,"duration":5},
+              {"text":"고기를 볶습니다","start":30,"duration":10},
+              {"text":"양념을 넣고 끓입니다","start":90,"duration":20}
+            ]
+        """;
+        }
+
+        return runPython(videoId);
+    }
+
+    private String runPython(String videoId) {
         try {
             ProcessBuilder pb = new ProcessBuilder(
                     "python3",

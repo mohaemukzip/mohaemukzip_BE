@@ -24,7 +24,7 @@ public class RecipeCrawlerRunner implements CommandLineRunner {
     public void run(String... args) throws Exception {
         // 1. 재료 이름 조회
         List<String> ingredientNames = ingredientRepository.findAllNames();
-        log.info("✅ 재료 개수: {}", ingredientNames.size());
+        log.info("재료 개수: {}", ingredientNames.size());
 
         // 2. 크롤링 실행
         String videoId = "j7s9VRsrm9o";  // 이 videoId만 내가 계속 직접 수정하면됨..

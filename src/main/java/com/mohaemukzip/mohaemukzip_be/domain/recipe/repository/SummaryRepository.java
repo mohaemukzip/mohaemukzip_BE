@@ -14,8 +14,4 @@ public interface SummaryRepository extends JpaRepository<Summary,Long> {
     boolean existsByRecipeId(Long recipeId);
 
     Optional<Summary> findByRecipeId(Long recipeId);
-
-
-    @Query("SELECT s FROM Summary s JOIN FETCH s.recipe WHERE REPLACE(s.title, ' ', '') LIKE CONCAT('%', REPLACE(:keyword, ' ', ''), '%')")
-    List<Summary> findByTitleContaining(@Param("keyword") String keyword);
 }

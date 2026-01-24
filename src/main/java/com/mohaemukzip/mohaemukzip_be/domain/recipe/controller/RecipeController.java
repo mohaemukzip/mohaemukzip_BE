@@ -24,7 +24,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/recipes")
 @Tag(name = "Recipe" , description = "레시피 관련 API")
 @Validated
-@RequestMapping
 public class RecipeController {
 
     private final RecipeQueryService recipeQueryService;
@@ -40,7 +39,7 @@ public class RecipeController {
     }
 
 
-    @GetMapping("/recipes/{recipeId}")
+    @GetMapping("/{recipeId}")
     @Operation(summary = "세부 레시피 조회 API", description = "특정 videoId에 속하는 레시피에 관한 정보를 조회합니다.")
     public ApiResponse<RecipeDetailResponseDTO> getRecipeDetail(
             @PathVariable Long recipeId,
@@ -51,7 +50,7 @@ public class RecipeController {
         );
     }
 
-    @PostMapping("/recipes/{recipeId}/summary")
+    @PostMapping("{recipeId}/summary")
     @Operation(summary = "요약 레시피 생성 API", description = "특정 RecipeId에 속하는 레시피의 조리법을 요약해서 저장합니다.")
     public ApiResponse<SummaryCreateResponse> createSummary(
             @PathVariable Long recipeId

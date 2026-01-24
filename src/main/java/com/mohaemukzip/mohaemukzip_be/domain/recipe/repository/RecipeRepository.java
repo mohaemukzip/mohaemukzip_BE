@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface RecipeRepository extends JpaRepository<Recipe, Long> {
-    List<Recipe> findByTitleContaining(String keyword);
 
     // 랜덤 레시피 조회 (MySQL 전용)
     @Query(value = "SELECT * FROM recipes ORDER BY RAND() LIMIT :limit", nativeQuery = true)

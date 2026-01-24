@@ -2,7 +2,6 @@ package com.mohaemukzip.mohaemukzip_be.domain.recipe.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.RecipeIngredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.IngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.RecipeIngredientRepository;
@@ -23,15 +22,12 @@ import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.*;
 
@@ -42,6 +38,8 @@ import java.util.*;
 @Slf4j
 public class RecipeCommandServiceImpl implements RecipeCommandService {
 
+    private static final int MAX_RECIPE_STEPS = 10;
+
     private final RecipeRepository recipeRepository;
     private final CookingRecordRepository cookingRecordRepository;
     private final IngredientRepository ingredientRepository;
@@ -51,15 +49,13 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
     private final PythonTranscriptExecutor transcriptExecutor;
     private final RecipeStepRepository recipeStepRepository;
     private final SummaryRepository summaryRepository;
-
-    @Value("${gemini.api.key}")
-    private String geminiApiKey;
-
-    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
+    @Qualifier("geminiSummaryWebClient")
+    private final WebClient geminiSummaryWebClient;
 
 
+    @Override
     public void rateRecipe(Long memberId, Long recipeId, int rating) {
         Recipe recipe = recipeRepository.findByIdForUpdate(recipeId);
         if (recipe == null) {
@@ -99,6 +95,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
                 .filter(c -> c.name().equalsIgnoreCase(data.category()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 카테고리: " + data.category()));
+
         Recipe recipe = Recipe.builder()
                 .title(data.title())
                 .level(0.0)
@@ -122,8 +119,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
             }
 
         // RecipeIngredient 저장
-        for (RecipeCrawler.IngredientData ingredientData : data.ingredients()) {
-
+        data.ingredients().forEach(ingredientData -> {
             ingredientRepository.findByName(ingredientData.name())
                     .ifPresentOrElse(ingredient -> {
 
@@ -142,12 +138,11 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
                         recipeIngredientRepository.save(recipeIngredient);
 
                     }, () -> {
-                        log.warn("❌ 재료 매칭 실패 - DB에 없음: {}", ingredientData.name());
+                        log.warn("재료 매칭 실패 - DB에 없음: {}", ingredientData.name());
                     });
-        }
+        });
 
-        log.info("레시피 저장 완료 - recipeId={}, videoId={}",
-                recipe.getId(), videoId);
+        log.info("레시피 저장 완료 - recipeId={}, videoId={}", recipe.getId(), videoId);
 
         return recipe.getId();
     }
@@ -216,9 +211,6 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
 
         String prompt = buildStepPrompt(recipeTitle, transcriptJson);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
         Map<String, Object> requestBody = Map.of(
                 "contents", List.of(
                         Map.of(
@@ -229,21 +221,20 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
                 )
         );
 
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
+        String responseBody = geminiSummaryWebClient.post()
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
 
-        String url = String.format(
-                "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=%s",
-                geminiApiKey
-        );
 
-        ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            throw new RuntimeException("Gemini 호출 실패: " + response.getStatusCode());
-         }
+        if (responseBody == null || responseBody.isBlank()) {
+            throw new RuntimeException("Gemini 응답이 비어있습니다.");
+        }
 
         JsonNode root;
         try {
-            root = objectMapper.readTree(response.getBody());
+            root = objectMapper.readTree(responseBody);
         } catch (Exception e) {
             throw new RuntimeException("Gemini 응답 파싱 실패", e);
         }
@@ -286,8 +277,8 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
             ));
         }
 
-        if (steps.size() > 10) {
-            steps = steps.subList(0, 10);
+        if (steps.size() > MAX_RECIPE_STEPS) {
+            steps = steps.subList(0, MAX_RECIPE_STEPS);
         }
         return steps;
     }
@@ -334,6 +325,5 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
 
     public record SummaryCreateResult(boolean summaryExists, int stepCount) {}
     private record StepDraft(int stepNumber, String title, String description, Integer videoTime) {}
-
 
 }

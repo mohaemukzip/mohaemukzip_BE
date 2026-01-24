@@ -2,48 +2,45 @@ package com.mohaemukzip.mohaemukzip_be.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mohaemukzip.mohaemukzip_be.global.config.YouTubeConfig;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-
-
 @Slf4j
 @Component
 public class RecipeCrawler {
-    @Value("${youtube.api.key}")
-    private String youtubeApiKey;
 
-    @Value("${gemini.api.key}")
-    private String geminiApiKey;
-
-    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final YouTubeConfig youtubeConfig;
+    private final WebClient youtubeWebClient;
+    private final WebClient geminiRecipeWebClient;
 
-    public RecipeCrawler(RestTemplate restTemplate, ObjectMapper objectMapper) {
-        this.restTemplate = restTemplate;
+    public RecipeCrawler(
+            ObjectMapper objectMapper,
+            YouTubeConfig youtubeConfig,
+            @Qualifier("youtubeWebClient") WebClient youtubeWebClient,
+            @Qualifier("geminiSummaryWebClient") WebClient geminiRecipeWebClient) {
         this.objectMapper = objectMapper;
+        this.youtubeConfig = youtubeConfig;
+        this.youtubeWebClient = youtubeWebClient;
+        this.geminiRecipeWebClient = geminiRecipeWebClient;
     }
-
 
     @PostConstruct
     public void checkApiKeys() {
-        log.info(" YouTube API Key loaded: {}", youtubeApiKey != null && !youtubeApiKey.isBlank());
-        log.info(" Gemini API Key loaded: {}", geminiApiKey != null && !geminiApiKey.isBlank());
+        log.info("YouTube API Key loaded: {}",
+                youtubeConfig.getApiKey() != null && !youtubeConfig.getApiKey().isBlank());
+        log.info("Gemini Recipe WebClient configured");
     }
-
 
     /**
      * YouTube Video ID로 레시피 정보 + 재료 추출
@@ -97,16 +94,16 @@ public class RecipeCrawler {
             log.info("크롤링 성공 - videoId: {}", videoId);
             return result;
 
-        } catch (HttpClientErrorException.Unauthorized e) {
+        } catch (WebClientResponseException.Unauthorized e) {
             log.error("API 인증 실패 - videoId: {}, 응답: {}", videoId, e.getResponseBodyAsString());
             throw new RuntimeException("API 인증 실패: API 키를 확인하세요", e);
 
-        } catch (HttpClientErrorException.Forbidden e) {
+        } catch (WebClientResponseException.Forbidden e) {
             log.error("API 할당량 초과 - videoId: {}, 응답: {}", videoId, e.getResponseBodyAsString());
             throw new RuntimeException("API 할당량 초과: 내일 다시 시도하세요", e);
 
-        } catch (HttpClientErrorException.NotFound e) {
-            log.error("❌ Gemini API 404 - endpoint/model/key 문제");
+        } catch (WebClientResponseException.NotFound e) {
+            log.error("Gemini API 404 - endpoint/model/key 문제");
             log.error("응답 바디: {}", e.getResponseBodyAsString());
             throw e;
 
@@ -119,80 +116,100 @@ public class RecipeCrawler {
     /**
      * YouTube Data API v3 호출
      */
-    private YouTubeData fetchYouTubeData(String videoId) throws Exception {
-        URI uri = UriComponentsBuilder
-                .fromHttpUrl("https://www.googleapis.com/youtube/v3/videos")
-                .queryParam("part", "snippet,contentDetails,statistics")
-                .queryParam("id", videoId)
-                .queryParam("key", youtubeApiKey)
-                .build(true)
-                .toUri();
+    private YouTubeData fetchYouTubeData(String videoId) {
+        log.debug("📡 YouTube API 호출 - videoId: {}", videoId);
 
-        log.debug("YouTube API 호출 - videoId: {}", videoId);
+        String responseBody = youtubeWebClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/videos")
+                        .queryParam("part", "snippet,contentDetails,statistics")
+                        .queryParam("id", videoId)
+                        .queryParam("key", youtubeConfig.getApiKey())
+                        .build())
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
 
-        ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
-        JsonNode root = objectMapper.readTree(response.getBody());
-        JsonNode items = root.path("items");
+        try {
+            JsonNode root = objectMapper.readTree(responseBody);
+            JsonNode items = root.path("items");
 
-        if (items.isEmpty()) {
-            throw new RuntimeException("Video not found: " + videoId);
+            if (items.isEmpty()) {
+                throw new RuntimeException("Video not found: " + videoId);
+            }
+
+            JsonNode item = items.get(0);
+            JsonNode snippet = item.path("snippet");
+            JsonNode contentDetails = item.path("contentDetails");
+            JsonNode statistics = item.path("statistics");
+
+            // Duration 파싱 (ISO 8601 → MM:SS)
+            String isoDuration = contentDetails.path("duration").asText();
+            String formattedTime = parseDuration(isoDuration);
+
+            return new YouTubeData(
+                    videoId,
+                    snippet.path("channelId").asText(),
+                    snippet.path("title").asText(),
+                    snippet.path("description").asText(),
+                    snippet.path("thumbnails").path("medium").path("url").asText(),
+                    snippet.path("channelTitle").asText(),
+                    formattedTime,
+                    statistics.path("viewCount").asLong()
+            );
+        } catch (Exception e) {
+            log.error("❌ YouTube API 응답 파싱 실패", e);
+            throw new RuntimeException("YouTube API 응답 파싱 실패", e);
         }
-
-        JsonNode item = items.get(0);
-        JsonNode snippet = item.path("snippet");
-        JsonNode contentDetails = item.path("contentDetails");
-        JsonNode statistics = item.path("statistics");
-
-        // Duration 파싱 (ISO 8601 → MM:SS)
-        String isoDuration = contentDetails.path("duration").asText();
-        String formattedTime = parseDuration(isoDuration);
-
-        return new YouTubeData(
-                videoId,
-                snippet.path("channelId").asText(),
-                snippet.path("title").asText(),
-                snippet.path("description").asText(),
-                snippet.path("thumbnails").path("medium").path("url").asText(),
-                snippet.path("channelTitle").asText(),
-                formattedTime,
-                statistics.path("viewCount").asLong()
-        );
     }
 
-    private String fetchChannelProfileImageUrl(String channelId) throws Exception {
-        if (channelId == null || channelId.isBlank()) return null;
-
-        URI uri = UriComponentsBuilder
-                .fromHttpUrl("https://www.googleapis.com/youtube/v3/channels")
-                .queryParam("part", "snippet")
-                .queryParam("id", channelId)
-                .queryParam("key", youtubeApiKey)
-                .build(true)
-                .toUri();
-
-        log.debug("YouTube Channel API 호출 - channelId: {}", channelId);
-
-        ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
-        JsonNode root = objectMapper.readTree(response.getBody());
-        JsonNode items = root.path("items");
-
-        if (items.isEmpty()) {
-            log.warn("Channel not found or no items - channelId: {}", channelId);
+    /**
+     * 채널 프로필 이미지 URL 조회
+     */
+    private String fetchChannelProfileImageUrl(String channelId) {
+        if (channelId == null || channelId.isBlank()) {
             return null;
         }
 
-        JsonNode thumbnails = items.get(0).path("snippet").path("thumbnails");
+        log.debug("📡 YouTube Channel API 호출 - channelId: {}", channelId);
 
-        String high = thumbnails.path("high").path("url").asText(null);
-        if (high != null && !high.isBlank()) return high;
+        String responseBody = youtubeWebClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/channels")
+                        .queryParam("part", "snippet")
+                        .queryParam("id", channelId)
+                        .queryParam("key", youtubeConfig.getApiKey())
+                        .build())
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
 
-        String medium = thumbnails.path("medium").path("url").asText(null);
-        if (medium != null && !medium.isBlank()) return medium;
+        try {
+            JsonNode root = objectMapper.readTree(responseBody);
+            JsonNode items = root.path("items");
 
-        String def = thumbnails.path("default").path("url").asText(null);
-        if (def != null && !def.isBlank()) return def;
+            if (items.isEmpty()) {
+                log.warn("⚠️ Channel not found - channelId: {}", channelId);
+                return null;
+            }
 
-        return null;
+            JsonNode thumbnails = items.get(0).path("snippet").path("thumbnails");
+
+            // 우선순위: high > medium > default
+            String high = thumbnails.path("high").path("url").asText(null);
+            if (high != null && !high.isBlank()) return high;
+
+            String medium = thumbnails.path("medium").path("url").asText(null);
+            if (medium != null && !medium.isBlank()) return medium;
+
+            String def = thumbnails.path("default").path("url").asText(null);
+            if (def != null && !def.isBlank()) return def;
+
+            return null;
+        } catch (Exception e) {
+            log.error("❌ Channel API 응답 파싱 실패", e);
+            return null;
+        }
     }
 
     /**
@@ -209,7 +226,7 @@ public class RecipeCrawler {
 
             return String.format("%d:%02d", minutes, seconds);
         } catch (Exception e) {
-            log.warn("Duration 파싱 실패: {}", isoDuration);
+            log.warn("⚠️ Duration 파싱 실패: {}", isoDuration);
             return "0:00";
         }
     }
@@ -221,79 +238,73 @@ public class RecipeCrawler {
             String title,
             String description,
             List<String> ingredientNames
-    ) throws Exception {
-
+    ) {
         String prompt = buildPrompt(title, description, ingredientNames);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
 
         Map<String, Object> requestBody = Map.of(
                 "contents", List.of(
-                        Map.of(
-                                "parts", List.of(
-                                        Map.of("text", prompt)
-                                )
-                        )
+                        Map.of("parts", List.of(Map.of("text", prompt)))
                 )
         );
 
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
+        log.debug("📡 Gemini API 호출 - title: {}", title);
 
-        String url = String.format(
-                "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=%s",
-                geminiApiKey
-        );
+        String responseBody = geminiRecipeWebClient.post()
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
 
-        log.debug("Gemini API 호출 - title: {}", title);
-
-        ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-
-        log.info("Gemini status: {}", response.getStatusCode());
-        log.debug("Gemini raw body:\n{}", response.getBody());
-
-        String body = response.getBody();
-        if (body == null || body.isBlank()) {
+        if (responseBody == null || responseBody.isBlank()) {
             throw new RuntimeException("Gemini API 응답 바디가 비어있습니다");
         }
-        JsonNode root = objectMapper.readTree(body);
 
-        JsonNode candidates = root.path("candidates");
-        if (candidates.isEmpty() || candidates.get(0) == null) {
-            throw new RuntimeException("Gemini API 응답에 candidates가 없습니다");
+        log.debug("Gemini raw response:\n{}", responseBody);
+
+        try {
+            JsonNode root = objectMapper.readTree(responseBody);
+
+            JsonNode candidates = root.path("candidates");
+            if (candidates.isEmpty() || candidates.get(0) == null) {
+                throw new RuntimeException("Gemini API 응답에 candidates가 없습니다");
+            }
+
+            JsonNode parts = candidates.get(0).path("content").path("parts");
+            if (parts.isEmpty() || parts.get(0) == null) {
+                throw new RuntimeException("Gemini API 응답에 parts가 없습니다");
+            }
+
+            String rawText = parts.get(0).path("text").asText();
+            log.debug("Gemini raw text:\n{}", rawText);
+
+            // 코드블록 제거 (Gemini가 ```json ... ``` 로 감싸서 응답하는 경우)
+            String cleanedJson = stripCodeBlock(rawText);
+            log.debug("Gemini cleaned JSON:\n{}", cleanedJson);
+
+            JsonNode resultNode = objectMapper.readTree(cleanedJson);
+
+            String category = resultNode.path("category").asText();
+            Integer cookingTime = resultNode.path("cookingTime").asInt();
+            JsonNode ingredientsNode = resultNode.path("ingredients");
+
+            if (!ingredientsNode.isArray()) {
+                throw new RuntimeException("Gemini 응답의 ingredients가 배열이 아닙니다");
+            }
+
+            List<IngredientData> ingredients = new ArrayList<>();
+            for (JsonNode node : ingredientsNode) {
+                ingredients.add(new IngredientData(
+                        node.path("name").asText(),
+                        node.path("amount").asText()
+                ));
+            }
+
+            return new RecipeAnalysis(category, cookingTime, ingredients);
+
+        } catch (Exception e) {
+            log.error("❌ Gemini 응답 파싱 실패", e);
+            throw new RuntimeException("Gemini 응답 파싱 실패: " + e.getMessage(), e);
         }
-        JsonNode parts = candidates.get(0).path("content").path("parts");
-        if (parts.isEmpty() || parts.get(0) == null) {
-            throw new RuntimeException("Gemini API 응답에 parts가 없습니다");
-        }
-        String rawText = parts.get(0).path("text").asText();
-
-        log.debug("Gemini raw text:\n{}", rawText);
-
-        // 여기서 코드블록 제거 (자꾸 Gemini가 ''' 내보냄)
-        String cleanedJson = stripCodeBlock(rawText);
-        log.debug("Gemini cleaned json:\n{}", cleanedJson);
-
-
-        JsonNode resultNode = objectMapper.readTree(cleanedJson);
-
-        String category = resultNode.path("category").asText();
-        Integer cookingTime = resultNode.path("cookingTime").asInt();
-        JsonNode ingredientsNode = resultNode.path("ingredients");
-        if (!ingredientsNode.isArray()) {
-            throw new RuntimeException("Gemini 응답의 ingredients가 배열이 아닙니다");
-        }
-
-        List<IngredientData> ingredients = new ArrayList<>();
-        for (JsonNode node : ingredientsNode) {
-            ingredients.add(new IngredientData(
-                    node.path("name").asText(),
-                    node.path("amount").asText()
-            ));
-        }
-
-        return new RecipeAnalysis(category, cookingTime, ingredients);
     }
 
     /**
@@ -304,20 +315,19 @@ public class RecipeCrawler {
             throw new RuntimeException("Gemini API 응답 텍스트가 비어있습니다");
         }
 
-
         text = text.trim();
 
-        // ```json ... ``` 또는 ``` ... ```
+        // ```json ... ``` 또는 ``` ... ``` 제거
         if (text.startsWith("```")) {
-            text = text.replaceFirst("^```[a-zA-Z]*", "");
-            text = text.replaceFirst("```$", "");
+            text = text.replaceFirst("^```[a-zA-Z]*\n?", "");
+            text = text.replaceFirst("\n?```$", "");
         }
 
         return text.trim();
     }
 
     /**
-     * Gemini 프롬프트
+     * Gemini 프롬프트 생성
      */
     private String buildPrompt(String title, String description, List<String> ingredientNames) {
         String ingredientList = (ingredientNames == null) ? "" : String.join(", ", ingredientNames);
@@ -366,20 +376,16 @@ public class RecipeCrawler {
            - 분량이 전혀 없으면 → "1" (기본값)
            - 모든 재료는 반드시 숫자 분량을 가져야 합니다
         
-        
         반드시 JSON만 출력하세요.
-            설명, 마크다운, 코드블록(```) 없이
-            아래 JSON 스키마 그대로 반환하세요.
-        
-        amount는 숫자(number) 타입으로 반환하세요 (문자열 X)
+        설명, 마크다운, 코드블록(```) 없이 아래 JSON 스키마 그대로 반환하세요.
         
         다음 JSON 스키마 형식으로 반환하세요:
         {
           "category": "KOREAN",
           "cookingTime": 15,
           "ingredients": [
-            {"name": "양배추", "amount": 1},
-            {"name": "소금", "amount": 0.5}
+            {"name": "양배추", "amount": "1"},
+            {"name": "소금", "amount": "0.5"}
           ]
         }
         
@@ -388,7 +394,7 @@ public class RecipeCrawler {
         """, ingredientList, title, description);
     }
 
-// ===== Record DTOs =====
+    // ===== Record DTOs =====
 
     /**
      * 크롤링 최종 결과
