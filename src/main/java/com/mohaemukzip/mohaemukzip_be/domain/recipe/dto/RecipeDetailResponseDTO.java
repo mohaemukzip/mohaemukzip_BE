@@ -1,6 +1,5 @@
 package com.mohaemukzip.mohaemukzip_be.domain.recipe.dto;
 
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.RecipeIngredient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

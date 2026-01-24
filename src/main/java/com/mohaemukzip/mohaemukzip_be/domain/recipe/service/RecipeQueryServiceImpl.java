@@ -39,7 +39,6 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
     private final SummaryRepository summaryRepository;
     private final MemberIngredientRepository memberIngredientRepository;
     private final RecipeStepRepository recipeStepRepository;
-    private final MemberRecipeRepository memberRecipeRepository;
     private final RecipeDetailConverter recipeDetailConverter;
 
 
