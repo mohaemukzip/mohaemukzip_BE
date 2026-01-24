@@ -20,10 +20,11 @@ public class Recipe extends BaseEntity {
     @Column(name = "title", nullable = false)
     private String title;
 
-    @Column(name = "level")
-    private Integer level;
+    @Column(name = "level", nullable = false)
+    @Builder.Default
+    private Double level = 0.0;
 
-    @Column(name = "rating_count")
+    @Column(name = "rating_count", nullable = false)
     @Builder.Default
     private Integer ratingCount = 0;
 
@@ -40,7 +41,7 @@ public class Recipe extends BaseEntity {
     private String channelId;
 
     @Column(name = "views")
-    private Integer views;
+    private Long views;
 
     @Column(name = "image_url")
     private String imageUrl;
@@ -49,20 +50,29 @@ public class Recipe extends BaseEntity {
     @Column(name = "category")
     private Category category;
 
-    @Column(name = "video_id", nullable = false)
+    @Column(name = "video_id", nullable = false, unique = true)
     private String videoId;
 
     @Column(name = "video_url", nullable = false)
     private String videoUrl;
 
-    public void addRating(Integer newRating) {
-        if (newRating == null || newRating < 1 || newRating > 5) {
+    @Column(name = "channel_profile_image_url",  nullable = false)
+    private String channelProfileImageUrl;
+
+    public void addRating(int newRating) {
+        if (newRating < 1 || newRating > 5) {
             throw new IllegalArgumentException("난이도는 1부터 5 사이의 값입니다.");
         }
 
-        Integer totalRating = (this.level * this.ratingCount) + newRating;
+        if ( this.ratingCount == null || this.ratingCount == 0) {
+            this.level = (double) newRating;
+            this.ratingCount = 1;
+            return;
+        }
+
+        double total = this.level * this.ratingCount;
         this.ratingCount += 1;
-        this.level = totalRating / this.ratingCount;
+        this.level = (total + newRating) / this.ratingCount;
     }
 
 

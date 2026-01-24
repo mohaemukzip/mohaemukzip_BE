@@ -29,4 +29,11 @@ cloud:
       secret-key: YOUR_SECRET_KEY
 
 gemini:
-  api-key: GEMINI_API_KEY
+  recipe:
+    api-key: YOUR_GEMINI_API_KEY  #레시피 챗봇
+  summary:
+    api-key: YOUR_GEMINI_RECIPE_KEY  #요약 생성용
+
+youtube:
+  api:
+    key: YOUR_YOUTUBE_API_KEY

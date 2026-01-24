@@ -19,12 +19,12 @@ public class RecipeResponseDTO {
         private Long id;
         private String title;
         private String channelName;
-        private Integer viewCount;
+        private Long viewCount;
         private String videoId;
         private String channelId;
         private String videoDuration;
         private Integer cookingTimeMinutes;
-        private Integer difficulty;
+        private Double difficulty;
         private Boolean isBookmarked;
     }
 
@@ -46,5 +46,25 @@ public class RecipeResponseDTO {
         private Long totalElements;
         private Boolean isFirst;
         private Boolean isLast;
+    }
+
+    @Builder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RecipeCreateRequest {
+        private String videoId;
+    }
+
+    public static record RecipeCreateResponse(Long recipeId) {}
+
+
+    @SuperBuilder
+    @Getter
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    @AllArgsConstructor
+    public static class RecipeDetailDTO extends RecipeCommonDTO {
+        private List<String> ingredients;
+        private List<String> instructions;
     }
 }
