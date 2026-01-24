@@ -8,4 +8,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface RecipeIngredientRepository extends JpaRepository<RecipeIngredient, Long> {
+    @Query("SELECT ri.ingredient.name FROM RecipeIngredient ri WHERE ri.recipe.id = :recipeId")
+    List<String> findIngredientNamesByRecipeId(@Param("recipeId") Long recipeId);
 }

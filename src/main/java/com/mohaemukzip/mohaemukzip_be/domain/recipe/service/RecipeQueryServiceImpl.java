@@ -63,7 +63,7 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
 
         boolean isBookmarked = false;
         if (member != null) {
-            Set<Long> bookmarkedIds = memberRecipeRepository.findBookmarkedRecipeIds(member, List.of(recipe));
+            Set<Long> bookmarkedIds = memberRecipeRepository.findBookmarkedRecipeIds(member, List.of(recipe.getId()));
             isBookmarked = bookmarkedIds.contains(recipe.getId());
         }
 

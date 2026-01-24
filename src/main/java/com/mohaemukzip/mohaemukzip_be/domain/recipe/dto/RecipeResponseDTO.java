@@ -28,7 +28,7 @@ public class RecipeResponseDTO {
         private Boolean isBookmarked;
     }
 
-    @Builder
+    @SuperBuilder
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     public static class RecipePreviewDTO extends RecipeCommonDTO {

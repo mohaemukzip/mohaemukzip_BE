@@ -185,26 +185,4 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
         memberRecentSearchRepository.delete(search);
 
     }
-
-    @Override
-    @Transactional
-    public void createIngredientRequest(Long memberId, IngredientRequestDTO.IngredientReq request) {
-
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
-
-        Optional<IngredientRequest> existingRequest =
-                ingredientRequestRepository.findByMemberAndIngredientName(member, request.getIngredientName());
-
-        if (existingRequest.isPresent()) {
-            throw new BusinessException(ErrorStatus.INGREDIENT_ALREADY_REQUESTED);
-        }
-
-        IngredientRequest newRequest = IngredientRequest.builder()
-                .member(member)
-                .ingredientName(request.getIngredientName())
-                .build();
-
-        ingredientRequestRepository.save(newRequest);
-    }
 }
