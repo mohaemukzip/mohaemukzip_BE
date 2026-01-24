@@ -16,7 +16,8 @@ import lombok.*;
         })
 public class RecipeStep extends BaseEntity {
 
-    @Id @GeneratedValue
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "recipe_step_id")
     private Long id;
 
