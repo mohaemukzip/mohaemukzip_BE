@@ -3,9 +3,7 @@ package com.mohaemukzip.mohaemukzip_be.domain.search.service;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.IngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Summary;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.SummaryRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.search.converter.SearchConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResultDTO;
@@ -27,17 +25,14 @@ public class SearchQueryServiceImpl implements SearchQueryService {
 
     private final IngredientRepository ingredientRepository;
     private final RecipeRepository recipeRepository;
-    private final SummaryRepository summaryRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
     public SearchQueryServiceImpl(
             IngredientRepository ingredientRepository,
             RecipeRepository recipeRepository,
-            SummaryRepository summaryRepository,
             @Qualifier("redisCacheTemplate") RedisTemplate<String, Object> redisTemplate) {
         this.ingredientRepository = ingredientRepository;
         this.recipeRepository = recipeRepository;
-        this.summaryRepository = summaryRepository;
         this.redisTemplate = redisTemplate;
     }
 
@@ -103,16 +98,6 @@ public class SearchQueryServiceImpl implements SearchQueryService {
         List<Recipe> recipes = recipeRepository.findByTitleContaining(keyword);
         for (Recipe recipe : recipes) {
             recipeMap.put(recipe.getId(), SearchConverter.toSearchResultDTO(recipe));
-        }
-
-        // 요약 레시피 제목 검색
-        List<Summary> summaries = summaryRepository.findByTitleContaining(keyword);
-        for (Summary summary : summaries) {
-            Recipe recipe = summary.getRecipe();
-            if (recipe != null) {
-                // 이미 존재하는 레시피는 건너뜀 (레시피 제목 검색 우선)
-                recipeMap.putIfAbsent(recipe.getId(), SearchConverter.toSearchResultDTO(recipe));
-            }
         }
 
         return new ArrayList<>(recipeMap.values());
