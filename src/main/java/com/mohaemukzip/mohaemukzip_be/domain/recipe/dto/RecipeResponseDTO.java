@@ -1,5 +1,6 @@
 package com.mohaemukzip.mohaemukzip_be.domain.recipe.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -40,6 +41,7 @@ public class RecipeResponseDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class RecipeCreateRequest {
+        @NotBlank
         private String videoId;
     }
 

@@ -69,10 +69,14 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
 
 
     public void rateRecipe(Long memberId, Long recipeId, int rating) {
+        if (rating < 1 || rating > 5) {
+            throw new BusinessException(ErrorStatus.INVALID_RATING);
+        }
         Recipe recipe = recipeRepository.findByIdForUpdate(recipeId);
         if (recipe == null) {
-            throw new IllegalArgumentException("레시피가 존재하지 않습니다.");
+            throw new BusinessException(ErrorStatus.RECIPE_NOT_FOUND);
         }
+
         recipe.addRating(rating);
 
         CookingRecord record = CookingRecord.builder()

@@ -40,6 +40,7 @@ public class PythonTranscriptExecutor {
                 }
             });
 
+            long startNs = System.nanoTime();
             boolean finished = process.waitFor(15, TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
@@ -47,7 +48,9 @@ public class PythonTranscriptExecutor {
                 throw new RuntimeException("Transcript script timeout");
             }
 
-            String output = outputFuture.get(1, TimeUnit.SECONDS);
+            long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNs);
+            long remainingMs = Math.max(1000, 15_000 - elapsedMs);
+            String output = outputFuture.get(remainingMs, TimeUnit.MILLISECONDS);
 
             if (process.exitValue() != 0) {
                 throw new RuntimeException("Transcript script failed: " + output);
@@ -55,6 +58,9 @@ public class PythonTranscriptExecutor {
 
             return output;
 
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Failed to fetch youtube transcript", e);
         } catch (Exception e) {
             throw new RuntimeException("Failed to fetch youtube transcript", e);
         }
