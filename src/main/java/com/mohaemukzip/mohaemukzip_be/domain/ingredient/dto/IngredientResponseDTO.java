@@ -3,6 +3,7 @@ package com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberFavorite;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberIngredient;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberRecentSearch;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.enums.IngredientStatus;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,6 +22,7 @@ public class IngredientResponseDTO {
         private String name;
         private String category;
         private String unit;
+        private Double weight;
 
         // 엔티티 -> DTO 변환 메서드
         public static Detail from(Ingredient ingredient) {
@@ -29,6 +31,7 @@ public class IngredientResponseDTO {
                     .name(ingredient.getName())
                     .category(ingredient.getCategory() != null ? ingredient.getCategory().getLabel() : null)
                     .unit(ingredient.getUnit() != null ? ingredient.getUnit().getLabel() : null)
+                    .weight(ingredient.getWeight())
                     .build();
         }
     }
@@ -111,7 +114,7 @@ public class IngredientResponseDTO {
     @Builder
     public record DeleteFridgeIngredient(Long memberIngredientId) {
     }
-  
+
     //5. 재료 즐겨찾기 등록
     @Builder
     public record AddFavorite(Long memberFavoriteId, Long ingredientId) {
@@ -150,9 +153,40 @@ public class IngredientResponseDTO {
     @Builder
     public record FavoriteList(
             List<FavoriteDetail> favoriteList
-    ) {}
+    ) {
+    }
 
     // 7. 즐겨찾기 재료 삭제
     @Builder
-    public record DeleteFavorite(Long memberFavoriteId) {}
+    public record DeleteFavorite(Long memberFavoriteId) {
+    }
+
+    // 8-1. 최근 재료 검색 조회
+    @Builder
+    public record RecentSearch(
+            Long memberRecentSearchId,
+            String keyword
+    ) {
+        public static RecentSearch from(MemberRecentSearch entity) {
+            return RecentSearch.builder()
+                    .memberRecentSearchId(entity.getId())
+                    .keyword(entity.getKeyword())
+                    .build();
+        }
+    }
+
+    //8-2. 최근 재료 검색 리스트 조회
+    @Builder
+    public record RecentSearchList(
+            List<RecentSearch> recentList
+    ) {
+
+        public static RecentSearchList from(List<MemberRecentSearch> entities) {
+            List<RecentSearch> dto = entities.stream()
+                    .map(RecentSearch::from)
+                    .toList();
+
+            return new RecentSearchList(dto);
+        }
+    }
 }
