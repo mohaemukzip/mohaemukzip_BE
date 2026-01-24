@@ -63,6 +63,8 @@ public enum ErrorStatus implements BaseCode {
     // 레시피 관련 에러
     RECIPE_NOT_FOUND(HttpStatus.NOT_FOUND, "RECIPE4001", "해당 레시피를 찾을 수 없습니다."),
     RECIPE_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "RECIPE4002", "이미 저장된 레시피입니다."),
+    INVALID_RATING_VALUE(HttpStatus.BAD_REQUEST, "RECIPE4003",   "난이도는 1부터 5 사이의 값입니다."),
+
     ;
     private final HttpStatus httpStatus;
     private final String code;

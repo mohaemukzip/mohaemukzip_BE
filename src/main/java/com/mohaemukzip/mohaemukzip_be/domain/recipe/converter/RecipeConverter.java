@@ -4,6 +4,8 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.enums.Category;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.RecipeCrawler;
+import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
+import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import com.mohaemukzip.mohaemukzip_be.global.util.TimeFormatter;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -70,6 +72,6 @@ public class RecipeConverter {
         return Arrays.stream(Category.values())
                 .filter(c -> c.name().equalsIgnoreCase(categoryName))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 카테고리: " + categoryName));
+                .orElseThrow(() -> new BusinessException(ErrorStatus.CATEGORY_NOT_FOUND));
     }
 }
