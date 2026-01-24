@@ -2,6 +2,8 @@ package com.mohaemukzip.mohaemukzip_be.domain.recipe.entity;
 
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.enums.Category;
 import com.mohaemukzip.mohaemukzip_be.global.entity.BaseEntity;
+import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
+import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -61,7 +63,7 @@ public class Recipe extends BaseEntity {
 
     public void addRating(int newRating) {
         if (newRating < 1 || newRating > 5) {
-            throw new IllegalArgumentException("난이도는 1부터 5 사이의 값입니다.");
+            throw new BusinessException(ErrorStatus.INVALID_RATING_VALUE);
         }
 
         if ( this.ratingCount == null || this.ratingCount == 0) {

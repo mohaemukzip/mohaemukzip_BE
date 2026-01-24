@@ -1,5 +1,6 @@
 package com.mohaemukzip.mohaemukzip_be.domain.recipe.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -53,18 +54,23 @@ public class RecipeResponseDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class RecipeCreateRequest {
+        @NotBlank
         private String videoId;
     }
 
     public static record RecipeCreateResponse(Long recipeId) {}
 
 
-    @SuperBuilder
+    @Builder
     @Getter
-    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    @NoArgsConstructor
     @AllArgsConstructor
-    public static class RecipeDetailDTO extends RecipeCommonDTO {
-        private List<String> ingredients;
-        private List<String> instructions;
+    public static class CookingRecordCreateResponseDTO {
+
+        private Long cookingRecordId;
+        private Long recipeId;
+        private Integer rating;      // 사용자가 준 별점 (1~5)
+        private Double recipeLevel;  // 갱신된 레시피 난이도
+        private Integer ratingCount; // 갱신된 평가 수
     }
 }

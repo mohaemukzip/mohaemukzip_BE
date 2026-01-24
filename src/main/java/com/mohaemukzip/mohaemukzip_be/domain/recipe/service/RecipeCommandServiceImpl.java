@@ -1,18 +1,16 @@
 package com.mohaemukzip.mohaemukzip_be.domain.recipe.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.RecipeIngredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.IngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.RecipeIngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.builder.GeminiPromptBuilder;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.CookingRecord;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.RecipeStep;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Summary;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.enums.Category;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.GeminiResponseConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.RecipeConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.RecipeIngredientConverter;
@@ -21,6 +19,8 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.CookingRecordRepo
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeStepRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.SummaryRepository;
+import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
+import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import com.mohaemukzip.mohaemukzip_be.global.service.PythonTranscriptExecutor;
 import lombok.RequiredArgsConstructor;
 
@@ -63,22 +63,6 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
 
     public record SummaryCreateResult(boolean summaryExists, int stepCount) {}
 
-    @Override
-    public void rateRecipe(Long memberId, Long recipeId, int rating) {
-        Recipe recipe = recipeRepository.findByIdForUpdate(recipeId);
-        if (recipe == null) {
-            throw new IllegalArgumentException("레시피가 존재하지 않습니다.");
-        }
-        recipe.addRating(rating);
-
-        CookingRecord record = CookingRecord.builder()
-                .member(Member.builder().id(memberId).build())
-                .recipe(recipe)
-                .rating(rating)
-                .build();
-
-        cookingRecordRepository.save(record);
-    }
 
     /**
      * videoId로 레시피 저장 (Recipe + RecipeIngredient)
@@ -88,7 +72,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
 
         // 중복 방지
         if (recipeRepository.existsByVideoId(videoId)) {
-            throw new IllegalStateException("이미 저장된 레시피입니다. videoId=" + videoId);
+            throw new BusinessException(ErrorStatus.RECIPE_ALREADY_EXISTS);
         }
 
         // Gemini 프롬프트용 재료 이름 조회
@@ -118,7 +102,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
 
         // Recipe 조회
         Recipe recipe = recipeRepository.findById(recipeId)
-                .orElseThrow(() -> new IllegalArgumentException("레시피가 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorStatus.RECIPE_NOT_FOUND));
 
         // 3자막 추출 (Python)
         String transcriptJson =
@@ -139,13 +123,46 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         return new SummaryCreateResult(true, entities.size());
     }
 
+    public RecipeResponseDTO.CookingRecordCreateResponseDTO createCookingRecord(
+            Long memberId,
+            Long recipeId,
+            int rating
+    ) {
+        if (rating < 1 || rating > 5) {
+            throw new BusinessException(ErrorStatus.INVALID_RATING);
+        }
+
+        Recipe recipe = recipeRepository.findByIdForUpdate(recipeId);
+        if (recipe == null) {
+            throw new BusinessException(ErrorStatus.RECIPE_NOT_FOUND);
+        }
+
+        recipe.addRating(rating); // level, ratingCount 내부에서 갱신
+
+        CookingRecord record = cookingRecordRepository.save(
+                CookingRecord.builder()
+                        .member(Member.builder().id(memberId).build())
+                        .recipe(recipe)
+                        .rating(rating)
+                        .build()
+        );
+
+        return RecipeResponseDTO.CookingRecordCreateResponseDTO.builder()
+                .cookingRecordId(record.getId())
+                .recipeId(recipe.getId())
+                .rating(rating)
+                .recipeLevel(recipe.getLevel())
+                .ratingCount(recipe.getRatingCount())
+                .build();
+    }
+
     private Recipe saveRecipe(RecipeCrawler.RecipeData data) {
         Recipe recipe = recipeConverter.toEntity(data);
 
         try {
             return recipeRepository.save(recipe);
         } catch (DataIntegrityViolationException e) {
-            throw new IllegalStateException("이미 저장된 레시피입니다. videoId=" + data.videoId(), e);
+            throw new BusinessException(ErrorStatus.RECIPE_ALREADY_EXISTS);
         }
     }
 

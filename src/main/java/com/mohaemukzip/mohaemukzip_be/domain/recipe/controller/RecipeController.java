@@ -1,19 +1,13 @@
 package com.mohaemukzip.mohaemukzip_be.domain.recipe.controller;
 
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeDetailResponseDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.RecipeCommandService;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.RecipeQueryService;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
 import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.Parameters;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
@@ -65,5 +59,20 @@ public class RecipeController {
             boolean summaryExists,
             int stepCount
     ) {}
-
+    
+    @PostMapping("/recipes/{recipeId}/complete")
+    @Operation(summary = "요리 완료 API", description = "특정 RecipeId에 속하는 레시피를 CookingRecord에 저장하고, 해당 레시피의 난이도를 갱신합니다.")
+    public ApiResponse<RecipeResponseDTO.CookingRecordCreateResponseDTO> createCookingRecord(
+            @PathVariable Long recipeId,
+            @RequestParam int rating,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ApiResponse.onSuccess(
+                recipeCommandService.createCookingRecord(
+                        userDetails.getMember().getId(),
+                        recipeId,
+                        rating
+                )
+        );
+    }
 }

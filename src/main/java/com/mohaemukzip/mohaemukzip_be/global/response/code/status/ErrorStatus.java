@@ -51,6 +51,7 @@ public enum ErrorStatus implements BaseCode {
     //점수 관련 에러
     INVALID_SCORE(HttpStatus.BAD_REQUEST, "SCORE4001", "유효하지 않은 점수입니다."),
     INVALID_LEVEL(HttpStatus.BAD_REQUEST, "SCORE4002", "유효하지 않은 레벨입니다."),
+    INVALID_RATING(HttpStatus.BAD_REQUEST, "SCORE4003", "유효하지 않은 평점입니다."),
 
     // 이미지 관련 에러
     INVALID_IMAGE_EXTENSION(HttpStatus.BAD_REQUEST, "IMAGE4001", "유효하지 않은 이미지 확장자입니다."),
@@ -61,6 +62,9 @@ public enum ErrorStatus implements BaseCode {
 
     // 레시피 관련 에러
     RECIPE_NOT_FOUND(HttpStatus.NOT_FOUND, "RECIPE4001", "해당 레시피를 찾을 수 없습니다."),
+    RECIPE_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "RECIPE4002", "이미 저장된 레시피입니다."),
+    INVALID_RATING_VALUE(HttpStatus.BAD_REQUEST, "RECIPE4003",   "난이도는 1부터 5 사이의 값입니다."),
+
     ;
     private final HttpStatus httpStatus;
     private final String code;
