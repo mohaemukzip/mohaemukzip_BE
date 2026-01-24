@@ -104,6 +104,7 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<IngredientResponseDTO.AdminRequestList> getIngredientRequestList() {
         List<IngredientRequest> requests = ingredientRequestRepository.findAllByOrderByCreatedAtDesc();
 

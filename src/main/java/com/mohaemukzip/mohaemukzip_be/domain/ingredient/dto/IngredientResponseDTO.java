@@ -190,15 +190,17 @@ public class IngredientResponseDTO {
     @Builder
     //9. 관리자용 재료 요청 목록 조회
     public record AdminRequestList(
+            Long requestId,
             Long requestMemberId,
             String ingredientName,
             LocalDate createdAt
     ) {
         public static AdminRequestList from(IngredientRequest entity) {
             return AdminRequestList.builder()
-                    .requestMemberId(entity.getMember().getId())
+                    .requestId(entity.getId())
+                    .requestMemberId(entity.getMember() != null ? entity.getMember().getId() : null)
                     .ingredientName(entity.getIngredientName())
-                    .createdAt(entity.getCreatedAt().toLocalDate())
+                    .createdAt(entity.getCreatedAt() != null ? entity.getCreatedAt().toLocalDate() : null)
                     .build();
         }
     }
