@@ -64,10 +64,10 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
                 .toList();
 
         // 유저가 보유한 재료 id Set 조회 (N+1 방지)
-        Set<Long> memberIngredientIds =
-                memberIngredientRepository.findIngredientIdsByMemberIdAndIngredientIdIn(
-                        memberId,
-                        ingredientIds
+        Set<Long> memberIngredientIds = ingredientIds.isEmpty()
+                ? Set.of()
+                : memberIngredientRepository.findIngredientIdsByMemberIdAndIngredientIdIn(
+                    memberId, ingredientIds
                 );
 
         boolean summaryExists = summaryRepository.existsByRecipeId(recipeId);

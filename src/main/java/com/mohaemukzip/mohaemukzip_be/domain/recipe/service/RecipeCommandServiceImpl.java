@@ -96,7 +96,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
 
         // 중복 방지
         if (recipeRepository.existsByVideoId(videoId)) {
-            throw new IllegalStateException("이미 저장된 레시피입니다. videoId=" + videoId);
+            throw new BusinessException(ErrorStatus.RECIPE_ALREADY_EXISTS);
         }
 
         // Gemini 프롬프트용 재료 이름 조회
@@ -130,7 +130,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         try {
                 recipeRepository.save(recipe);
             } catch (DataIntegrityViolationException e) {
-                throw new IllegalStateException("이미 저장된 레시피입니다. videoId=" + videoId, e);
+                throw new BusinessException(ErrorStatus.RECIPE_ALREADY_EXISTS);
             }
 
         // RecipeIngredient 저장
@@ -179,7 +179,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
 
         // Recipe 조회
         Recipe recipe = recipeRepository.findById(recipeId)
-                .orElseThrow(() -> new IllegalArgumentException("레시피가 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorStatus.RECIPE_NOT_FOUND));
 
         // 3자막 추출 (Python)
         String transcriptJson =

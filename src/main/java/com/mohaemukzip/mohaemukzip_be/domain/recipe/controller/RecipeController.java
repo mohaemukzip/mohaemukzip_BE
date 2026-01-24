@@ -56,7 +56,7 @@ public class RecipeController {
 
 
     @GetMapping("/recipes/{recipeId}")
-    @Operation(summary = "세부 레시피 조회 API", description = "특정 videoId에 속하는 레시피에 관한 정보를 조회합니다.")
+    @Operation(summary = "세부 레시피 조회 API", description = "특정 recipeId에 속하는 레시피에 관한 정보를 조회합니다.")
     public ApiResponse<RecipeDetailResponseDTO> getRecipeDetail(
             @PathVariable Long recipeId,
             @AuthenticationPrincipal CustomUserDetails userDetails
