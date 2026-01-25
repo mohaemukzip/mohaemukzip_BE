@@ -1,6 +1,5 @@
 package com.mohaemukzip.mohaemukzip_be.domain.search.controller;
 
-import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.RecipeQueryService;
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResponseDTO;
@@ -49,7 +48,7 @@ public class SearchController {
             @RequestParam(name = "page", defaultValue = "0") @PositiveOrZero Integer page,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        Member member = (userDetails != null) ? userDetails.getMember() : null;
-        return ApiResponse.onSuccess(recipeQueryService.getRecipesByCategoryId(categoryId, page, member));
+        Long memberId = userDetails.getMember().getId();
+        return ApiResponse.onSuccess(recipeQueryService.getRecipesByCategoryId(categoryId, page, memberId));
     }
 }

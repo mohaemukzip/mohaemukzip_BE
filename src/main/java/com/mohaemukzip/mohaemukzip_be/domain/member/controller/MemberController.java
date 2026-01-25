@@ -4,9 +4,8 @@ import com.mohaemukzip.mohaemukzip_be.domain.member.dto.MemberRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.MemberResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.service.MemberCommandService;
 import com.mohaemukzip.mohaemukzip_be.domain.member.service.MemberQueryService;
-import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
-import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @RestController
@@ -30,10 +31,6 @@ public class MemberController {
     @GetMapping("/profile")
     public ApiResponse<MemberResponseDTO.GetMemberDTO> getMyProfile(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-
-        if (userDetails == null) {
-            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
-        }
 
         Long memberId = userDetails.getMember().getId();
         MemberResponseDTO.GetMemberDTO profile = memberQueryService.getMyProfile(memberId);
@@ -51,5 +48,17 @@ public class MemberController {
 
         memberCommandService.updateProfile(memberId, req);
         return ApiResponse.onSuccess(null);
+    }
+
+    @GetMapping("/recently-viewed")
+    @Operation(summary = "최근 본 레시피 조회 API", description = "사용자가 최근에 조회한 레시피 목록을 반환합니다.")
+    public ApiResponse<List<RecipeResponseDTO.RecipePreviewDTO>> getRecentlyViewedRecipes(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        List<RecipeResponseDTO.RecipePreviewDTO> recipes = memberQueryService.getRecentlyViewedRecipes(
+                userDetails.getMember().getId()
+        );
+
+        return ApiResponse.onSuccess(recipes);
     }
 }
