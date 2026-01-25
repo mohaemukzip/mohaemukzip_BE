@@ -39,7 +39,8 @@ public class MemberMission extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private MissionStatus status;
+    @Builder.Default
+    private MissionStatus status = MissionStatus.ASSIGNED;
 
 
     public void completeToday() {

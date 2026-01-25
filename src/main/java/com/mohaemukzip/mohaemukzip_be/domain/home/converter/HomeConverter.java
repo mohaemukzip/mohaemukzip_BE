@@ -33,7 +33,7 @@ public class HomeConverter {
                 .build();
     }
 
-    public static HomeResponseDTO.TodayMissionDto toTodayMissionDto(Mission mission, Boolean isDone)  {
+    public static HomeResponseDTO.TodayMissionDto toTodayMissionDto(Mission mission, boolean isDone)  {
         return HomeResponseDTO.TodayMissionDto.builder()
                 .missionId(mission.getId())
                 .title(mission.getTitle())
