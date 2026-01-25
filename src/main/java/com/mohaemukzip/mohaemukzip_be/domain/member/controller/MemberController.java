@@ -27,8 +27,8 @@ public class MemberController {
     private final MemberQueryService memberQueryService;
     private final MemberCommandService memberCommandService;
 
-    @Operation(summary = "마이페이지 프로필 조회", description = "유저 프로필 + 레벨 정보")
-    @GetMapping("/profile")
+    @Operation(summary = "마이페이지 조회", description = "유저 프로필 + 레벨 정보")
+    @GetMapping("/me/mypage")
     public ApiResponse<MemberResponseDTO.GetMemberDTO> getMyProfile(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
@@ -39,7 +39,7 @@ public class MemberController {
     }
 
     @Operation(summary = "프로필 수정", description = "이미지/닉네임 중 하나이상 업데이트")
-    @PatchMapping("/profile")
+    @PatchMapping("/me/profile")
     public ApiResponse<Void> updateProfileImage(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody MemberRequestDTO.ProfileUpdateRequest req) {
@@ -50,7 +50,7 @@ public class MemberController {
         return ApiResponse.onSuccess(null);
     }
 
-    @GetMapping("/recently-viewed")
+    @GetMapping("/me/recently-viewed")
     @Operation(summary = "최근 본 레시피 조회 API", description = "사용자가 최근에 조회한 레시피 목록을 반환합니다.")
     public ApiResponse<List<RecipeResponseDTO.RecipePreviewDTO>> getRecentlyViewedRecipes(
             @AuthenticationPrincipal CustomUserDetails userDetails

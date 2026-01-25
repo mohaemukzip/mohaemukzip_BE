@@ -1,9 +1,9 @@
 package com.mohaemukzip.mohaemukzip_be.domain.member.service;
 
-import com.mohaemukzip.mohaemukzip_be.domain.member.converter.MemberConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.MemberResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.RecipeConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.MemberRecipeRepository;
@@ -73,7 +73,7 @@ public class MemberQueryServiceImpl implements MemberQueryService {
                         return null; // 삭제된 레시피는 제외
                     }
                     Boolean isBookmarked = bookmarkedRecipeIds.contains(recipeId);
-                    return MemberConverter.toRecipePreviewDTO(recipe, isBookmarked);
+                    return RecipeConverter.toRecipePreviewDTO(recipe, isBookmarked);
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
