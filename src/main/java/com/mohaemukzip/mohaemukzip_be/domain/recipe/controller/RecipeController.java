@@ -1,6 +1,7 @@
 package com.mohaemukzip.mohaemukzip_be.domain.recipe.controller;
 
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeDetailResponseDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.RecipeCommandService;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.RecipeQueryService;
@@ -26,7 +27,7 @@ public class RecipeController {
     @PostMapping
     @Operation(summary = "레시피 저장 API", description = "특정 video_id를 가진 유튜브 영상에 관한 레시피를 저장합니다.")
     public ApiResponse<RecipeResponseDTO.RecipeCreateResponse> createRecipe(
-            @RequestBody RecipeResponseDTO.RecipeCreateRequest request
+            @RequestBody RecipeRequestDTO.RecipeCreateRequest request
     ) {
         Long recipeId = recipeCommandService.saveRecipeByVideoId(request.getVideoId());
         return ApiResponse.onSuccess(new RecipeResponseDTO.RecipeCreateResponse(recipeId));

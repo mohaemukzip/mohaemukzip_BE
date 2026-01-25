@@ -49,14 +49,6 @@ public class RecipeResponseDTO {
         private Boolean isLast;
     }
 
-    @Builder
-    @Getter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class RecipeCreateRequest {
-        @NotBlank
-        private String videoId;
-    }
 
     public static record RecipeCreateResponse(Long recipeId) {}
 

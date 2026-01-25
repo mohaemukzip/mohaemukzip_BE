@@ -1,16 +1,24 @@
 package com.mohaemukzip.mohaemukzip_be.domain.mission.entity;
 
+import com.mohaemukzip.mohaemukzip_be.domain.home.entity.enums.MissionStatus;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDate;
 
 @Entity
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
-@Table(name = "member_missions")
+@Table(name = "member_missions", uniqueConstraints = {
+        @UniqueConstraint(
+                name = "UQ_MEMBER_ASSIGNED_DATE",
+                columnNames = {"member_id", "assigned_date"}
+        )
+})
 public class MemberMission extends BaseEntity {
 
     @Id
@@ -26,12 +34,21 @@ public class MemberMission extends BaseEntity {
     @JoinColumn(name = "mission_id", nullable = false)
     private Mission mission;
 
-    @Column(name = "is_completed", nullable = false)
-    @Builder.Default
-    private Boolean isCompleted = false;
+    @Column(name = "assignedDate")
+    private LocalDate assignedDate; // 오늘의 퀘스트 날짜
 
-    // 퀘스트 완료 메서드
-    public void complete() {
-        this.isCompleted = true;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    @Builder.Default
+    private MissionStatus status = MissionStatus.ASSIGNED;
+
+
+    public void completeToday() {
+        this.status = MissionStatus.COMPLETED;
     }
+
+    public void failToday() {
+        this.status = MissionStatus.FAILED;
+    }
+
 }
