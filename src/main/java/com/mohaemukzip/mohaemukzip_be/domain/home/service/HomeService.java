@@ -2,6 +2,7 @@ package com.mohaemukzip.mohaemukzip_be.domain.home.service;
 
 import com.mohaemukzip.mohaemukzip_be.domain.home.converter.HomeConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeResponseDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.home.entity.enums.MissionStatus;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.MemberMission;
@@ -165,7 +166,9 @@ public class HomeService {
         Mission mission = allMissions.get(index);
 
         // 4. 선택된 미션이 완료되었는지 여부 DTO에 담아 보내기 (완료된 미션은 프론트에서 따로 표시해야하기 떄문에 추가함)
-        boolean isDone = memberMissionRepository.existsByMemberIdAndMissionId(memberId, mission.getId());
+        LocalDate today = LocalDate.now();
+        boolean isDone = memberMissionRepository.existsByMemberIdAndMissionIdAndAssignedDateAndStatus(
+                memberId, mission.getId(), today, MissionStatus.COMPLETED);
 
         return HomeConverter.toTodayMissionDto(mission, isDone);
     }
@@ -175,5 +178,5 @@ public class HomeService {
         List<Recipe> recipes = recipeRepository.findTop5ByOrderByViewsDesc();
 
         return HomeConverter.toRecommendedRecipeDtos(recipes);
-    }
+}
 }

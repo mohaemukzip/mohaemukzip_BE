@@ -17,6 +17,6 @@ public interface MemberMissionRepository extends JpaRepository<MemberMission,Lon
     boolean existsByMemberIdAndMissionId(Long memberId, Long missionId);
 
     // 오늘 완료 여부
-    boolean existsByMemberIdAndAssignedDateAndStatus(Long memberId, LocalDate date, MissionStatus status);
+    boolean existsByMemberIdAndMissionIdAndAssignedDateAndStatus(Long memberId, Long MissionId, LocalDate assignedDate, MissionStatus status);
 
 }
