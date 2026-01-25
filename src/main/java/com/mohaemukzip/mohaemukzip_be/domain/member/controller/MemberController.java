@@ -4,9 +4,8 @@ import com.mohaemukzip.mohaemukzip_be.domain.member.dto.MemberRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.MemberResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.service.MemberCommandService;
 import com.mohaemukzip.mohaemukzip_be.domain.member.service.MemberQueryService;
-import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
-import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @RestController
@@ -26,14 +27,10 @@ public class MemberController {
     private final MemberQueryService memberQueryService;
     private final MemberCommandService memberCommandService;
 
-    @Operation(summary = "마이페이지 프로필 조회", description = "유저 프로필 + 레벨 정보")
-    @GetMapping("/profile")
+    @Operation(summary = "마이페이지 조회", description = "유저 프로필 + 레벨 정보")
+    @GetMapping("/me/mypage")
     public ApiResponse<MemberResponseDTO.GetMemberDTO> getMyProfile(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-
-        if (userDetails == null) {
-            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
-        }
 
         Long memberId = userDetails.getMember().getId();
         MemberResponseDTO.GetMemberDTO profile = memberQueryService.getMyProfile(memberId);
@@ -42,7 +39,7 @@ public class MemberController {
     }
 
     @Operation(summary = "프로필 수정", description = "이미지/닉네임 중 하나이상 업데이트")
-    @PatchMapping("/profile")
+    @PatchMapping("/me/profile")
     public ApiResponse<Void> updateProfileImage(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody MemberRequestDTO.ProfileUpdateRequest req) {
@@ -51,5 +48,17 @@ public class MemberController {
 
         memberCommandService.updateProfile(memberId, req);
         return ApiResponse.onSuccess(null);
+    }
+
+    @GetMapping("/me/recently-viewed")
+    @Operation(summary = "최근 본 레시피 조회 API", description = "사용자가 최근에 조회한 레시피 목록을 반환합니다.")
+    public ApiResponse<List<RecipeResponseDTO.RecipePreviewDTO>> getRecentlyViewedRecipes(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        List<RecipeResponseDTO.RecipePreviewDTO> recipes = memberQueryService.getRecentlyViewedRecipes(
+                userDetails.getMember().getId()
+        );
+
+        return ApiResponse.onSuccess(recipes);
     }
 }
