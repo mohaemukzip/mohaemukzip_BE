@@ -1,6 +1,8 @@
 package com.mohaemukzip.mohaemukzip_be.domain.recipe.repository;
 
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.MemberRecipe;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,4 +17,10 @@ public interface MemberRecipeRepository extends JpaRepository<MemberRecipe,Long>
 
     @Query("SELECT mr.recipe.id FROM MemberRecipe mr WHERE mr.member.id = :memberId AND mr.recipe.id IN :recipeIds")
     Set<Long> findBookmarkedRecipeIdsByMemberId(@Param("memberId") Long memberId, @Param("recipeIds") List<Long> recipeIds);
+
+    @Query("SELECT mr FROM MemberRecipe mr " +
+            "JOIN FETCH mr.recipe r " +
+            "WHERE mr.member.id = :memberId " +
+            "ORDER BY mr.createdAt DESC")
+    Page<MemberRecipe> findByMemberIdOrderByCreatedAtDesc(@Param("memberId") Long memberId, Pageable pageable);
 }

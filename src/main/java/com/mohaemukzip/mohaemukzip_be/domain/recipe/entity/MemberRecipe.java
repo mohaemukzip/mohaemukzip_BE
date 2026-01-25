@@ -1,6 +1,7 @@
 package com.mohaemukzip.mohaemukzip_be.domain.recipe.entity;
 
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
+import com.mohaemukzip.mohaemukzip_be.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,7 +18,7 @@ import lombok.*;
                 )
         })
 
-public class MemberRecipe {
+public class MemberRecipe extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_recipe_id")
