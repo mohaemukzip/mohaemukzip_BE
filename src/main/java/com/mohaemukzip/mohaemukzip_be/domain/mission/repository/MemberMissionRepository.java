@@ -16,7 +16,7 @@ public interface MemberMissionRepository extends JpaRepository<MemberMission,Lon
     // 특정 미션을 이미 도전한 이력(완료/실패 포함)인지 체크
     boolean existsByMemberIdAndMissionId(Long memberId, Long missionId);
 
-    // 오늘 완료 여부
-    boolean existsByMemberIdAndMissionIdAndAssignedDateAndStatus(Long memberId, Long MissionId, LocalDate assignedDate, MissionStatus status);
+    // 특정 미션의 오늘 완료 여부
+    boolean existsByMemberIdAndMissionIdAndAssignedDateAndStatus(Long memberId, Long missionId, LocalDate assignedDate, MissionStatus status);
 
 }
