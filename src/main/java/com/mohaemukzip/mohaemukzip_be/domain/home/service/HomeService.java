@@ -1,5 +1,6 @@
 package com.mohaemukzip.mohaemukzip_be.domain.home.service;
 
+import com.mohaemukzip.mohaemukzip_be.domain.home.converter.HomeConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
@@ -62,17 +63,15 @@ public class HomeService {
         // 7. 다음 레벨까지 필요한 점수
         LevelService.LevelProgressDto levelProgress = levelService.calculateLevelProgress(member.getScore());
 
-        return HomeResponseDTO.builder()
-                .level(levelProgress.currentLevel())
-                .title(levelProgress.title())
-                .monthlyCooking(monthlyCooking.intValue())
-                .score(member.getScore())
-                .nextLevelScore(levelProgress.nextLevelScore())
-                .consecutiveDays(consecutiveDays)
-                .weeklyCooking(weeklyCooking)
-                .todayMission(todayMission)
-                .recommendedRecipes(recommendedRecipes)
-                .build();
+        return HomeConverter.toHomeResponseDTO(
+                levelProgress,
+                monthlyCooking.intValue(),
+                member.getScore(),
+                consecutiveDays,
+                weeklyCooking,
+                todayMission,
+                recommendedRecipes
+        );
     }
 
     // 연속 집밥 일수 계산 (이번 주 범위 내에서만)
@@ -145,15 +144,7 @@ public class HomeService {
                         (existing, replacement) -> existing
                 ));
 
-        return HomeResponseDTO.WeeklyCookingDto.builder()
-                .monday(cookingByDay.getOrDefault(DayOfWeek.MONDAY, false))
-                .tuesday(cookingByDay.getOrDefault(DayOfWeek.TUESDAY, false))
-                .wednesday(cookingByDay.getOrDefault(DayOfWeek.WEDNESDAY, false))
-                .thursday(cookingByDay.getOrDefault(DayOfWeek.THURSDAY, false))
-                .friday(cookingByDay.getOrDefault(DayOfWeek.FRIDAY, false))
-                .saturday(cookingByDay.getOrDefault(DayOfWeek.SATURDAY, false))
-                .sunday(cookingByDay.getOrDefault(DayOfWeek.SUNDAY, false))
-                .build();
+        return HomeConverter.toWeeklyCookingDto(cookingByDay);
     }
 
     // 오늘의 미션 (현재는 도전완료까지 진행 안한 미션 중 하나를 랜덤하게 보여줌. 같은 날짜, 같은 사용자에겐 하루동안 지속하고
@@ -174,34 +165,15 @@ public class HomeService {
         Mission mission = allMissions.get(index);
 
         // 4. 선택된 미션이 완료되었는지 여부 DTO에 담아 보내기 (완료된 미션은 프론트에서 따로 표시해야하기 떄문에 추가함)
-        boolean isDone = memberMissionRepository.existsByMemberIdAndMissionIdAndIsCompletedTrue(memberId, mission.getId());
+        boolean isDone = memberMissionRepository.existsByMemberIdAndMissionId(memberId, mission.getId());
 
-        return HomeResponseDTO.TodayMissionDto.builder()
-                .missionId(mission.getId())
-                .title(mission.getTitle())
-                .description(mission.getDescription())
-                .reward(mission.getReward())
-                .isCompleted(isDone)
-                .build();
+        return HomeConverter.toTodayMissionDto(mission, isDone);
     }
 
     // 추천 레시피
     private List<HomeResponseDTO.RecommendedRecipeDto> getRecommendedRecipes() {
         List<Recipe> recipes = recipeRepository.findTop5ByOrderByViewsDesc();
 
-        return recipes.stream()
-                .map(recipe -> HomeResponseDTO.RecommendedRecipeDto.builder()
-                        .recipeId(recipe.getId())
-                        .title(recipe.getTitle())
-                        .videoId(recipe.getVideoId())
-                        .videoUrl(recipe.getVideoUrl())
-                        .imageUrl(recipe.getImageUrl())
-                        .channel(recipe.getChannel())
-                        .channelId(recipe.getChannelId())
-                        .views(recipe.getViews())
-                        .time(recipe.getTime())
-                        .cookingTime(recipe.getCookingTime())
-                        .build())
-                        .collect(Collectors.toList());
+        return HomeConverter.toRecommendedRecipeDtos(recipes);
     }
 }
