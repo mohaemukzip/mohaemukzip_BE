@@ -18,9 +18,10 @@ public interface MemberRecipeRepository extends JpaRepository<MemberRecipe,Long>
     @Query("SELECT mr.recipe.id FROM MemberRecipe mr WHERE mr.member.id = :memberId AND mr.recipe.id IN :recipeIds")
     Set<Long> findBookmarkedRecipeIdsByMemberId(@Param("memberId") Long memberId, @Param("recipeIds") List<Long> recipeIds);
 
-    @Query("SELECT mr FROM MemberRecipe mr " +
+    @Query( value = "SELECT mr FROM MemberRecipe mr " +
             "JOIN FETCH mr.recipe r " +
             "WHERE mr.member.id = :memberId " +
-            "ORDER BY mr.createdAt DESC")
+            "ORDER BY mr.createdAt DESC",
+            countQuery = "SELECT count(mr) FROM MemberRecipe mr WHERE mr.member.id = :memberId")
     Page<MemberRecipe> findByMemberIdOrderByCreatedAtDesc(@Param("memberId") Long memberId, Pageable pageable);
 }
