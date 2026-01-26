@@ -16,7 +16,7 @@ import java.time.LocalDate;
 @Table(name = "member_missions", uniqueConstraints = {
         @UniqueConstraint(
                 name = "UQ_MEMBER_ASSIGNED_DATE",
-                columnNames = {"member_id", "assigned_date"}
+                columnNames = {"member_id", "assignedDate"}
         )
 })
 public class MemberMission extends BaseEntity {
