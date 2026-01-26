@@ -83,10 +83,6 @@ public class RecentlyViewedRecipeManager {
     /**
      * 최근 본 레시피 목록 조회
      */
-    public List<Long> getListMypage(Long memberId) {
-        return getList(memberId, 3);
-    }
-
     public List<Long> getList(Long memberId) {
         return getList(memberId, MAX_SIZE);
     }
