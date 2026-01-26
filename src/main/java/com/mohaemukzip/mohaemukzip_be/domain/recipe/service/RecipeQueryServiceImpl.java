@@ -3,7 +3,6 @@ package com.mohaemukzip.mohaemukzip_be.domain.recipe.service;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.RecipeIngredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberIngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.RecipeIngredientRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.RecipeConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.RecipeDetailConverter;
@@ -15,6 +14,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Summary;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.*;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
+import com.mohaemukzip.mohaemukzip_be.global.service.RecentlyViewedRecipeManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -41,9 +41,11 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
     private final RecipeStepRepository recipeStepRepository;
     private final RecipeDetailConverter recipeDetailConverter;
 
+    private final RecentlyViewedRecipeManager recentlyViewedRecipeManager;
+
 
     @Override
-    public RecipeResponseDTO.RecipePreviewListDTO getRecipesByCategoryId(Long categoryId, Integer page, Member member) {
+    public RecipeResponseDTO.RecipePreviewListDTO getRecipesByCategoryId(Long categoryId, Integer page, Long memberId) {
         Page<Recipe> recipePage = recipeCategoryRepository.findRecipesByCategoryId(categoryId, PageRequest.of(page, PAGE_SIZE));
 
         // 첫 페이지인데 데이터가 없다면 -> 존재하지 않는 카테고리로 간주
@@ -52,12 +54,12 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
         }
 
         Set<Long> bookmarkedRecipeIds = Collections.emptySet();
-        if (member != null && !recipePage.isEmpty()) {
+        if (memberId != null && !recipePage.isEmpty()) {
             List<Long> recipeIds = recipePage.getContent().stream()
                     .map(Recipe::getId)
                     .collect(Collectors.toList());
             bookmarkedRecipeIds = memberRecipeRepository
-                    .findBookmarkedRecipeIds(member, recipeIds);
+                    .findBookmarkedRecipeIdsByMemberId(memberId, recipeIds);
         }
 
         return RecipeConverter.toRecipePreviewListDTO(recipePage, bookmarkedRecipeIds);
@@ -89,6 +91,8 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
         boolean summaryExists = summaryRepository.existsByRecipeId(recipeId);
 
         List<RecipeStep> steps = fetchRecipeSteps(recipeId);
+
+        recentlyViewedRecipeManager.add(memberId, recipeId);
 
         return recipeDetailConverter.toDTO(
                 recipe,
