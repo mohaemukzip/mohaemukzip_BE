@@ -1,6 +1,6 @@
 package com.mohaemukzip.mohaemukzip_be.domain.mission.repository;
 
-import com.mohaemukzip.mohaemukzip_be.domain.home.entity.enums.MissionStatus;
+import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.enums.MissionStatus;
 import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.MemberMission;
 import org.springframework.data.jpa.repository.JpaRepository;
 

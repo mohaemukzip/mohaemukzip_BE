@@ -66,6 +66,8 @@ public enum ErrorStatus implements BaseCode {
     RECIPE_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "RECIPE4002", "이미 저장된 레시피입니다."),
     INVALID_RATING_VALUE(HttpStatus.BAD_REQUEST, "RECIPE4003",   "난이도는 1부터 5 사이의 값입니다."),
 
+    // 미션 관련 에러
+    NO_AVAILABLE_MISSION(HttpStatus.NOT_FOUND, "MISSION4001", "퀘스트로 할당할 미션이 남아있지 않습니다.")
     ;
     private final HttpStatus httpStatus;
     private final String code;
