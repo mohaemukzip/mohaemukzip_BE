@@ -81,8 +81,8 @@ public class Member extends BaseEntity {
     }
 
     public void addScore(int reward) {
-        if (reward <= 0) return;
         if (this.score == null) this.score = 0;
+        if (reward <= 0) return;
         this.score += reward;
     }
 }

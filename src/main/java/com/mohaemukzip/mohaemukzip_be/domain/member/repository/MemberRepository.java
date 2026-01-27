@@ -18,5 +18,5 @@ public interface MemberRepository extends JpaRepository<Member,Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE) // 동시성 방지용 (같은 사용자가 2번 complete 호출 경우)
     @Query("select m from Member m where m.id = :memberId")
-    Member findByIdForUpdate(@Param("memberId") Long memberId);
+    Optional<Member> findByIdForUpdate(@Param("memberId") Long memberId);
 }

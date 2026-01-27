@@ -2,7 +2,6 @@ package com.mohaemukzip.mohaemukzip_be.domain.home.service;
 
 import com.mohaemukzip.mohaemukzip_be.domain.home.converter.HomeConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeResponseDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.enums.MissionStatus;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.Mission;
@@ -32,7 +31,6 @@ import static com.mohaemukzip.mohaemukzip_be.domain.mission.converter.MissionCon
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class HomeService {
 
     private final MemberRepository memberRepository;
@@ -42,7 +40,7 @@ public class HomeService {
     private final MemberMissionRepository memberMissionRepository;
     private final LevelService levelService;
 
-
+    @Transactional(readOnly = true)
     public HomeResponseDTO getHome(Long memberId) {
         // 1. Member 조회
         Member member = memberRepository.findById(memberId)
@@ -154,26 +152,12 @@ public class HomeService {
 
         LocalDate today = LocalDate.now();
 
-        // 1. 오늘 할당된 미션 조회 (할당된 미션 없으면 할당까지)
-        MemberMission memberMission = memberMissionRepository
-                .findByMemberIdAndAssignedDate(memberId, today)
-                .orElseGet(() -> assignTodayMission(memberId, today));
-
-        // 2. 오늘 완료 여부 정확히 반영
-        boolean isCompletedToday = memberMissionRepository
-                .existsByMemberIdAndMissionIdAndAssignedDateAndStatus(
-                        memberId,
-                        memberMission.getMission().getId(),
-                        today,
-                        MissionStatus.COMPLETED
-                );
-
-        if (isCompletedToday && memberMission.getStatus() != MissionStatus.COMPLETED) {
-            memberMission.completeToday();   // 상태 싱크 맞추기
-        }
-
+        // 오늘 미션 확보(없으면 할당) -> write 트랜잭션 메서드로 분리
+        MemberMission memberMission = getOrAssignTodayMission(memberId, today);
+        
         return HomeConverter.toTodayMissionDto(memberMission);
     }
+
 
     private MemberMission assignTodayMission(Long memberId, LocalDate today) {
 
@@ -203,5 +187,11 @@ public class HomeService {
         List<Recipe> recipes = recipeRepository.findTop5ByOrderByViewsDesc();
 
         return HomeConverter.toRecommendedRecipeDtos(recipes);
+    }
+
+    @Transactional
+    protected MemberMission getOrAssignTodayMission(Long memberId, LocalDate today) {
+        return memberMissionRepository.findByMemberIdAndAssignedDate(memberId, today)
+                .orElseGet(() -> assignTodayMission(memberId, today));
     }
 }
