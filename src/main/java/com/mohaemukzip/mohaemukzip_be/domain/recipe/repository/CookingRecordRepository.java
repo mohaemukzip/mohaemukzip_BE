@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -28,4 +29,16 @@ public interface CookingRecordRepository extends JpaRepository<CookingRecord, Lo
             @Param("weekStart") LocalDateTime weekStart,
             @Param("weekEnd") LocalDateTime weekEnd
     );
+
+    boolean existsByMember_IdAndCreatedAtBetween(Long memberId, LocalDateTime start, LocalDateTime end);
+
+    @Query("select distinct function('date', c.createdAt) " +
+            "from CookingRecord c " +
+            "where c.member.id = :memberId and c.createdAt between :start and :end")
+    List<LocalDate> findDistinctCookingDatesBetween(
+            @Param("memberId") Long memberId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
 }

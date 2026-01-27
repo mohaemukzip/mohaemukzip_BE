@@ -35,4 +35,6 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
     // 조회수(views) 내림차순으로 상위 5개 조회 (HomeService 사용)
     List<Recipe> findTop5ByOrderByViewsDesc();
+
+    boolean existsByIdAndTitleContaining(Long recipeId, String keyword);
 }

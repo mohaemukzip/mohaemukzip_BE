@@ -79,4 +79,10 @@ public class Member extends BaseEntity {
     public void updateNickname(String nickname) {
         this.nickname = nickname;
     }
+
+    public void addScore(int reward) {
+        if (reward <= 0) return;
+        if (this.score == null) this.score = 0;
+        this.score += reward;
+    }
 }

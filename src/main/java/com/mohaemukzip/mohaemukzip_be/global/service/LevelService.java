@@ -12,7 +12,7 @@ public class LevelService {
     public static final int MIN_LEVEL = 0;
 
     // 레벨별 필요 점수 (누적)
-    private static final int[] LEVEL_SCORES = {0, 8, 20, 40, 70, Integer.MAX_VALUE};
+    private static final int[] LEVEL_SCORES = {0, 50, 200, 475, 825, Integer.MAX_VALUE};
 
     private static final Map<Integer, String> LEVEL_TITLE_MAP = Map.of(
             0, "집밥 왕초보",

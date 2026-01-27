@@ -16,7 +16,7 @@ public class HomeResponseDTO {
     private Integer nextLevelScore;
     private Integer consecutiveDays;
     private WeeklyCookingDto weeklyCooking;
-    private TodayMissionDto todayMission;  // 미션 중 1개만
+    private TodayMissionDto todayMission;
     private List<RecommendedRecipeDto> recommendedRecipes;
 
     @Getter
