@@ -42,7 +42,8 @@ public class HomeResponseDTO {
         private String title;
         private String description;
         private Integer reward;
-        private Boolean isCompleted;
+        private String keyword;
+        private String status; // "ASSIGNED", "COMPLETED", "FAILED"
     }
 
     @Getter

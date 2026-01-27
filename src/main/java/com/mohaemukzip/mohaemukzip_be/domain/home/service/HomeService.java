@@ -2,7 +2,7 @@ package com.mohaemukzip.mohaemukzip_be.domain.home.service;
 
 import com.mohaemukzip.mohaemukzip_be.domain.home.converter.HomeConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeResponseDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.home.entity.enums.MissionStatus;
+import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.enums.MissionStatus;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.Mission;
@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
+
+import static com.mohaemukzip.mohaemukzip_be.domain.mission.converter.MissionConverter.toMemberMission;
 
 @Service
 @RequiredArgsConstructor
@@ -147,29 +149,53 @@ public class HomeService {
         return HomeConverter.toWeeklyCookingDto(cookingByDay);
     }
 
-    // 오늘의 미션 (현재는 도전완료까지 진행 안한 미션 중 하나를 랜덤하게 보여줌. 같은 날짜, 같은 사용자에겐 하루동안 지속하고
-    // 사용자마다 동일하지않음.
+    // 오늘의 미션 (도전완료까지 진행 안한 미션 중 하나를 랜덤하게 보여줌)
     private HomeResponseDTO.TodayMissionDto getTodayMission(Long memberId) {
 
-        // 1. 전체 미션 조회
-        List<Mission> allMissions = missionRepository.findAll();
-
-        if (allMissions.isEmpty()) return null;
-
-        // 2. 날짜 + 멤버ID 기반 시드
-        long seed = LocalDate.now().toEpochDay() + memberId;
-        Random random = new Random(seed);
-
-        // 3. 전체 미션 중 하나 선택
-        int index = random.nextInt(allMissions.size());
-        Mission mission = allMissions.get(index);
-
-        // 4. 선택된 미션이 완료되었는지 여부 DTO에 담아 보내기 (완료된 미션은 프론트에서 따로 표시해야하기 떄문에 추가함)
         LocalDate today = LocalDate.now();
-        boolean isDone = memberMissionRepository.existsByMemberIdAndMissionIdAndAssignedDateAndStatus(
-                memberId, mission.getId(), today, MissionStatus.COMPLETED);
 
-        return HomeConverter.toTodayMissionDto(mission, isDone);
+        // 1. 오늘 할당된 미션 조회 (할당된 미션 없으면 할당까지)
+        MemberMission memberMission = memberMissionRepository
+                .findByMemberIdAndAssignedDate(memberId, today)
+                .orElseGet(() -> assignTodayMission(memberId, today));
+
+        // 2. 오늘 완료 여부 정확히 반영
+        boolean isCompletedToday = memberMissionRepository
+                .existsByMemberIdAndMissionIdAndAssignedDateAndStatus(
+                        memberId,
+                        memberMission.getMission().getId(),
+                        today,
+                        MissionStatus.COMPLETED
+                );
+
+        if (isCompletedToday && memberMission.getStatus() != MissionStatus.COMPLETED) {
+            memberMission.completeToday();   // 상태 싱크 맞추기
+        }
+
+        return HomeConverter.toTodayMissionDto(memberMission);
+    }
+
+    private MemberMission assignTodayMission(Long memberId, LocalDate today) {
+
+        List<Mission> candidates = missionRepository.findAll()
+                .stream()
+                .filter(mission ->
+                        !memberMissionRepository.existsByMemberIdAndMissionId(
+                                memberId,
+                                mission.getId()
+                        )
+                )
+                .toList();
+
+        if (candidates.isEmpty()) {
+            throw new BusinessException(ErrorStatus.NO_AVAILABLE_MISSION);
+        }
+
+        Mission selected = candidates.get(new Random().nextInt(candidates.size()));
+
+        return memberMissionRepository.save(
+                toMemberMission(memberId, selected, today)
+        );
     }
 
     // 추천 레시피
@@ -177,5 +203,5 @@ public class HomeService {
         List<Recipe> recipes = recipeRepository.findTop5ByOrderByViewsDesc();
 
         return HomeConverter.toRecommendedRecipeDtos(recipes);
-}
+    }
 }
