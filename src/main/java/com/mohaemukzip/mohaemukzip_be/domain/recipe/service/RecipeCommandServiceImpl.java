@@ -153,25 +153,31 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
 
     @Override
     public RecipeResponseDTO.BookmarkToggleResult toggleBookmark(Member member, Long recipeId) {
-        Recipe recipe = recipeRepository.findById(recipeId)
-                .orElseThrow(() -> new BusinessException(ErrorStatus.RECIPE_NOT_FOUND));
+        // 1. 삭제 시도 (Bulk Delete)
+        int deletedCount = memberRecipeRepository.deleteByMemberIdAndRecipeId(member.getId(), recipeId);
 
-        Optional<MemberRecipe> memberRecipe = memberRecipeRepository.findByMemberAndRecipe(member, recipe);
-        boolean isBookmarked;
-
-        if (memberRecipe.isPresent()) {
-            memberRecipeRepository.delete(memberRecipe.get());
-            isBookmarked = false;
+        if (deletedCount > 0) {
+            // 삭제 성공 -> 북마크 해제됨
+            return RecipeConverter.toBookmarkToggleResult(false);
         } else {
-            memberRecipeRepository.save(
-                    MemberRecipe.builder()
-                            .member(member)
-                            .recipe(recipe)
-                            .build()
-            );
-            isBookmarked = true;
+            // 2. 삭제된 게 없으면 -> 저장 시도
+            // Proxy 객체 조회 (DB Select 방지)
+            Recipe recipeRef = recipeRepository.getReferenceById(recipeId);
+
+            try {
+                memberRecipeRepository.save(
+                        MemberRecipe.builder()
+                                .member(member)
+                                .recipe(recipeRef)
+                                .build()
+                );
+                return RecipeConverter.toBookmarkToggleResult(true);
+            } catch (DataIntegrityViolationException e) {
+                // 동시성 이슈: 이미 다른 스레드가 저장함 -> 저장된 것으로 간주 (멱등성)
+                log.warn("Bookmark race condition detected for memberId={}, recipeId={}", member.getId(), recipeId);
+                return RecipeConverter.toBookmarkToggleResult(true);
+            }
         }
-        return RecipeConverter.toBookmarkToggleResult(isBookmarked);
     }
 
     private Recipe saveRecipe(RecipeCrawler.RecipeData data) {

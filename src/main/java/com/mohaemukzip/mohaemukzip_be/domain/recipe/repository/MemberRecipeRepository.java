@@ -6,6 +6,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -20,6 +21,11 @@ public interface MemberRecipeRepository extends JpaRepository<MemberRecipe,Long>
 
     // 북마크 토글(삭제)을 위해 엔티티 조회
     Optional<MemberRecipe> findByMemberAndRecipe(Member member, Recipe recipe);
+
+    // 최적화된 삭제 로직 (Bulk Delete)
+    @Modifying
+    @Query("DELETE FROM MemberRecipe mr WHERE mr.member.id = :memberId AND mr.recipe.id = :recipeId")
+    int deleteByMemberIdAndRecipeId(@Param("memberId") Long memberId, @Param("recipeId") Long recipeId);
 
     @Query("SELECT mr.recipe.id FROM MemberRecipe mr WHERE mr.member.id = :memberId AND mr.recipe.id IN :recipeIds")
     Set<Long> findBookmarkedRecipeIdsByMemberId(@Param("memberId") Long memberId, @Param("recipeIds") List<Long> recipeIds);
