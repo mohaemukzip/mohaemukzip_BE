@@ -173,9 +173,15 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
                 );
                 return RecipeConverter.toBookmarkToggleResult(true);
             } catch (DataIntegrityViolationException e) {
-                // 동시성 이슈: 이미 다른 스레드가 저장함 -> 저장된 것으로 간주 (멱등성)
-                log.warn("Bookmark race condition detected for memberId={}, recipeId={}", member.getId(), recipeId);
-                return RecipeConverter.toBookmarkToggleResult(true);
+                // 동시성 이슈 또는 FK 위반 가능 -> 실제 저장 여부 확인
+                boolean actuallyExists = memberRecipeRepository.existsByMember_IdAndRecipe_Id(member.getId(), recipeId);
+                if (actuallyExists) {
+                    log.warn("Bookmark race condition detected for memberId={}, recipeId={}", member.getId(), recipeId);
+                    return RecipeConverter.toBookmarkToggleResult(true);
+                } else {
+                    // 레시피가 존재하지 않음 (FK 위반)
+                    throw new BusinessException(ErrorStatus.RECIPE_NOT_FOUND);
+                }
             }
         }
     }

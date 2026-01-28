@@ -70,7 +70,7 @@ public class RecipeResponseDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class BookmarkToggleResult {
-        private boolean isBookmarked;
+        private Boolean isBookmarked;
         private String message;
     }
 }
