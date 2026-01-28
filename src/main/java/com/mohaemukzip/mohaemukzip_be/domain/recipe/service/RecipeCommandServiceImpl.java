@@ -7,18 +7,12 @@ import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.RecipeIngredi
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.builder.GeminiPromptBuilder;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.CookingRecord;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.RecipeStep;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Summary;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.*;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.GeminiResponseConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.RecipeConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.RecipeIngredientConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.RecipeStepConverter;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.CookingRecordRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeStepRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.SummaryRepository;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.*;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import com.mohaemukzip.mohaemukzip_be.global.service.PythonTranscriptExecutor;
@@ -51,6 +45,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
     private final RecipeIngredientRepository recipeIngredientRepository;
     private final RecipeStepRepository recipeStepRepository;
     private final SummaryRepository summaryRepository;
+    private final MemberRecipeRepository memberRecipeRepository;
     private final PythonTranscriptExecutor transcriptExecutor;
 
 
@@ -154,6 +149,27 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
                 .recipeLevel(recipe.getLevel())
                 .ratingCount(recipe.getRatingCount())
                 .build();
+    }
+
+    @Override
+    public boolean toggleBookmark(Member member, Long recipeId) {
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.RECIPE_NOT_FOUND));
+
+        Optional<MemberRecipe> memberRecipe = memberRecipeRepository.findByMemberAndRecipe(member, recipe);
+
+        if (memberRecipe.isPresent()) {
+            memberRecipeRepository.delete(memberRecipe.get());
+            return false; // 삭제됨
+        } else {
+            memberRecipeRepository.save(
+                    MemberRecipe.builder()
+                            .member(member)
+                            .recipe(recipe)
+                            .build()
+            );
+            return true; // 저장됨
+        }
     }
 
     private Recipe saveRecipe(RecipeCrawler.RecipeData data) {

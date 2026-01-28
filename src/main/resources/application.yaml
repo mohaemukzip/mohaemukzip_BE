@@ -23,12 +23,14 @@ cloud:
 gemini:
   recipe: # 레시피 챗봇
     api-url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+    api-key: ${GEMINI_RECIPE_KEY}
     model: gemini-2.5-flash
     timeout:
       connect: 10
       response: 30
   summary: # 요약 생성용
     api-url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+    api-key: ${GEMINI_API_KEY}
     model: gemini-2.5-flash
     timeout:
       connect: 10
@@ -37,6 +39,7 @@ gemini:
 youtube:
   api:
     base-url: https://www.googleapis.com/youtube/v3
+    key: ${YOUTUBE_API_KEY}
 
 transcript:
   script-path: /app/scripts/get_youtube_transcript.py
