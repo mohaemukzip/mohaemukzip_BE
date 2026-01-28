@@ -64,4 +64,13 @@ public class RecipeResponseDTO {
         private Double recipeLevel;  // 갱신된 레시피 난이도
         private Integer ratingCount; // 갱신된 평가 수
     }
+
+    @Builder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BookmarkToggleResult {
+        private boolean isBookmarked;
+        private String message;
+    }
 }

@@ -152,15 +152,16 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
     }
 
     @Override
-    public boolean toggleBookmark(Member member, Long recipeId) {
+    public RecipeResponseDTO.BookmarkToggleResult toggleBookmark(Member member, Long recipeId) {
         Recipe recipe = recipeRepository.findById(recipeId)
                 .orElseThrow(() -> new BusinessException(ErrorStatus.RECIPE_NOT_FOUND));
 
         Optional<MemberRecipe> memberRecipe = memberRecipeRepository.findByMemberAndRecipe(member, recipe);
+        boolean isBookmarked;
 
         if (memberRecipe.isPresent()) {
             memberRecipeRepository.delete(memberRecipe.get());
-            return false; // 삭제됨
+            isBookmarked = false;
         } else {
             memberRecipeRepository.save(
                     MemberRecipe.builder()
@@ -168,8 +169,9 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
                             .recipe(recipe)
                             .build()
             );
-            return true; // 저장됨
+            isBookmarked = true;
         }
+        return RecipeConverter.toBookmarkToggleResult(isBookmarked);
     }
 
     private Recipe saveRecipe(RecipeCrawler.RecipeData data) {

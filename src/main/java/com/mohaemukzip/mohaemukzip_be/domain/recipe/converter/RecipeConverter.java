@@ -48,6 +48,14 @@ public class RecipeConverter {
                 .build();
     }
 
+    public static RecipeResponseDTO.BookmarkToggleResult toBookmarkToggleResult(boolean isBookmarked) {
+        String message = isBookmarked ? "북마크 저장 완료" : "북마크 해제 완료";
+        return RecipeResponseDTO.BookmarkToggleResult.builder()
+                .isBookmarked(isBookmarked)
+                .message(message)
+                .build();
+    }
+
     public Recipe toEntity(RecipeCrawler.RecipeData data) {
         Category category = convertCategory(data.category());
 

@@ -79,17 +79,12 @@ public class RecipeController {
 
     @PostMapping("/{recipeId}/bookmark")
     @Operation(summary = "북마크 토글 API", description = "특정 레시피를 북마크에 저장하거나, 이미 저장된 경우 삭제합니다.")
-    public ApiResponse<BookmarkResponse> toggleBookmark(
+    public ApiResponse<RecipeResponseDTO.BookmarkToggleResult> toggleBookmark(
             @PathVariable Long recipeId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        boolean isBookmarked = recipeCommandService.toggleBookmark(userDetails.getMember(), recipeId);
-        String message = isBookmarked ? "북마크 저장 완료" : "북마크 해제 완료";
-        return ApiResponse.onSuccess(new BookmarkResponse(isBookmarked, message));
+        return ApiResponse.onSuccess(
+                recipeCommandService.toggleBookmark(userDetails.getMember(), recipeId)
+        );
     }
-
-    public record BookmarkResponse(
-            boolean isBookmarked,
-            String message
-    ) {}
 }
