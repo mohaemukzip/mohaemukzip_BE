@@ -84,7 +84,7 @@ public class RecipeController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         return ApiResponse.onSuccess(
-                recipeCommandService.toggleBookmark(userDetails.getMember(), recipeId)
+                recipeCommandService.toggleBookmark(userDetails.getMember().getId(), recipeId)
         );
     }
 }

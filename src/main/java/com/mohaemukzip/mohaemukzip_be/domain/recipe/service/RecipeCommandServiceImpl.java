@@ -5,6 +5,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.RecipeIngredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.IngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.RecipeIngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
+import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.builder.GeminiPromptBuilder;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.*;
@@ -46,6 +47,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
     private final RecipeStepRepository recipeStepRepository;
     private final SummaryRepository summaryRepository;
     private final MemberRecipeRepository memberRecipeRepository;
+    private final MemberRepository memberRepository;
     private final PythonTranscriptExecutor transcriptExecutor;
 
 
@@ -152,9 +154,9 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
     }
 
     @Override
-    public RecipeResponseDTO.BookmarkToggleResult toggleBookmark(Member member, Long recipeId) {
+    public RecipeResponseDTO.BookmarkToggleResult toggleBookmark(Long memberId, Long recipeId) {
         // 1. 삭제 시도 (Bulk Delete)
-        int deletedCount = memberRecipeRepository.deleteByMemberIdAndRecipeId(member.getId(), recipeId);
+        int deletedCount = memberRecipeRepository.deleteByMemberIdAndRecipeId(memberId, recipeId);
 
         if (deletedCount > 0) {
             // 삭제 성공 -> 북마크 해제됨
@@ -163,20 +165,21 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
             // 2. 삭제된 게 없으면 -> 저장 시도
             // Proxy 객체 조회 (DB Select 방지)
             Recipe recipeRef = recipeRepository.getReferenceById(recipeId);
+            Member memberRef = memberRepository.getReferenceById(memberId);
 
             try {
                 memberRecipeRepository.save(
                         MemberRecipe.builder()
-                                .member(member)
+                                .member(memberRef)
                                 .recipe(recipeRef)
                                 .build()
                 );
                 return RecipeConverter.toBookmarkToggleResult(true);
             } catch (DataIntegrityViolationException e) {
                 // 동시성 이슈 또는 FK 위반 가능 -> 실제 저장 여부 확인
-                boolean actuallyExists = memberRecipeRepository.existsByMember_IdAndRecipe_Id(member.getId(), recipeId);
+                boolean actuallyExists = memberRecipeRepository.existsByMember_IdAndRecipe_Id(memberId, recipeId);
                 if (actuallyExists) {
-                    log.warn("Bookmark race condition detected for memberId={}, recipeId={}", member.getId(), recipeId);
+                    log.warn("Bookmark race condition detected for memberId={}, recipeId={}", memberId, recipeId);
                     return RecipeConverter.toBookmarkToggleResult(true);
                 } else {
                     // 레시피가 존재하지 않음 (FK 위반)

@@ -15,5 +15,5 @@ public interface RecipeCommandService {
             int rating
     );
 
-    RecipeResponseDTO.BookmarkToggleResult toggleBookmark(Member member, Long recipeId);
+    RecipeResponseDTO.BookmarkToggleResult toggleBookmark(Long memberId, Long recipeId);
 }
