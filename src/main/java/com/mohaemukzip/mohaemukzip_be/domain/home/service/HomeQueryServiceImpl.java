@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class HomeQueryServiceImpl implements HomeQueryService {
 
     private final MemberRepository memberRepository;
@@ -37,6 +36,7 @@ public class HomeQueryServiceImpl implements HomeQueryService {
     private final LevelService levelService;
 
     @Override
+    @Transactional
     public HomeResponseDTO getHome(Long memberId) {
 
         Member member = memberRepository.findById(memberId)
