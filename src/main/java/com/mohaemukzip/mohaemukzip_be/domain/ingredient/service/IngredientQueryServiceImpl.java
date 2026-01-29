@@ -12,7 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -29,8 +32,7 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
 
     @Override
     @Transactional(readOnly = true)
-    // DB 재료 조회
-    public List<IngredientResponseDTO.Detail> getIngredients(String keyword, Category category) {
+    public List<IngredientResponseDTO.Detail> getIngredients(Long memberId, String keyword, Category category) {
 
         List<Ingredient> ingredients;
 
@@ -51,10 +53,23 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
             ingredients = ingredientRepository.findAll();
         }
 
+        // 로그인한 경우 즐겨찾기 ID 조회
+        Set<Long> favoriteIngredientIds = new HashSet<>();
+        if (memberId != null) {
+            favoriteIngredientIds = memberFavoriteRepository.findIngredientIdsByMemberId(memberId);
+        }
+
+        // isFavorite 포함하여 DTO 변환
+        final Set<Long> finalFavoriteIds = favoriteIngredientIds;
         return ingredients.stream()
-                .map(IngredientResponseDTO.Detail::from)
-                .collect(toList());
+                .map(ingredient -> IngredientResponseDTO.Detail.from(
+                        ingredient,
+                        finalFavoriteIds.contains(ingredient.getId())
+                ))
+                .collect(Collectors.toList());
     }
+
+
 
     // 냉장고 재료 조회
     @Override

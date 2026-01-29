@@ -31,26 +31,29 @@ public class IngredientController {
     private final IngredientQueryService ingredientQueryService;
     private final IngredientCommandService ingredientCommandService;
 
-    @Operation(summary = "재료 검색")
+    @Operation(summary = "즐겨찾기 여부 포함 재료 검색")
     @GetMapping
     public ApiResponse<List<IngredientResponseDTO.Detail>> searchIngredients(
-
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
             @RequestParam(name = "query", required = false) String query,
             @RequestParam(name = "category", required = false) Category category
     ) {
 
-        if (customUserDetails != null && query != null && !query.isBlank()) {
-            Long memberId = customUserDetails.getMember().getId();
+        Long memberId = null;
 
-            try {
-                ingredientCommandService.saveRecentSearch(memberId, query);
-            } catch (Exception e) {
-                log.warn("최근 검색어 저장 실패 - MemberId: {}, Query: {}", memberId, query, e);
+        if (customUserDetails != null) {
+            memberId = customUserDetails.getMember().getId();
+
+            if (query != null && !query.isBlank()) {
+                try {
+                    ingredientCommandService.saveRecentSearch(memberId, query);
+                } catch (Exception e) {
+                    log.warn("최근 검색어 저장 실패 - MemberId: {}, Query: {}", memberId, query, e);
+                }
             }
         }
 
-        List<IngredientResponseDTO.Detail> response = ingredientQueryService.getIngredients(query,category);
+        List<IngredientResponseDTO.Detail> response = ingredientQueryService.getIngredients(memberId, query, category);
 
         return ApiResponse.onSuccess(response);
     }
