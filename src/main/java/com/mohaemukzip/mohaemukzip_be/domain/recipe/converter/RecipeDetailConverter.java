@@ -98,7 +98,7 @@ public class RecipeDetailConverter {
                 .name(recipeIngredient.getIngredient().getName())
                 .amount(recipeIngredient.getAmount())
                 .unit(recipeIngredient.getIngredient().getUnit() != null
-                        ? recipeIngredient.getIngredient().getUnit().name()
+                        ? recipeIngredient.getIngredient().getUnit().getLabel()
                         : null)
                 .hasIngredient(memberIngredientIds.contains(
                         recipeIngredient.getIngredient().getId()))
