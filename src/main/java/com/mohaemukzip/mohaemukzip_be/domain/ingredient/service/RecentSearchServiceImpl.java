@@ -31,32 +31,21 @@ public class RecentSearchServiceImpl implements RecentSearchService {
     // 최근 검색어 저장
     @Override
     public void saveRecentSearch(Long memberId, String keyword) {
-        System.out.println("============== [Redis 저장 로직 시작] ==============");
-        System.out.println("1. 입력된 memberId: " + memberId);
-        System.out.println("2. 입력된 keyword: " + keyword);
         if(keyword == null || keyword.isBlank()){
-            System.out.println("❌ 실패: 키워드가 비어있어서 저장을 안 하고 종료합니다.");
+            log.debug("키워드가 비어있어 저장 중단");
             return;
         }
 
-        if (!memberRepository.existsById(memberId)) {
-            System.out.println("❌ 실패: DB에서 멤버를 찾을 수 없습니다. (ID: " + memberId + ")");
-            // 예외를 던지면 500 에러가 나니까, 일단 로그만 보고 리턴할게요.
-            return;
-        }
         String recentSearchKey = getRecentSearchKey(memberId);
-        System.out.println("3. 생성된 Redis Key: " + recentSearchKey);
 
         try {
-            System.out.println("🚀 Redis에 데이터 넣는 중...");
+            redisTemplate.opsForZSet().remove(recentSearchKey, keyword);
             redisTemplate.opsForZSet().add(recentSearchKey, keyword, System.currentTimeMillis());
-            System.out.println("✅ Redis 저장 명령 성공!");
 
             Long size = redisTemplate.opsForZSet().zCard(recentSearchKey);
 
-            if (size != null && size >= MAX_RECENT_SEARCH_COUNT) {
-                redisTemplate.opsForZSet().remove(recentSearchKey, 0, size - MAX_RECENT_SEARCH_COUNT - 1);
-            }
+            if (size != null && size > MAX_RECENT_SEARCH_COUNT) {
+                redisTemplate.opsForZSet().removeRange(recentSearchKey, 0, size - MAX_RECENT_SEARCH_COUNT - 1); }
         }
         catch (Exception e) {
             log.error("Redis 작업 중 오류 발생! 원인: {}", e.getMessage());

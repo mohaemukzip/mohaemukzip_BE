@@ -96,18 +96,4 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
                 .toList();
     }
 
-    // 최근 검색어 조회
-    @Override
-    public IngredientResponseDTO.RecentSearchList getRecentSearches(Long memberId) {
-
-        if (!memberRepository.existsById(memberId)) {
-            throw new BusinessException(ErrorStatus.MEMBER_NOT_FOUND);
-        }
-
-        List<String> keywords = recentSearchService.getRecentSearches(memberId);
-
-        return IngredientResponseDTO.RecentSearchList.from(keywords);
-    }
-
-
 }

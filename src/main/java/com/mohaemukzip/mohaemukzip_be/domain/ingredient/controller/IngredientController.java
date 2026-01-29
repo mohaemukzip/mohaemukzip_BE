@@ -48,11 +48,7 @@ public class IngredientController {
                 : null;
 
         if (memberId != null && query != null && !query.isBlank()) {
-            try {
-                ingredientCommandService.saveRecentSearch(memberId, query);
-            } catch (Exception e) {
-                log.warn("최근 검색어 저장 실패 - MemberId: {}, Query: {}", memberId, query, e);
-            }
+            recentSearchService.saveRecentSearch(memberId, query);
         }
 
         Page<IngredientResponseDTO.Detail> pageResponse = ingredientQueryService.getIngredients(memberId, query, category, page);
@@ -130,7 +126,7 @@ public class IngredientController {
     }
 
     @Operation(summary = "최근 재료 검색어 삭제")
-    @DeleteMapping("/recent-searches/{recentSearchId}")
+    @DeleteMapping("/recent-searches")
     public ApiResponse<String> deleteRecentSearch(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
             @RequestParam String keyword) {
