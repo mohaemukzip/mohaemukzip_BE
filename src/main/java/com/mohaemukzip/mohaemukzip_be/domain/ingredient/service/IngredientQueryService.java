@@ -2,13 +2,14 @@ package com.mohaemukzip.mohaemukzip_be.domain.ingredient.service;
 
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Category;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
 public interface IngredientQueryService {
 
     // 즐겨찾기 여부 포함된 재료 목록 반환
-    List<IngredientResponseDTO.Detail> getIngredients(Long memberId, String keyword, Category category);
+    Page<IngredientResponseDTO.Detail> getIngredients(Long memberId, String keyword, Category category, Integer page);
 
     // 냉장고 조회
     IngredientResponseDTO.FridgeIngredientList getMyFridgeIngredients(Long memberId);

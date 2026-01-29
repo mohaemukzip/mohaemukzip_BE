@@ -8,6 +8,9 @@ import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +25,7 @@ import static java.util.stream.Collectors.toList;
 @RequiredArgsConstructor
 public class IngredientQueryServiceImpl implements IngredientQueryService {
 
+    private static final int PAGE_SIZE = 20;
     private final IngredientRequestRepository ingredientRequestRepository;
     private final MemberRecentSearchRepository memberRecentSearchRepository;
     private final MemberRepository memberRepository;
@@ -31,24 +35,23 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<IngredientResponseDTO.Detail> getIngredients(Long memberId, String keyword, Category category) {
+    public Page<IngredientResponseDTO.Detail> getIngredients(Long memberId, String keyword, Category category, Integer page) {
 
         String searchKeyword = (keyword != null && !keyword.isBlank()) ? keyword : null;
 
-        List<Ingredient> ingredients = ingredientRepository.findByKeywordAndCategory(searchKeyword, category);
-
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE);
+        Page<Ingredient> ingredients = ingredientRepository
+                .findByKeywordAndCategory(searchKeyword, category, pageable);
 
         // 로그인한 경우 즐겨찾기 ID 조회
         Set<Long> favoriteIngredientIds = (memberId != null)
                 ? memberFavoriteRepository.findIngredientIdsByMemberId(memberId)
                 : Collections.emptySet();
 
-         return ingredients.stream()
-                .map(ingredient -> IngredientResponseDTO.Detail.from(
-                        ingredient,
-                        favoriteIngredientIds.contains(ingredient.getId())
-                ))
-                .toList();
+        return ingredients.map(ingredient -> IngredientResponseDTO.Detail.from(
+                ingredient,
+                favoriteIngredientIds.contains(ingredient.getId())
+        ));
     }
 
 

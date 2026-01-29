@@ -5,7 +5,6 @@ import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.home.entity.enums.MissionStatus;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.MemberMission;
 import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.Mission;
 import com.mohaemukzip.mohaemukzip_be.domain.mission.repository.MemberMissionRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.mission.repository.MissionRepository;

@@ -13,4 +13,8 @@ import java.util.List;
 @AllArgsConstructor
 public class SearchResponseDTO {
     private List<SearchResultDTO> results;
+    private Integer totalPage;
+    private Long totalElements;
+    private Boolean isFirst;
+    private Boolean isLast;
 }
