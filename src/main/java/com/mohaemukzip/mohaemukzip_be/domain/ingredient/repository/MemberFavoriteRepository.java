@@ -9,15 +9,21 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface MemberFavoriteRepository extends JpaRepository<MemberFavorite, Long> {
 
     boolean existsByMemberAndIngredient(Member member, Ingredient ingredient);
 
+    @Query("SELECT mf.ingredient.id " +
+            "FROM MemberFavorite mf " +
+            "WHERE mf.member.id = :memberId")
+    Set<Long> findIngredientIdsByMemberId(@Param("memberId") Long memberId);
+
     @Query("SELECT mf FROM MemberFavorite mf " +
             "JOIN FETCH mf.ingredient " +
-            "WHERE mf.member = :member")
-    List<MemberFavorite> findAllByMember(@Param("member") Member member);
+            "WHERE mf.member.id = :memberId")
+    List<MemberFavorite> findAllByMemberId(@Param("memberId") Long memberId);
 
     Optional<MemberFavorite> findByIdAndMemberId(Long id, Long memberId);
 }

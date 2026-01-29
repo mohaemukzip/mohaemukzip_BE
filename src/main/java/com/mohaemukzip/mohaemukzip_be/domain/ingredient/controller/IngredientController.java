@@ -31,18 +31,19 @@ public class IngredientController {
     private final IngredientQueryService ingredientQueryService;
     private final IngredientCommandService ingredientCommandService;
 
-    @Operation(summary = "재료 검색")
+    @Operation(summary = "즐겨찾기 여부 포함 재료 검색")
     @GetMapping
     public ApiResponse<List<IngredientResponseDTO.Detail>> searchIngredients(
-
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
             @RequestParam(name = "query", required = false) String query,
             @RequestParam(name = "category", required = false) Category category
     ) {
 
-        if (customUserDetails != null && query != null && !query.isBlank()) {
-            Long memberId = customUserDetails.getMember().getId();
+        Long memberId = (customUserDetails != null)
+                ? customUserDetails.getMember().getId()
+                : null;
 
+        if (memberId != null && query != null && !query.isBlank()) {
             try {
                 ingredientCommandService.saveRecentSearch(memberId, query);
             } catch (Exception e) {
@@ -50,14 +51,14 @@ public class IngredientController {
             }
         }
 
-        List<IngredientResponseDTO.Detail> response = ingredientQueryService.getIngredients(query,category);
+        List<IngredientResponseDTO.Detail> response = ingredientQueryService.getIngredients(memberId, query, category);
 
         return ApiResponse.onSuccess(response);
     }
 
     @Operation(summary = "즐겨찾기 재료 목록 조회")
     @GetMapping("/favorites")
-    public ApiResponse<IngredientResponseDTO.FavoriteList> getFavoriteList(
+    public ApiResponse<List<IngredientResponseDTO.Detail>> getFavoriteList(
             @AuthenticationPrincipal CustomUserDetails customUserDetails
     ) {
         if (customUserDetails == null) {
@@ -65,7 +66,7 @@ public class IngredientController {
         }
         Long memberId = customUserDetails.getMember().getId();
 
-        IngredientResponseDTO.FavoriteList response = ingredientQueryService.getFavoriteList(memberId);
+        List<IngredientResponseDTO.Detail> response = ingredientQueryService.getFavoriteList(memberId);
 
         return ApiResponse.onSuccess(response);
     }

@@ -31,4 +31,14 @@ public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
 
     // 재료명으로 조회 (매칭용)
     Optional<Ingredient> findByName(String name);
+
+    @Query("""
+    SELECT i FROM Ingredient i
+    WHERE (:keyword IS NULL OR i.name LIKE %:keyword%)
+    AND (:category IS NULL OR i.category = :category)
+    """)
+    List<Ingredient> findByKeywordAndCategory(
+            @Param("keyword") String keyword,
+            @Param("category") Category category
+    );
 }

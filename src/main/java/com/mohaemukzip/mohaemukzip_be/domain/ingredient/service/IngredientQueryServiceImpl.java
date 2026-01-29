@@ -12,7 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
 
@@ -29,32 +31,27 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
 
     @Override
     @Transactional(readOnly = true)
-    // DB 재료 조회
-    public List<IngredientResponseDTO.Detail> getIngredients(String keyword, Category category) {
+    public List<IngredientResponseDTO.Detail> getIngredients(Long memberId, String keyword, Category category) {
 
-        List<Ingredient> ingredients;
+        String searchKeyword = (keyword != null && !keyword.isBlank()) ? keyword : null;
 
-        // 1. 키워드 + 카테고리가 있는 경우 조회
-        if (keyword != null && !keyword.isBlank() && category != null) {
-            ingredients = ingredientRepository.findByNameContainingAndCategory(keyword, category);
-        }
-        // 2. 키워드만 있는 경우
-        else if (keyword != null && !keyword.isBlank()) {
-            ingredients = ingredientRepository.findByNameContaining(keyword);
-        }
-        // 3. 카테고리만 있는 경우
-        else if (category != null) {
-            ingredients = ingredientRepository.findByCategory(category);
-        }
-        // 4. 둘 다 없는 경우 (전체 출력)
-        else {
-            ingredients = ingredientRepository.findAll();
-        }
+        List<Ingredient> ingredients = ingredientRepository.findByKeywordAndCategory(searchKeyword, category);
 
-        return ingredients.stream()
-                .map(IngredientResponseDTO.Detail::from)
-                .collect(toList());
+
+        // 로그인한 경우 즐겨찾기 ID 조회
+        Set<Long> favoriteIngredientIds = (memberId != null)
+                ? memberFavoriteRepository.findIngredientIdsByMemberId(memberId)
+                : Collections.emptySet();
+
+         return ingredients.stream()
+                .map(ingredient -> IngredientResponseDTO.Detail.from(
+                        ingredient,
+                        favoriteIngredientIds.contains(ingredient.getId())
+                ))
+                .toList();
     }
+
+
 
     // 냉장고 재료 조회
     @Override
@@ -75,20 +72,15 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
     //즐겨찾기 재료 리스트 조회
     @Override
     @Transactional(readOnly = true)
-    public IngredientResponseDTO.FavoriteList getFavoriteList(Long memberId) {
+    public List<IngredientResponseDTO.Detail> getFavoriteList(Long memberId) {
 
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
+        List<MemberFavorite> favoriteList = memberFavoriteRepository.findAllByMemberId(memberId);
 
-        List<MemberFavorite> favoriteList = memberFavoriteRepository.findAllByMember(member);
-
-        List<IngredientResponseDTO.FavoriteDetail> detailList = favoriteList.stream()
-                .map(IngredientResponseDTO.FavoriteDetail::from)
+        return favoriteList.stream()
+                .map(favorite -> IngredientResponseDTO.Detail.from(
+                        favorite.getIngredient(),true
+                ))
                 .toList();
-
-        return new IngredientResponseDTO.FavoriteList(detailList);
-
-
     }
 
     @Override
