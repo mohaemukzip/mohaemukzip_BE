@@ -39,17 +39,15 @@ public class IngredientController {
             @RequestParam(name = "category", required = false) Category category
     ) {
 
-        Long memberId = null;
+        Long memberId = (customUserDetails != null)
+                ? customUserDetails.getMember().getId()
+                : null;
 
-        if (customUserDetails != null) {
-            memberId = customUserDetails.getMember().getId();
-
-            if (query != null && !query.isBlank()) {
-                try {
-                    ingredientCommandService.saveRecentSearch(memberId, query);
-                } catch (Exception e) {
-                    log.warn("최근 검색어 저장 실패 - MemberId: {}, Query: {}", memberId, query, e);
-                }
+        if (memberId != null && query != null && !query.isBlank()) {
+            try {
+                ingredientCommandService.saveRecentSearch(memberId, query);
+            } catch (Exception e) {
+                log.warn("최근 검색어 저장 실패 - MemberId: {}, Query: {}", memberId, query, e);
             }
         }
 
@@ -60,7 +58,7 @@ public class IngredientController {
 
     @Operation(summary = "즐겨찾기 재료 목록 조회")
     @GetMapping("/favorites")
-    public ApiResponse<IngredientResponseDTO.FavoriteList> getFavoriteList(
+    public ApiResponse<List<IngredientResponseDTO.Detail>> getFavoriteList(
             @AuthenticationPrincipal CustomUserDetails customUserDetails
     ) {
         if (customUserDetails == null) {
@@ -68,7 +66,7 @@ public class IngredientController {
         }
         Long memberId = customUserDetails.getMember().getId();
 
-        IngredientResponseDTO.FavoriteList response = ingredientQueryService.getFavoriteList(memberId);
+        List<IngredientResponseDTO.Detail> response = ingredientQueryService.getFavoriteList(memberId);
 
         return ApiResponse.onSuccess(response);
     }

@@ -22,8 +22,8 @@ public interface MemberFavoriteRepository extends JpaRepository<MemberFavorite, 
 
     @Query("SELECT mf FROM MemberFavorite mf " +
             "JOIN FETCH mf.ingredient " +
-            "WHERE mf.member = :member")
-    List<MemberFavorite> findAllByMember(@Param("member") Member member);
+            "WHERE mf.member.id = :memberId")
+    List<MemberFavorite> findAllByMemberId(@Param("memberId") Long memberId);
 
     Optional<MemberFavorite> findByIdAndMemberId(Long id, Long memberId);
 }

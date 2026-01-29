@@ -148,12 +148,6 @@ public class IngredientResponseDTO {
         }
     }
 
-    // 6-2. 즐겨찾기 재료 리스트
-    @Builder
-    public record FavoriteList(
-            List<FavoriteDetail> favoriteList
-    ) {
-    }
 
     // 7. 즐겨찾기 재료 삭제
     @Builder
