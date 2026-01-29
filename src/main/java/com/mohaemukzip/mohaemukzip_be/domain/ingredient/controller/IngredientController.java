@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -33,10 +34,11 @@ public class IngredientController {
 
     @Operation(summary = "즐겨찾기 여부 포함 재료 검색")
     @GetMapping
-    public ApiResponse<List<IngredientResponseDTO.Detail>> searchIngredients(
+    public ApiResponse<IngredientResponseDTO.IngredientPageResponse> searchIngredients(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
             @RequestParam(name = "query", required = false) String query,
-            @RequestParam(name = "category", required = false) Category category
+            @RequestParam(name = "category", required = false) Category category,
+            @RequestParam(name = "page", defaultValue = "0") int page
     ) {
 
         Long memberId = (customUserDetails != null)
@@ -51,10 +53,12 @@ public class IngredientController {
             }
         }
 
-        List<IngredientResponseDTO.Detail> response = ingredientQueryService.getIngredients(memberId, query, category);
-
+        Page<IngredientResponseDTO.Detail> pageResponse = ingredientQueryService.getIngredients(memberId, query, category, page);
+        IngredientResponseDTO.IngredientPageResponse response = IngredientResponseDTO.IngredientPageResponse.from(pageResponse);
         return ApiResponse.onSuccess(response);
     }
+
+
 
     @Operation(summary = "즐겨찾기 재료 목록 조회")
     @GetMapping("/favorites")
