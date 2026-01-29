@@ -4,7 +4,6 @@ import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDT
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.*;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Category;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.*;
-import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
@@ -26,8 +25,8 @@ import static java.util.stream.Collectors.toList;
 public class IngredientQueryServiceImpl implements IngredientQueryService {
 
     private static final int PAGE_SIZE = 20;
+    private final RecentSearchService recentSearchService;
     private final IngredientRequestRepository ingredientRequestRepository;
-    private final MemberRecentSearchRepository memberRecentSearchRepository;
     private final MemberRepository memberRepository;
     private final IngredientRepository ingredientRepository;
     private final MemberIngredientRepository memberIngredientRepository;
@@ -86,17 +85,6 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
                 .toList();
     }
 
-    @Override
-    public IngredientResponseDTO.RecentSearchList getRecentSearch(Long memberId) {
-
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
-
-        List<MemberRecentSearch> recentSearches =
-                memberRecentSearchRepository.findAllByMemberOrderByUpdatedAtDesc(member);
-
-        return IngredientResponseDTO.RecentSearchList.from(recentSearches);
-    }
 
     @Override
     @Transactional(readOnly = true)
@@ -106,6 +94,19 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
         return requests.stream()
                 .map(IngredientResponseDTO.AdminRequestList::from)
                 .toList();
+    }
+
+    // 최근 검색어 조회
+    @Override
+    public IngredientResponseDTO.RecentSearchList getRecentSearches(Long memberId) {
+
+        if (!memberRepository.existsById(memberId)) {
+            throw new BusinessException(ErrorStatus.MEMBER_NOT_FOUND);
+        }
+
+        List<String> keywords = recentSearchService.getRecentSearches(memberId);
+
+        return IngredientResponseDTO.RecentSearchList.from(keywords);
     }
 
 

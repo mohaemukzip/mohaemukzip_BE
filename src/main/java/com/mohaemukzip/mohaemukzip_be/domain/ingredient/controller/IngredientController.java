@@ -5,6 +5,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDT
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Category;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.service.IngredientCommandService;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.service.IngredientQueryService;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.service.RecentSearchService;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
@@ -29,6 +30,7 @@ import java.util.List;
 @Validated
 public class IngredientController {
 
+    private final RecentSearchService recentSearchService;
     private final IngredientQueryService ingredientQueryService;
     private final IngredientCommandService ingredientCommandService;
 
@@ -114,18 +116,33 @@ public class IngredientController {
 
     @Operation(summary = "최근 재료 검색어 조회")
     @GetMapping("/recent-searches")
-    public ApiResponse<IngredientResponseDTO.RecentSearchList> getRecentSearch(
-            @AuthenticationPrincipal CustomUserDetails customUserDetails
-    ) {
+    public ApiResponse<List<String>> getRecentSearches(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails) {
+
         if (customUserDetails == null) {
             throw new BusinessException(ErrorStatus.TOKEN_MISSING);
         }
+
         Long memberId = customUserDetails.getMember().getId();
+        List<String> recentSearches = recentSearchService.getRecentSearches(memberId);
 
-        IngredientResponseDTO.RecentSearchList result =
-                ingredientQueryService.getRecentSearch(memberId);
+        return ApiResponse.onSuccess(recentSearches);
+    }
 
-        return ApiResponse.onSuccess(result);
+    @Operation(summary = "최근 재료 검색어 삭제")
+    @DeleteMapping("/recent-searches/{recentSearchId}")
+    public ApiResponse<String> deleteRecentSearch(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @RequestParam String keyword) {
+
+        if (customUserDetails == null) {
+            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
+        }
+
+        Long memberId = customUserDetails.getMember().getId();
+        recentSearchService.deleteRecentSearch(memberId, keyword);
+
+        return ApiResponse.onSuccess("최근 검색어가 삭제되었습니다.");
     }
 
     @Operation(summary = "재료 추가 요청")
@@ -143,24 +160,7 @@ public class IngredientController {
 
         return ApiResponse.onSuccess("소중한 의견 감사합니다 *.* ");
     }
-  
-    @Operation(summary = "최근 재료 검색어 삭제")
-    @DeleteMapping("/recent-searches/{recentSearchId}")
-    public ApiResponse<String> deleteRecentSearch(
 
-            @AuthenticationPrincipal CustomUserDetails customUserDetails,
-            @PathVariable(name = "recentSearchId") Long recentSearchId
-    ) {
-        if (customUserDetails == null) {
-            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
-        }
-
-        Long memberId = customUserDetails.getMember().getId();
-
-        ingredientCommandService.deleteRecentSearch(memberId, recentSearchId);
-
-        return ApiResponse.onSuccess("최근 검색어가 삭제되었습니다.");
-    }
 }
 
 

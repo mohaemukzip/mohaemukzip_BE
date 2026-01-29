@@ -12,8 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -24,7 +22,7 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
     private final IngredientRequestRepository  ingredientRequestRepository;
     private final IngredientRepository ingredientRepository;
     private final MemberRepository memberRepository;
-    private final MemberRecentSearchRepository memberRecentSearchRepository;
+    private final RecentSearchService recentSearchService;
     private final MemberIngredientRepository memberIngredientRepository;
     private final MemberFavoriteRepository memberFavoriteRepository;
 
@@ -105,51 +103,6 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
 
     }
 
-    //최근 검색어 저장
-    @Override
-    @Transactional
-    public void saveRecentSearch(Long memberId, String keyword) {
-
-        if (keyword == null || keyword.isBlank()) {
-            return;
-        }
-
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
-
-
-        Optional<MemberRecentSearch> existingSearch =
-                memberRecentSearchRepository.findByMemberAndKeyword(member, keyword);
-
-        if (existingSearch.isPresent()) {
-
-            memberRecentSearchRepository.updateUpdatedAt(
-                    existingSearch.get().getId(),
-                    LocalDateTime.now()
-            );
-
-            return;
-        }
-        MemberRecentSearch newSearch = MemberRecentSearch.builder()
-                .member(member)
-                .keyword(keyword)
-                .build();
-
-        memberRecentSearchRepository.save(newSearch);
-
-        List<MemberRecentSearch> allSearches =
-                memberRecentSearchRepository.findAllByMemberOrderByUpdatedAtDesc(member);
-
-        if (allSearches.size() > MAX_RECENT_SEARCH_COUNT) {
-
-            List<MemberRecentSearch> searchesToDelete =
-                    allSearches.subList(MAX_RECENT_SEARCH_COUNT, allSearches.size());
-
-            memberRecentSearchRepository.deleteAllInBatch(searchesToDelete);
-
-        }
-
-    }
 
     @Override
     @Transactional
@@ -172,17 +125,16 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
 
         ingredientRequestRepository.save(newRequest);
     }
-    
+
     @Override
     @Transactional
-    public void deleteRecentSearch(Long memberId, Long recentSearchId) {
+    public void deleteRecentSearch(Long memberId, String keyword) {
 
+        if (!memberRepository.existsById(memberId)) {
+            throw new BusinessException(ErrorStatus.MEMBER_NOT_FOUND);
+        }
 
-        MemberRecentSearch search = memberRecentSearchRepository.findByIdAndMemberId(recentSearchId, memberId)
-                .orElseThrow(() -> new BusinessException(ErrorStatus.SEARCH_NOT_FOUND));
-
-
-        memberRecentSearchRepository.delete(search);
+        recentSearchService.deleteRecentSearch(memberId, keyword);
 
     }
 }
