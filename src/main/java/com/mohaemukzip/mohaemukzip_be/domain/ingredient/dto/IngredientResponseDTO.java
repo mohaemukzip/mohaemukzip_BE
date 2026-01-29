@@ -4,6 +4,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.*;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.enums.IngredientStatus;
 import lombok.Builder;
 import lombok.Getter;
+import org.springframework.data.domain.Page;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -11,7 +12,31 @@ import java.util.List;
 
 public class IngredientResponseDTO {
 
-    //1. 재료 조회 api
+    //1-1. 재료 조회 api
+    @Getter
+    @Builder
+    public static class IngredientPageResponse {
+        private List<Detail> content;
+        private int page;
+        private int size;
+        private long totalElements;
+        private int totalPages;
+        private boolean first;
+        private boolean last;
+
+        public static IngredientPageResponse from(Page<Detail> page) {
+            return IngredientPageResponse.builder()
+                    .content(page.getContent())
+                    .page(page.getNumber())
+                    .size(page.getSize())
+                    .totalElements(page.getTotalElements())
+                    .totalPages(page.getTotalPages())
+                    .first(page.isFirst())
+                    .last(page.isLast())
+                    .build();
+        }
+    }
+    //1-2. 재료 조회 api
     @Getter
     @Builder
     public static class Detail {
