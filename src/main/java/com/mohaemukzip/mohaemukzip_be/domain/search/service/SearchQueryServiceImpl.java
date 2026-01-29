@@ -1,71 +1,66 @@
 package com.mohaemukzip.mohaemukzip_be.domain.search.service;
 
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.IngredientRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeProjection;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.search.converter.SearchConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResponseDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResultDTO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
-@RequiredArgsConstructor
 public class SearchQueryServiceImpl implements SearchQueryService {
 
-    private final IngredientRepository ingredientRepository;
     private final RecipeRepository recipeRepository;
-    @Qualifier("redisCacheTemplate")
     private final RedisTemplate<String, Object> redisTemplate;
+    private static final int DEFAULT_PAGE_SIZE = 20;
+
+    public SearchQueryServiceImpl(
+            RecipeRepository recipeRepository,
+            @Qualifier("redisCacheTemplate") RedisTemplate<String, Object> redisTemplate) {
+        this.recipeRepository = recipeRepository;
+        this.redisTemplate = redisTemplate;
+    }
 
     @Override
-    public SearchResponseDTO search(String keyword) {
-        // 빈 키워드 방어 로직
-        if (keyword == null || keyword.isBlank()) {
+    public SearchResponseDTO search(String keyword, Integer page) {
+        // 1. Input Validation & Sanitization
+        if (keyword == null || keyword.trim().length() < 1) {
             return SearchConverter.toEmptySearchResponseDTO();
         }
 
-        // 공백 제거된 키워드 생성 (DB 검색용)
-        String strippedKeyword = keyword.replace(" ", "");
+        String sanitizedKeyword = keyword.trim();
+        // 특수문자 제거 등 추가 정제 로직이 필요하다면 여기에 위치
+        // 현재는 공백 제거만 수행 (DB 쿼리에서 REPLACE로 처리하므로 여기선 trim만)
+        String strippedKeyword = sanitizedKeyword.replace(" ", "");
 
-        // Redis 키는 원본 키워드 사용 (또는 strippedKeyword 사용 가능)
-        // 여기서는 원본 키워드를 사용하여 사용자 입력 그대로 캐싱
-        String cacheKey = "search::" + keyword.trim();
+        // 2. Redis Caching Strategy
+        // 키워드 + 페이지 번호를 조합하여 캐시 키 생성
+        String cacheKey = "search::" + strippedKeyword + "::" + page;
 
-        // 1. Redis 캐시 조회
         try {
             SearchResponseDTO cachedData = (SearchResponseDTO) redisTemplate.opsForValue().get(cacheKey);
             if (cachedData != null) {
                 return cachedData;
             }
         } catch (Exception e) {
-            // Redis 조회 실패 시 DB 조회 진행
+            // Redis 조회 실패 시 로그 남기고 DB 조회 진행 (서비스 중단 방지)
         }
 
-        // 2. DB 조회 (공백 제거된 키워드 사용)
-        List<SearchResultDTO> results = new ArrayList<>();
+        // 3. DB Query with Projection & Pagination
+        Pageable pageable = PageRequest.of(page, DEFAULT_PAGE_SIZE);
+        Page<RecipeProjection> resultPage = recipeRepository.findProjectedByTitleContaining(strippedKeyword, pageable);
 
-        // 재료 검색
-        results.addAll(searchIngredients(strippedKeyword));
+        SearchResponseDTO response = SearchConverter.toSearchResponseDTO(resultPage);
 
-        // 메뉴(레시피) 검색
-        results.addAll(searchRecipes(strippedKeyword));
-
-        SearchResponseDTO response = SearchConverter.toSearchResponseDTO(results);
-
-        // 3. Redis 캐시 저장 (TTL 30분)
+        // 4. Cache Update (TTL 30분)
         try {
             redisTemplate.opsForValue().set(cacheKey, response, Duration.ofMinutes(30));
         } catch (Exception e) {
@@ -73,27 +68,5 @@ public class SearchQueryServiceImpl implements SearchQueryService {
         }
 
         return response;
-    }
-
-    // 재료 검색 로직
-    private List<SearchResultDTO> searchIngredients(String keyword) {
-        List<Ingredient> ingredients = ingredientRepository.findByNameContaining(keyword);
-        return ingredients.stream()
-                .map(SearchConverter::toSearchResultDTO)
-                .collect(Collectors.toList());
-    }
-
-    // 메뉴(레시피) 검색 로직
-    private List<SearchResultDTO> searchRecipes(String keyword) {
-        // 중복 제거 및 순서 보장을 위해 LinkedHashMap 사용
-        Map<Long, SearchResultDTO> recipeMap = new LinkedHashMap<>();
-
-        // 레시피 제목 검색
-        List<Recipe> recipes = recipeRepository.findByTitleContaining(keyword);
-        for (Recipe recipe : recipes) {
-            recipeMap.put(recipe.getId(), SearchConverter.toSearchResultDTO(recipe));
-        }
-
-        return new ArrayList<>(recipeMap.values());
     }
 }
