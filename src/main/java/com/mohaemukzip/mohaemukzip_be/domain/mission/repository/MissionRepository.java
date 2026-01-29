@@ -7,8 +7,13 @@ import org.springframework.data.repository.query.Param;
 
 
 import java.util.List;
-import java.util.Optional;
 
 public interface MissionRepository extends JpaRepository<Mission,Long> {
-
+    @Query("SELECT m FROM Mission m " +
+            "WHERE m.id NOT IN (" +
+            "    SELECT mm.mission.id FROM MemberMission mm " +
+            "    WHERE mm.member.id = :memberId " +
+            "    AND mm.status = 'COMPLETED'" +
+            ")")
+    List<Mission> findAvailableMissions(@Param("memberId") Long memberId);
 }

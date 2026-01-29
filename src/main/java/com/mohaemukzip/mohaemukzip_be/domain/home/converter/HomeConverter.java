@@ -78,6 +78,4 @@ public class HomeConverter {
         return recipes.stream().map(HomeConverter::toRecommendedRecipeDto).toList();
     }
 
-
-
 }

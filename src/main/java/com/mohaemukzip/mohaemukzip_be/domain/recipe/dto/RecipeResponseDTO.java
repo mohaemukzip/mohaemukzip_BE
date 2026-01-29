@@ -49,8 +49,13 @@ public class RecipeResponseDTO {
     }
 
 
-    public static record RecipeCreateResponse(Long recipeId) {}
+    public record RecipeCreateResponse(Long recipeId) {}
 
+    @Builder
+    public record SummaryCreateResult(
+            boolean summaryExists,
+            int stepCount
+    ) {}
 
     @Builder
     @Getter

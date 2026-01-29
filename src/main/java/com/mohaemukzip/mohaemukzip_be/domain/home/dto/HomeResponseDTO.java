@@ -6,7 +6,7 @@ import java.util.List;
 @Getter
 @Builder
 @AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 public class HomeResponseDTO {
 
     private Integer level;
@@ -31,6 +31,18 @@ public class HomeResponseDTO {
         private Boolean friday;
         private Boolean saturday;
         private Boolean sunday;
+
+        public int getCookingDaysCount() {
+            int count = 0;
+            if (Boolean.TRUE.equals(monday)) count++;
+            if (Boolean.TRUE.equals(tuesday)) count++;
+            if (Boolean.TRUE.equals(wednesday)) count++;
+            if (Boolean.TRUE.equals(thursday)) count++;
+            if (Boolean.TRUE.equals(friday)) count++;
+            if (Boolean.TRUE.equals(saturday)) count++;
+            if (Boolean.TRUE.equals(sunday)) count++;
+            return count;
+        }
     }
 
     @Getter

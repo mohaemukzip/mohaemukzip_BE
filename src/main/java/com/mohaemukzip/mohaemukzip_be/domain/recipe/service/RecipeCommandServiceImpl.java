@@ -96,7 +96,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
 
     @Transactional
     @Override
-    public SummaryCreateResult createSummary(Long recipeId) {
+    public RecipeResponseDTO.SummaryCreateResult createSummary(Long recipeId) {
 
         //  이미 요약 존재 → 멱등
         Summary existing = summaryRepository.findByRecipeId(recipeId).orElse(null);
@@ -104,7 +104,10 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
             int count = recipeStepRepository
                     .findAllBySummaryIdOrderByStepNumberAsc(existing.getId())
                     .size();
-            return new SummaryCreateResult(true, count);
+            return RecipeResponseDTO.SummaryCreateResult.builder()
+                    .summaryExists(true)
+                    .stepCount(count)
+                    .build();
         }
 
         // Recipe 조회
@@ -127,7 +130,10 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
 
         recipeStepRepository.saveAll(entities);
 
-        return new SummaryCreateResult(true, entities.size());
+        return RecipeResponseDTO.SummaryCreateResult.builder()
+                .summaryExists(true)
+                .stepCount(entities.size())
+                .build();
     }
 
     @Override
@@ -165,7 +171,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         // CookingRecord 저장
         CookingRecord record = cookingRecordRepository.save(
                 CookingRecord.builder()
-                        .member(Member.builder().id(memberId).build())
+                        .member(member)
                         .recipe(recipe)
                         .rating(rating)
                         .build()
@@ -356,12 +362,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         boolean matches = recipeRepository.existsByIdAndTitleContaining(recipeId, keyword);
         if (!matches) return 0;
 
-        // 1. 미션 완료
         mm.completeToday();
-
-        // 2. 보상 지급(점수)
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
 
         Integer reward = mm.getMission().getReward();
         return (reward == null) ? 0 : reward;

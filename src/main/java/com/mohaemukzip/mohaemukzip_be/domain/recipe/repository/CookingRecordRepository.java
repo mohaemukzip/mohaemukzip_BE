@@ -30,15 +30,18 @@ public interface CookingRecordRepository extends JpaRepository<CookingRecord, Lo
             @Param("weekEnd") LocalDateTime weekEnd
     );
 
+    //특정 기간 동안 요리 기록 존재 여부 확인
     boolean existsByMember_IdAndCreatedAtBetween(Long memberId, LocalDateTime start, LocalDateTime end);
 
-    @Query("select distinct function('date', c.createdAt) " +
-            "from CookingRecord c " +
-            "where c.member.id = :memberId and c.createdAt between :start and :end")
+    //특정 기간 동안 요리한 날짜 목록 조회
+    @Query("SELECT DISTINCT CAST(c.createdAt AS LocalDate) " +
+            "FROM CookingRecord c " +
+            "WHERE c.member.id = :memberId " +
+            "AND c.createdAt BETWEEN :start AND :end " +
+            "ORDER BY CAST(c.createdAt AS LocalDate) DESC")
     List<LocalDate> findDistinctCookingDatesBetween(
             @Param("memberId") Long memberId,
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
-
 }

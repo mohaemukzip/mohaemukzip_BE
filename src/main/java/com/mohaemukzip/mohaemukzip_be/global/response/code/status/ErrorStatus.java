@@ -70,7 +70,7 @@ public enum ErrorStatus implements BaseCode {
     GEMINI_BAD_REQUEST(HttpStatus.BAD_REQUEST, "GEMINI4001", "잘못된 Gemini 요청입니다."),
     GEMINI_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GEMINI5001", "Gemini 서버 오류입니다."),
     EXTERNAL_API_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "EXTERNAL5001", "외부 API 호출 중 오류가 발생했습니다."),
-    SUMMARY_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "GEMINI5002", "요약문 생성에 실패했습니다.")
+    SUMMARY_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "GEMINI5002", "요약문 생성에 실패했습니다."),
     // 미션 관련 에러
     NO_AVAILABLE_MISSION(HttpStatus.NOT_FOUND, "MISSION4001", "퀘스트로 할당할 미션이 남아있지 않습니다.")
     ;
