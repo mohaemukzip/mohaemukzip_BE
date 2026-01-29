@@ -12,8 +12,6 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.MemberRecipeRepos
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
-import com.mohaemukzip.mohaemukzip_be.global.s3.S3Service;
-import com.mohaemukzip.mohaemukzip_be.global.service.LevelService;
 import com.mohaemukzip.mohaemukzip_be.global.service.RecentlyViewedRecipeManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -36,11 +36,6 @@ public class ChatController {
      * @return 봇의 응답 메시지 (레시피 추천 포함)
      */
     @Operation(summary = "챗봇 대화 요청", description = "사용자의 메시지를 분석하여 답변을 생성하고, 필요 시 맞춤형 레시피를 추천합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "요청 성공 (봇 응답 반환)"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청 (필수값 누락 등)"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    })
     @PostMapping
     public ResponseEntity<ChatResponse> processMessage(
             @AuthenticationPrincipal CustomUserDetails userDetails,

@@ -1,6 +1,5 @@
 package com.mohaemukzip.mohaemukzip_be.domain.member.service;
 
-import com.mohaemukzip.mohaemukzip_be.domain.member.dto.AuthResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.TermRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 

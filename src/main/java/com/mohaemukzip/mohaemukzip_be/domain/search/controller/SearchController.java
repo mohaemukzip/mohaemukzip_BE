@@ -1,6 +1,5 @@
 package com.mohaemukzip.mohaemukzip_be.domain.search.controller;
 
-import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.RecipeQueryService;
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResponseDTO;
@@ -48,9 +47,6 @@ public class SearchController {
 
     @GetMapping("/recipes")
     @Operation(summary = "세부 카테고리별 레시피 조회 API", description = "특정 세부 카테고리(categoryId)에 속하는 레시피 목록을 조회합니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "OK"),
-    })
     @Parameters({
             @Parameter(name = "categoryId", description = "세부 카테고리 ID", required = true),
             @Parameter(name = "page", description = "페이지 번호 (0부터 시작)")
