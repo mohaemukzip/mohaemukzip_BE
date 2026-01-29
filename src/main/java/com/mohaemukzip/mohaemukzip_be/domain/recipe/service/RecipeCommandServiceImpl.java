@@ -148,7 +148,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         }
 
         // score, 레벨업 판단을 위해 Member 로드 (member lock)
-        Member member = memberRepository.findById(memberId)
+        Member member = memberRepository.findByIdForUpdate(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
 
         int oldScore = member.getScore() == null ? 0 : member.getScore();
@@ -158,16 +158,6 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         if (recipe == null) throw new BusinessException(ErrorStatus.RECIPE_NOT_FOUND);
         recipe.addRating(rating);
 
-
-        // 오늘 첫 요리 여부 판단 (점수 계산용)
-        LocalDate today = LocalDate.now();
-        LocalDateTime startOfToday = today.atStartOfDay();
-        LocalDateTime endOfToday = today.atTime(23,59,59);
-
-        boolean alreadyCookedToday =
-                cookingRecordRepository.existsByMember_IdAndCreatedAtBetween(memberId, startOfToday, endOfToday);
-        boolean isFirstCookingToday = !alreadyCookedToday;
-
         // CookingRecord 저장
         CookingRecord record = cookingRecordRepository.save(
                 CookingRecord.builder()
@@ -176,6 +166,17 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
                         .rating(rating)
                         .build()
         );
+
+        // 오늘 첫 요리 여부 판단 (점수 계산용)
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfToday = today.atStartOfDay();
+        LocalDateTime startOfTomorrow = today.plusDays(1).atStartOfDay();
+
+        long todayCookingCount = cookingRecordRepository
+                .countByMember_IdAndCreatedAtBetween(memberId, startOfToday, startOfTomorrow);
+
+        boolean isFirstCookingToday = (todayCookingCount == 1);
+
 
         // 이번 요청에서 얻는 점수 합산
         int rewardScore = 0;

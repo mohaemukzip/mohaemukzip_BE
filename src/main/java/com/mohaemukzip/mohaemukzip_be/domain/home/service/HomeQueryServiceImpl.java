@@ -123,7 +123,7 @@ public class HomeQueryServiceImpl implements HomeQueryService {
         LocalDate weekEnd = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
 
         LocalDateTime weekStartDateTime = weekStart.atStartOfDay();
-        LocalDateTime weekEndDateTime = weekEnd.atTime(23, 59, 59);
+        LocalDateTime weekEndDateTime = weekEnd.plusDays(1).atStartOfDay();
 
         List<Integer> cookingDaysNumbers = cookingRecordRepository
                 .findWeeklyCookingDays(memberId, weekStartDateTime, weekEndDateTime);
