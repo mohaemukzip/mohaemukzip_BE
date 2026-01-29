@@ -15,4 +15,8 @@ public interface RecipeIngredientRepository extends JpaRepository<RecipeIngredie
 
     @Query("SELECT ri.ingredient.name FROM RecipeIngredient ri WHERE ri.recipe.id = :recipeId")
     List<String> findIngredientNamesByRecipeId(@Param("recipeId") Long recipeId);
+
+    @Query("select ri.ingredient.id from RecipeIngredient ri where ri.recipe.id = :recipeId")
+    List<Long> findIngredientIdsByRecipeId(@Param("recipeId") Long recipeId);
+
 }

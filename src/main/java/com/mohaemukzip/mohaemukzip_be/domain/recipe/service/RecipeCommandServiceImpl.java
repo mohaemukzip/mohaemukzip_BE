@@ -1,11 +1,16 @@
 package com.mohaemukzip.mohaemukzip_be.domain.recipe.service;
 
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberIngredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.RecipeIngredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.IngredientRepository;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberIngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.RecipeIngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
+import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.MemberMission;
+import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.enums.MissionStatus;
+import com.mohaemukzip.mohaemukzip_be.domain.mission.repository.MemberMissionRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.builder.GeminiPromptBuilder;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.*;
@@ -16,6 +21,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.RecipeStepConverte
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.*;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
+import com.mohaemukzip.mohaemukzip_be.global.service.LevelService;
 import com.mohaemukzip.mohaemukzip_be.global.service.PythonTranscriptExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +34,8 @@ import org.springframework.web.reactive.function.client.WebClientException;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -47,9 +55,12 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
     private final IngredientRepository ingredientRepository;
     private final RecipeIngredientRepository recipeIngredientRepository;
     private final RecipeStepRepository recipeStepRepository;
+    private final MemberMissionRepository memberMissionRepository;
+    private final MemberRepository memberRepository;
+    private final MemberIngredientRepository memberIngredientRepository;
     private final SummaryRepository summaryRepository;
     private final MemberRecipeRepository memberRecipeRepository;
-    private final MemberRepository memberRepository;
+    private final LevelService levelService;
     private final PythonTranscriptExecutor transcriptExecutor;
 
     private final RecipeConverter recipeConverter;
@@ -85,7 +96,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
 
     @Transactional
     @Override
-    public SummaryCreateResult createSummary(Long recipeId) {
+    public RecipeResponseDTO.SummaryCreateResult createSummary(Long recipeId) {
 
         //  이미 요약 존재 → 멱등
         Summary existing = summaryRepository.findByRecipeId(recipeId).orElse(null);
@@ -93,7 +104,10 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
             int count = recipeStepRepository
                     .findAllBySummaryIdOrderByStepNumberAsc(existing.getId())
                     .size();
-            return new SummaryCreateResult(true, count);
+            return RecipeResponseDTO.SummaryCreateResult.builder()
+                    .summaryExists(true)
+                    .stepCount(count)
+                    .build();
         }
 
         // Recipe 조회
@@ -116,7 +130,10 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
 
         recipeStepRepository.saveAll(entities);
 
-        return new SummaryCreateResult(true, entities.size());
+        return RecipeResponseDTO.SummaryCreateResult.builder()
+                .summaryExists(true)
+                .stepCount(entities.size())
+                .build();
     }
 
     @Override
@@ -130,20 +147,58 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
             throw new BusinessException(ErrorStatus.INVALID_RATING);
         }
 
+        // score, 레벨업 판단을 위해 Member 로드 (member lock)
+        Member member = memberRepository.findByIdForUpdate(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
+
+        int oldScore = member.getScore() == null ? 0 : member.getScore();
+
+        // 레시피 lock + 난이도 갱신
         Recipe recipe = recipeRepository.findByIdForUpdate(recipeId);
-        if (recipe == null) {
-            throw new BusinessException(ErrorStatus.RECIPE_NOT_FOUND);
-        }
+        if (recipe == null) throw new BusinessException(ErrorStatus.RECIPE_NOT_FOUND);
+        recipe.addRating(rating);
 
-        recipe.addRating(rating); // level, ratingCount 내부에서 갱신
-
+        // CookingRecord 저장
         CookingRecord record = cookingRecordRepository.save(
                 CookingRecord.builder()
-                        .member(Member.builder().id(memberId).build())
+                        .member(member)
                         .recipe(recipe)
                         .rating(rating)
                         .build()
         );
+
+        // 오늘 첫 요리 여부 판단 (점수 계산용)
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfToday = today.atStartOfDay();
+        LocalDateTime startOfTomorrow = today.plusDays(1).atStartOfDay();
+
+        long todayCookingCount = cookingRecordRepository
+                .countByMember_IdAndCreatedAtBetween(memberId, startOfToday, startOfTomorrow);
+
+        boolean isFirstCookingToday = (todayCookingCount == 1);
+
+
+        // 이번 요청에서 얻는 점수 합산
+        int rewardScore = 0;
+
+        // 1. 요리 기록 점수: 정책표 기준 +5
+        rewardScore += 5;
+
+        // 2. 오늘 미션 매칭 시 완료 보상(예: +20)
+        rewardScore +=  completeTodayMissionIfMatched(memberId, recipeId); // 매칭되면 reward 반환, 아니면 0
+
+        if (isFirstCookingToday) {
+            //  재료 보너스(하루 1회)
+            rewardScore += calculateIngredientBonus(memberId, recipeId, today);
+
+            // 연속 요리 보너스(하루 1회)
+            rewardScore += calculateStreakBonus(memberId, today);
+        }
+
+        // 점수 반영 + 레벨업 판정
+        member.addScore(rewardScore);
+        int newScore = member.getScore();
+        boolean leveledUp = levelService.shouldLevelUp(oldScore, newScore);
 
         return RecipeResponseDTO.CookingRecordCreateResponseDTO.builder()
                 .cookingRecordId(record.getId())
@@ -151,6 +206,8 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
                 .rating(rating)
                 .recipeLevel(recipe.getLevel())
                 .ratingCount(recipe.getRatingCount())
+                .rewardScore(rewardScore)
+                .leveledUp(leveledUp)
                 .build();
     }
 
@@ -289,4 +346,73 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
             throw new BusinessException(ErrorStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    private int completeTodayMissionIfMatched(Long memberId, Long recipeId) {
+        LocalDate today = LocalDate.now();
+
+        MemberMission mm = memberMissionRepository
+                .findByMemberIdAndAssignedDateForUpdate(memberId, today)
+                .orElse(null);
+
+        if (mm == null) return 0;
+        if (mm.getStatus() != MissionStatus.ASSIGNED) return 0;
+
+        String keyword = mm.getMission().getKeyword();
+        if (keyword == null || keyword.isBlank()) return 0;
+
+        boolean matches = recipeRepository.existsByIdAndTitleContaining(recipeId, keyword);
+        if (!matches) return 0;
+
+        mm.completeToday();
+
+        Integer reward = mm.getMission().getReward();
+        return (reward == null) ? 0 : reward;
+    }
+
+    private int calculateIngredientBonus(Long memberId, Long recipeId, LocalDate today) {
+        List<Long> ingredientIds = recipeIngredientRepository.findIngredientIdsByRecipeId(recipeId);
+        if (ingredientIds.isEmpty()) return 0;
+
+        List<MemberIngredient> owned = memberIngredientRepository
+                .findAllByMemberIdAndIngredientIdIn(memberId, ingredientIds);
+
+        if (owned.isEmpty()) return 0;
+
+        LocalDate d3 = today.plusDays(3);
+
+        boolean hasD3 = owned.stream()
+                .map(MemberIngredient::getExpireDate)
+                .filter(Objects::nonNull)
+                .anyMatch(exp -> !exp.isBefore(today) && !exp.isAfter(d3)); // today ~ today+3
+
+        return hasD3 ? 10 : 5;
+    }
+
+    private int calculateStreakBonus(Long memberId, LocalDate today) {
+        // 최근 7일만 보면 충분 (7일 보너스까지만)
+        LocalDateTime start = today.minusDays(7).atStartOfDay();
+        LocalDateTime end = today.minusDays(1).atTime(23,59,59);
+
+        List<LocalDate> cookedDates = cookingRecordRepository
+                .findDistinctCookingDatesBetween(memberId, start, end);
+
+        Set<LocalDate> set = new HashSet<>(cookedDates);
+
+        int streakBeforeToday = 0;
+        LocalDate d = today.minusDays(1);
+        while (set.contains(d)) {
+            streakBeforeToday++;
+            d = d.minusDays(1);
+            if (streakBeforeToday >= 6) break; // 최대 6까지만 필요(오늘 포함 7)
+        }
+
+        int streakIncludingToday = streakBeforeToday + 1;
+
+        if (streakIncludingToday >= 7) return 25;
+        if (streakIncludingToday >= 3) return 10;
+        return 5; // 1일차(오늘 첫 요리)
+    }
+
+
+
 }

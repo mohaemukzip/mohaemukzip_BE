@@ -49,8 +49,13 @@ public class RecipeResponseDTO {
     }
 
 
-    public static record RecipeCreateResponse(Long recipeId) {}
+    public record RecipeCreateResponse(Long recipeId) {}
 
+    @Builder
+    public record SummaryCreateResult(
+            boolean summaryExists,
+            int stepCount
+    ) {}
 
     @Builder
     @Getter
@@ -63,6 +68,8 @@ public class RecipeResponseDTO {
         private Integer rating;      // 사용자가 준 별점 (1~5)
         private Double recipeLevel;  // 갱신된 레시피 난이도
         private Integer ratingCount; // 갱신된 평가 수
+        private Integer rewardScore; // 이번 요청으로 오른 점수, 없으면 0
+        private Boolean leveledUp; // 레벨업 유무
     }
 
     @Builder
