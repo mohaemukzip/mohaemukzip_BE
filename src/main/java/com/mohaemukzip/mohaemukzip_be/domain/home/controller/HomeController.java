@@ -1,7 +1,7 @@
 package com.mohaemukzip.mohaemukzip_be.domain.home.controller;
 
 import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeResponseDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.home.service.HomeService;
+import com.mohaemukzip.mohaemukzip_be.domain.home.service.HomeQueryService;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
@@ -22,19 +22,15 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 public class HomeController {
 
-    private final HomeService homeService;
+    private final HomeQueryService homequeryService;
 
     @Operation(summary = "홈 화면 조회")
     @GetMapping
     public ApiResponse<HomeResponseDTO> getHome(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        if (userDetails == null) {
-            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
-        }
-
         Long memberId = userDetails.getMember().getId();
-        HomeResponseDTO response = homeService.getHome(memberId);
+        HomeResponseDTO response = homequeryService.getHome(memberId);
 
         return ApiResponse.onSuccess(response);
     }

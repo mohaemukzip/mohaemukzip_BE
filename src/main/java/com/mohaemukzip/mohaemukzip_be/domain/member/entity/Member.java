@@ -17,11 +17,11 @@ import java.time.LocalDate;
         name = "members",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "UQ_LOGIN_ID",
+                        name = "uk_login_id",
                         columnNames = {"login_id"}
                 ),
                 @UniqueConstraint(
-                        name = "UQ_PROVIDER_OAUTH_ID",
+                        name = "uk_provider_oauth_id",
                         columnNames = {"login_type", "oauth_id"}
                 )
         }
@@ -78,5 +78,11 @@ public class Member extends BaseEntity {
 
     public void updateNickname(String nickname) {
         this.nickname = nickname;
+    }
+
+    public void addScore(int reward) {
+        if (this.score == null) this.score = 0;
+        if (reward <= 0) return;
+        this.score += reward;
     }
 }

@@ -29,4 +29,12 @@ public interface MemberIngredientRepository extends JpaRepository<MemberIngredie
     // 챗봇 추천용: 유통기한 임박한 순서로 조회 (NULL은 맨 뒤로)
     @Query("SELECT mi FROM MemberIngredient mi JOIN FETCH mi.ingredient WHERE mi.member.id = :memberId ORDER BY CASE WHEN mi.expireDate IS NULL THEN 1 ELSE 0 END, mi.expireDate ASC")
     List<MemberIngredient> findAllByMemberIdOrderByExpireDateAsc(@Param("memberId") Long memberId);
+
+    // 레시피 재료들 중 포함 재료들 expiredDate 조회용
+    @Query("select mi from MemberIngredient mi " +
+            "where mi.member.id = :memberId and mi.ingredient.id in :ingredientIds")
+    List<MemberIngredient> findAllByMemberIdAndIngredientIdIn(
+            @Param("memberId") Long memberId,
+            @Param("ingredientIds") List<Long> ingredientIds
+    );
 }

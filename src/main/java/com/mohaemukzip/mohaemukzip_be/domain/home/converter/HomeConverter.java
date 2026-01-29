@@ -1,6 +1,8 @@
 package com.mohaemukzip.mohaemukzip_be.domain.home.converter;
 
 import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeResponseDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.MemberMission;
+import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.enums.MissionStatus;
 import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.Mission;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
 import com.mohaemukzip.mohaemukzip_be.global.service.LevelService;
@@ -33,13 +35,15 @@ public class HomeConverter {
                 .build();
     }
 
-    public static HomeResponseDTO.TodayMissionDto toTodayMissionDto(Mission mission, boolean isDone)  {
+    public static HomeResponseDTO.TodayMissionDto toTodayMissionDto(MemberMission memberMission)  {
+        Mission mission = memberMission.getMission();
         return HomeResponseDTO.TodayMissionDto.builder()
                 .missionId(mission.getId())
                 .title(mission.getTitle())
                 .description(mission.getDescription())
                 .reward(mission.getReward())
-                .isCompleted(isDone)
+                .keyword(mission.getKeyword())
+                .status(memberMission.getStatus().name())
                 .build();
     }
 
@@ -73,7 +77,5 @@ public class HomeConverter {
     public static List<HomeResponseDTO.RecommendedRecipeDto> toRecommendedRecipeDtos(List<Recipe> recipes) {
         return recipes.stream().map(HomeConverter::toRecommendedRecipeDto).toList();
     }
-
-
 
 }

@@ -17,13 +17,10 @@ public interface IngredientCommandService {
     //재료 즐겨찾기 삭제
     IngredientResponseDTO.DeleteFavorite deleteFavorite(Long memberId, Long favoriteId);
 
-    //최근 검색어 저장
-    void saveRecentSearch(Long memberId, String keyword);
-
     //재료 요청하기
     void createIngredientRequest(Long memberId, IngredientRequestDTO.IngredientReq request);
     
-  // 최근 검색어 삭제
-    void deleteRecentSearch(Long memberId, Long recentSearchId);
+    // 최근 검색어 삭제
+    void deleteRecentSearch(Long memberId, String keyword);
 
 }

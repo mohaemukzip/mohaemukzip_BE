@@ -6,11 +6,13 @@ public interface RecipeCommandService {
 
     Long saveRecipeByVideoId(String videoId);
 
-    RecipeCommandServiceImpl.SummaryCreateResult createSummary(Long recipeId);
+    RecipeResponseDTO.SummaryCreateResult createSummary(Long recipeId);
 
     RecipeResponseDTO.CookingRecordCreateResponseDTO createCookingRecord(
             Long memberId,
             Long recipeId,
             int rating
     );
+
+    RecipeResponseDTO.BookmarkToggleResult toggleBookmark(Long memberId, Long recipeId);
 }

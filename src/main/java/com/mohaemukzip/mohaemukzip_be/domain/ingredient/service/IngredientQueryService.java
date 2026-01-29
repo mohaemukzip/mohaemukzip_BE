@@ -17,9 +17,6 @@ public interface IngredientQueryService {
     //즐겨찾기 조회
     List<IngredientResponseDTO.Detail> getFavoriteList(Long memberId);
 
-    //최근 검색 조회
-    IngredientResponseDTO.RecentSearchList getRecentSearch(Long memberId);
-
     //관리자용 재료 요청 목록 조회
     List<IngredientResponseDTO.AdminRequestList> getIngredientRequestList();
 }

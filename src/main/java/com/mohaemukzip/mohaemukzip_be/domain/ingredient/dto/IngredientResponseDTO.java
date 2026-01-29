@@ -182,14 +182,10 @@ public class IngredientResponseDTO {
     // 8-1. 최근 재료 검색 조회
     @Builder
     public record RecentSearch(
-            Long memberRecentSearchId,
             String keyword
     ) {
-        public static RecentSearch from(MemberRecentSearch entity) {
-            return RecentSearch.builder()
-                    .memberRecentSearchId(entity.getId())
-                    .keyword(entity.getKeyword())
-                    .build();
+        public static RecentSearch from(String keyword) {
+            return new RecentSearch(keyword);
         }
     }
 
@@ -198,9 +194,8 @@ public class IngredientResponseDTO {
     public record RecentSearchList(
             List<RecentSearch> recentList
     ) {
-
-        public static RecentSearchList from(List<MemberRecentSearch> entities) {
-            List<RecentSearch> dto = entities.stream()
+        public static RecentSearchList from(List<String> keywords) {
+            List<RecentSearch> dto = keywords.stream()
                     .map(RecentSearch::from)
                     .toList();
 

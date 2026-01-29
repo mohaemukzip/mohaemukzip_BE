@@ -1,6 +1,6 @@
 package com.mohaemukzip.mohaemukzip_be.domain.mission.entity;
 
-import com.mohaemukzip.mohaemukzip_be.domain.home.entity.enums.MissionStatus;
+import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.enums.MissionStatus;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.global.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -15,8 +15,8 @@ import java.time.LocalDate;
 @Getter
 @Table(name = "member_missions", uniqueConstraints = {
         @UniqueConstraint(
-                name = "UQ_MEMBER_ASSIGNED_DATE",
-                columnNames = {"member_id", "assignedDate"}
+                name = "uk_member_assigned_date",
+                columnNames = {"member_id", "assigned_date"}
         )
 })
 public class MemberMission extends BaseEntity {
@@ -34,7 +34,7 @@ public class MemberMission extends BaseEntity {
     @JoinColumn(name = "mission_id", nullable = false)
     private Mission mission;
 
-    @Column(name = "assignedDate")
+    @Column(name = "assigned_date",  nullable = false)
     private LocalDate assignedDate; // 오늘의 퀘스트 날짜
 
     @Enumerated(EnumType.STRING)

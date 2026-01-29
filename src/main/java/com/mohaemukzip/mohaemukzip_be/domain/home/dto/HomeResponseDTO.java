@@ -6,7 +6,7 @@ import java.util.List;
 @Getter
 @Builder
 @AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 public class HomeResponseDTO {
 
     private Integer level;
@@ -16,7 +16,7 @@ public class HomeResponseDTO {
     private Integer nextLevelScore;
     private Integer consecutiveDays;
     private WeeklyCookingDto weeklyCooking;
-    private TodayMissionDto todayMission;  // 미션 중 1개만
+    private TodayMissionDto todayMission;
     private List<RecommendedRecipeDto> recommendedRecipes;
 
     @Getter
@@ -42,7 +42,8 @@ public class HomeResponseDTO {
         private String title;
         private String description;
         private Integer reward;
-        private Boolean isCompleted;
+        private String keyword;
+        private String status; // "ASSIGNED", "COMPLETED", "FAILED"
     }
 
     @Getter
