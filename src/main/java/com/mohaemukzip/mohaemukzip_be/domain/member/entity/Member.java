@@ -17,11 +17,11 @@ import java.time.LocalDate;
         name = "members",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "UQ_LOGIN_ID",
+                        name = "uk_login_id",
                         columnNames = {"login_id"}
                 ),
                 @UniqueConstraint(
-                        name = "UQ_PROVIDER_OAUTH_ID",
+                        name = "uk_provider_oauth_id",
                         columnNames = {"login_type", "oauth_id"}
                 )
         }

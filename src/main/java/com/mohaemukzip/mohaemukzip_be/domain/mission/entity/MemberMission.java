@@ -15,7 +15,7 @@ import java.time.LocalDate;
 @Getter
 @Table(name = "member_missions", uniqueConstraints = {
         @UniqueConstraint(
-                name = "UQ_MEMBER_ASSIGNED_DATE",
+                name = "uk_member_assigned_date",
                 columnNames = {"member_id", "assigned_date"}
         )
 })
