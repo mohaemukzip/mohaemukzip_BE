@@ -12,8 +12,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SearchResultDTO {
-    private SearchType type;
     private Long id;
-    private String name;  // INGREDIENT
-    private String title; // RECIPE
+    private String title;
 }

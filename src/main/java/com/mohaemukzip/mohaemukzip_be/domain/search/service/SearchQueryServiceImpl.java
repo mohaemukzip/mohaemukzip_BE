@@ -1,13 +1,10 @@
 package com.mohaemukzip.mohaemukzip_be.domain.search.service;
 
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.IngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.search.converter.SearchConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResultDTO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -18,17 +15,20 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
-@RequiredArgsConstructor
 public class SearchQueryServiceImpl implements SearchQueryService {
 
-    private final IngredientRepository ingredientRepository;
     private final RecipeRepository recipeRepository;
-    @Qualifier("redisCacheTemplate")
     private final RedisTemplate<String, Object> redisTemplate;
+
+    public SearchQueryServiceImpl(
+            RecipeRepository recipeRepository,
+            @Qualifier("redisCacheTemplate") RedisTemplate<String, Object> redisTemplate) {
+        this.recipeRepository = recipeRepository;
+        this.redisTemplate = redisTemplate;
+    }
 
     @Override
     public SearchResponseDTO search(String keyword) {
@@ -42,7 +42,7 @@ public class SearchQueryServiceImpl implements SearchQueryService {
 
         // Redis 키는 원본 키워드 사용 (또는 strippedKeyword 사용 가능)
         // 여기서는 원본 키워드를 사용하여 사용자 입력 그대로 캐싱
-        String cacheKey = "search::" + keyword.trim();
+        String cacheKey = "search::" + strippedKeyword; 
 
         // 1. Redis 캐시 조회
         try {
@@ -57,9 +57,6 @@ public class SearchQueryServiceImpl implements SearchQueryService {
         // 2. DB 조회 (공백 제거된 키워드 사용)
         List<SearchResultDTO> results = new ArrayList<>();
 
-        // 재료 검색
-        results.addAll(searchIngredients(strippedKeyword));
-
         // 메뉴(레시피) 검색
         results.addAll(searchRecipes(strippedKeyword));
 
@@ -73,14 +70,6 @@ public class SearchQueryServiceImpl implements SearchQueryService {
         }
 
         return response;
-    }
-
-    // 재료 검색 로직
-    private List<SearchResultDTO> searchIngredients(String keyword) {
-        List<Ingredient> ingredients = ingredientRepository.findByNameContaining(keyword);
-        return ingredients.stream()
-                .map(SearchConverter::toSearchResultDTO)
-                .collect(Collectors.toList());
     }
 
     // 메뉴(레시피) 검색 로직
