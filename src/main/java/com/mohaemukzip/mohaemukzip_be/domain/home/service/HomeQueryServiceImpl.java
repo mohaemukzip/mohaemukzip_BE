@@ -125,12 +125,13 @@ public class HomeQueryServiceImpl implements HomeQueryService {
         LocalDateTime weekStartDateTime = weekStart.atStartOfDay();
         LocalDateTime weekEndDateTime = weekEnd.atTime(23, 59, 59);
 
-        List<CookingRecord> weeklyRecords = cookingRecordRepository
-                .findWeeklyCookingRecords(memberId, weekStartDateTime, weekEndDateTime);
+        List<Integer> cookingDaysNumbers = cookingRecordRepository
+                .findWeeklyCookingDays(memberId, weekStartDateTime, weekEndDateTime);
 
         // 요일별로 그룹핑
-        Map<DayOfWeek, Boolean> cookingByDay = weeklyRecords.stream()
-                .map(record -> record.getCreatedAt().toLocalDate().getDayOfWeek())
+        Map<DayOfWeek, Boolean> cookingByDay = cookingDaysNumbers.stream()
+                .map(dayNum -> {return dayNum == 1 ? DayOfWeek.SUNDAY : DayOfWeek.of(dayNum - 1);
+                })
                 .distinct()
                 .collect(Collectors.toMap(
                         day -> day,
@@ -139,9 +140,6 @@ public class HomeQueryServiceImpl implements HomeQueryService {
                 ));
 
         HomeResponseDTO.WeeklyCookingDto result = HomeConverter.toWeeklyCookingDto(cookingByDay);
-
-        log.debug("주간 요리 현황 조회 완료 - memberId: {}, 요리한 날: {}/7",
-                memberId, result.getCookingDaysCount());
 
         return result;
     }

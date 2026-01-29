@@ -350,7 +350,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         LocalDate today = LocalDate.now();
 
         MemberMission mm = memberMissionRepository
-                .findByMemberIdAndAssignedDate(memberId, today)
+                .findByMemberIdAndAssignedDateForUpdate(memberId, today)
                 .orElse(null);
 
         if (mm == null) return 0;
