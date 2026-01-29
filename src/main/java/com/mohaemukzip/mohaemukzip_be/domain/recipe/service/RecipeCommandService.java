@@ -1,5 +1,6 @@
 package com.mohaemukzip.mohaemukzip_be.domain.recipe.service;
 
+import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 
 public interface RecipeCommandService {
@@ -13,4 +14,6 @@ public interface RecipeCommandService {
             Long recipeId,
             int rating
     );
+
+    RecipeResponseDTO.BookmarkToggleResult toggleBookmark(Long memberId, Long recipeId);
 }

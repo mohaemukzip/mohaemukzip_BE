@@ -18,7 +18,7 @@ public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
     List<String> findAllNames();
 
     // 재료명으로 조회 (매칭용)
-    Optional<Ingredient> findByName(String name);
+    List<Ingredient> findAllByNameIn(List<String> names);
 
     @Query("""
 SELECT i FROM Ingredient i
