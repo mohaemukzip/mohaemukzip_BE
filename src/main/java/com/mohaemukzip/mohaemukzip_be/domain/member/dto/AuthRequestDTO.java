@@ -11,11 +11,11 @@ import java.util.List;
 public class AuthRequestDTO {
     @Schema(description = "로그인 요청")
     public record LoginRequest(
-            @Schema(description = "로그인 ID", example = "test01")
+            @Schema(description = "로그인 ID", example = "admin")
             @NotBlank
             String loginId,
 
-            @Schema(description = "비밀번호", example = "Test1234!")
+            @Schema(description = "비밀번호", example = "mohaemukzip123!")
             @NotBlank
             String password
     ) { }

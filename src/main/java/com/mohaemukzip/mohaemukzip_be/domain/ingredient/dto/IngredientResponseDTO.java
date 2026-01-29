@@ -20,15 +20,17 @@ public class IngredientResponseDTO {
         private String category;
         private String unit;
         private Double weight;
+        private Boolean isFavorite;
 
         // 엔티티 -> DTO 변환 메서드
-        public static Detail from(Ingredient ingredient) {
+        public static Detail from(Ingredient ingredient, boolean isFavorite) {
             return Detail.builder()
                     .ingredientId(ingredient.getId())
                     .name(ingredient.getName())
                     .category(ingredient.getCategory() != null ? ingredient.getCategory().getLabel() : null)
                     .unit(ingredient.getUnit() != null ? ingredient.getUnit().getLabel() : null)
                     .weight(ingredient.getWeight())
+                    .isFavorite(isFavorite)
                     .build();
         }
     }
@@ -117,7 +119,7 @@ public class IngredientResponseDTO {
     public record AddFavorite(Long memberFavoriteId, Long ingredientId) {
     }
 
-    // 6-1. 즐겨찾기 재료 상세 조회
+    // 6-1. 즐겨찾기 재료 조회
     @Builder
     public record FavoriteDetail(
             Long memberFavoriteId,
@@ -146,12 +148,6 @@ public class IngredientResponseDTO {
         }
     }
 
-    // 6-2. 즐겨찾기 재료 리스트
-    @Builder
-    public record FavoriteList(
-            List<FavoriteDetail> favoriteList
-    ) {
-    }
 
     // 7. 즐겨찾기 재료 삭제
     @Builder
