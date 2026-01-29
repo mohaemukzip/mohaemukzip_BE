@@ -1,6 +1,5 @@
 package com.mohaemukzip.mohaemukzip_be.domain.recipe.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
