@@ -15,7 +15,7 @@ public interface IngredientQueryService {
     IngredientResponseDTO.FridgeIngredientList getMyFridgeIngredients(Long memberId);
 
     //즐겨찾기 조회
-    List<IngredientResponseDTO.FavoriteDetail> getFavoriteList(Long memberId);
+    List<IngredientResponseDTO.Detail> getFavoriteList(Long memberId);
 
     //관리자용 재료 요청 목록 조회
     List<IngredientResponseDTO.AdminRequestList> getIngredientRequestList();

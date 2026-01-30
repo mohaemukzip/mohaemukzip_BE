@@ -140,36 +140,7 @@ public class IngredientResponseDTO {
     }
 
 
-    // 6-1. 즐겨찾기 재료 조회
-    @Builder
-    public record FavoriteDetail(
-            Long memberFavoriteId,
-            Long ingredientId,
-            String name,
-            Double weight,
-            String unit
-    ) {
-
-        public static FavoriteDetail from(MemberFavorite favorite) {
-
-            Ingredient ingredient = favorite.getIngredient();
-
-            if (ingredient == null) {
-                return FavoriteDetail.builder()
-                        .memberFavoriteId(favorite.getId())
-                        .build();
-            }
-            return FavoriteDetail.builder()
-                    .memberFavoriteId(favorite.getId())
-                    .ingredientId(ingredient.getId())
-                    .name(ingredient.getName())
-                    .weight(ingredient.getWeight())
-                    .unit(ingredient.getUnit() != null ? ingredient.getUnit().getLabel() : null)
-                    .build();
-        }
-    }
-
-    // 6-2. 즐겨찾기 토글 응답
+    // 6. 즐겨찾기 토글 응답
     @Builder
     public record ToggleFavorite(
             Long memberFavoriteId,
