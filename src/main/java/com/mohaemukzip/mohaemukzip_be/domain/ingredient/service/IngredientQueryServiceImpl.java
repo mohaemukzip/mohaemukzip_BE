@@ -5,8 +5,6 @@ import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.*;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Category;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.*;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
-import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
-import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,9 +23,7 @@ import static java.util.stream.Collectors.toList;
 public class IngredientQueryServiceImpl implements IngredientQueryService {
 
     private static final int PAGE_SIZE = 20;
-    private final RecentSearchService recentSearchService;
     private final IngredientRequestRepository ingredientRequestRepository;
-    private final MemberRepository memberRepository;
     private final IngredientRepository ingredientRepository;
     private final MemberIngredientRepository memberIngredientRepository;
     private final MemberFavoriteRepository memberFavoriteRepository;
@@ -79,8 +75,9 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
         List<MemberFavorite> favoriteList = memberFavoriteRepository.findAllByMemberId(memberId);
 
         return favoriteList.stream()
-                .map(favorite -> IngredientResponseDTO.Detail.from(
-                        favorite.getIngredient(),true
+                .map(favorite -> IngredientResponseDTO.Detail.from(  // ✅ Ingredient 직접 전달
+                        favorite.getIngredient(),
+                        true
                 ))
                 .toList();
     }

@@ -56,6 +56,25 @@ public class IngredientController {
         return ApiResponse.onSuccess(response);
     }
 
+    @Operation(summary = "즐겨찾기 재료 토글 (등록/삭제)")
+    @PostMapping("/{ingredientId}/favorites")
+    public ApiResponse<IngredientResponseDTO.ToggleFavorite> toggleFavorite(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @PathVariable Long ingredientId
+    ) {
+        if (customUserDetails == null) {
+            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
+        }
+        Long memberId = customUserDetails.getMember().getId();
+
+        IngredientResponseDTO.ToggleFavorite result =
+                ingredientCommandService.toggleFavorite(memberId, ingredientId);
+
+        return ApiResponse.onSuccess(result);
+    }
+
+
+
 
 
     @Operation(summary = "즐겨찾기 재료 목록 조회")
@@ -73,42 +92,6 @@ public class IngredientController {
         return ApiResponse.onSuccess(response);
     }
 
-    @Operation(summary = "즐겨찾기 재료 등록")
-    @PostMapping("/{ingredientId}/favorites")
-    public ApiResponse<IngredientResponseDTO.AddFavorite> addFavorite(
-            @AuthenticationPrincipal CustomUserDetails customUserDetails,
-            @PathVariable Long ingredientId
-    ) {
-
-        if (customUserDetails == null) {
-            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
-        }
-        Long memberId = customUserDetails.getMember().getId();
-
-        IngredientResponseDTO.AddFavorite result =
-                ingredientCommandService.addFavorite(memberId, ingredientId);
-
-        return ApiResponse.onSuccess(result);
-    }
-
-    @Operation(summary = "즐겨찾기 재료 삭제")
-    @DeleteMapping("/favorites/{favoriteId}")
-    public ApiResponse<IngredientResponseDTO.DeleteFavorite> deleteFavorite(
-            @AuthenticationPrincipal CustomUserDetails customUserDetails,
-            @PathVariable Long favoriteId
-    ) {
-        if (customUserDetails == null) {
-            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
-        }
-        Long memberId = customUserDetails.getMember().getId();
-
-        IngredientResponseDTO.DeleteFavorite result =
-                ingredientCommandService.deleteFavorite(memberId, favoriteId);
-
-        return ApiResponse.onSuccess(result);
-
-
-    }
 
     @Operation(summary = "최근 재료 검색어 조회")
     @GetMapping("/recent-searches")
