@@ -1,8 +1,10 @@
 package com.mohaemukzip.mohaemukzip_be.domain.home.converter;
 
+import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeCalendarResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeResponseDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeStatsResponseDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.CookingRecord;
 import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.MemberMission;
-import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.enums.MissionStatus;
 import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.Mission;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
 import com.mohaemukzip.mohaemukzip_be.global.service.LevelService;
@@ -76,6 +78,60 @@ public class HomeConverter {
 
     public static List<HomeResponseDTO.RecommendedRecipeDto> toRecommendedRecipeDtos(List<Recipe> recipes) {
         return recipes.stream().map(HomeConverter::toRecommendedRecipeDto).toList();
+    }
+
+    // ===== 통계 탭 관련 Converter =====
+
+    public static HomeStatsResponseDTO toHomeStatsResponseDTO(
+            Integer fridgeScore,
+            Long totalCookingCount,
+            Double averageDifficulty,
+            List<HomeStatsResponseDTO.MonthlyStat> monthlyCookingStats
+    ) {
+        return HomeStatsResponseDTO.builder()
+                .fridgeScore(fridgeScore)
+                .totalCookingCount(totalCookingCount)
+                .averageDifficulty(averageDifficulty)
+                .monthlyCookingStats(monthlyCookingStats)
+                .build();
+    }
+
+    public static HomeStatsResponseDTO.MonthlyStat toMonthlyStat(Integer month, Long count) {
+        return HomeStatsResponseDTO.MonthlyStat.builder()
+                .month(month)
+                .count(count)
+                .build();
+    }
+
+    public static HomeCalendarResponseDTO toHomeCalendarResponseDTO(
+            Integer year,
+            Integer month,
+            List<Integer> cookedDates,
+            Map<Integer, List<HomeCalendarResponseDTO.CookingRecordItem>> cookingRecords
+    ) {
+        return HomeCalendarResponseDTO.builder()
+                .year(year)
+                .month(month)
+                .cookedDates(cookedDates)
+                .cookingRecords(cookingRecords)
+                .build();
+    }
+
+    public static HomeCalendarResponseDTO.CookingRecordItem toCookingRecordItem(CookingRecord record) {
+        Recipe recipe = record.getRecipe();
+        return HomeCalendarResponseDTO.CookingRecordItem.builder()
+                .recipeId(recipe.getId())
+                .imageUrl(recipe.getImageUrl())
+                .title(recipe.getTitle())
+                .channel(recipe.getChannel())
+                .views(recipe.getViews())
+                .time(recipe.getTime())
+                .rating(record.getRating())
+                .build();
+    }
+
+    public static List<HomeCalendarResponseDTO.CookingRecordItem> toCookingRecordItems(List<CookingRecord> records) {
+        return records.stream().map(HomeConverter::toCookingRecordItem).toList();
     }
 
 }

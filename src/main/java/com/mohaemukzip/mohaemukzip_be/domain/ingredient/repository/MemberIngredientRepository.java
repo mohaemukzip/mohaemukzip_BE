@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -36,5 +37,19 @@ public interface MemberIngredientRepository extends JpaRepository<MemberIngredie
     List<MemberIngredient> findAllByMemberIdAndIngredientIdIn(
             @Param("memberId") Long memberId,
             @Param("ingredientIds") List<Long> ingredientIds
+    );
+
+    // 어제 만료된 재료 개수 (스케줄러용)
+    @Query("SELECT COUNT(mi) FROM MemberIngredient mi " +
+            "WHERE mi.member.id = :memberId AND mi.expireDate = :yesterday")
+    int countExpiredYesterday(@Param("memberId") Long memberId, @Param("yesterday") LocalDate yesterday);
+
+    // 최근 7일간 만료된 재료 존재 여부
+    @Query("SELECT COUNT(mi) FROM MemberIngredient mi " +
+            "WHERE mi.member.id = :memberId AND mi.expireDate BETWEEN :startDate AND :endDate")
+    int countExpiredBetween(
+            @Param("memberId") Long memberId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
     );
 }

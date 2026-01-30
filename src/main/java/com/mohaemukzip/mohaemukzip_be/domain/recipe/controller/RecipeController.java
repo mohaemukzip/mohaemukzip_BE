@@ -47,21 +47,16 @@ public class RecipeController {
 
     @PostMapping("{recipeId}/summary")
     @Operation(summary = "요약 레시피 생성 API", description = "특정 RecipeId에 속하는 레시피의 조리법을 요약해서 저장합니다.")
-    public ApiResponse<SummaryCreateResponse> createSummary(
+    public ApiResponse<RecipeResponseDTO.SummaryCreateResponse> createSummary(
             @PathVariable Long recipeId
     ) {
         var result = recipeCommandService.createSummary(recipeId);
         return ApiResponse.onSuccess(
-                new SummaryCreateResponse(result.summaryExists(), result.stepCount())
+                new RecipeResponseDTO.SummaryCreateResponse(result.summaryExists(), result.stepCount())
         );
     }
-
-    public record SummaryCreateResponse(
-            boolean summaryExists,
-            int stepCount
-    ) {}
     
-    @PostMapping("/recipes/{recipeId}/complete")
+    @PostMapping("/{recipeId}/complete")
     @Operation(summary = "요리 완료 API", description = "특정 RecipeId에 속하는 레시피를 CookingRecord에 저장하고, 해당 레시피의 난이도를 갱신합니다.")
     public ApiResponse<RecipeResponseDTO.CookingRecordCreateResponseDTO> createCookingRecord(
             @PathVariable Long recipeId,
