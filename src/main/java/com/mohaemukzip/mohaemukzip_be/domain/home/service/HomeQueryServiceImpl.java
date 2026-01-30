@@ -149,7 +149,11 @@ public class HomeQueryServiceImpl implements HomeQueryService {
 
         // 최근 30일간의 요리 기록 조회 (충분한 범위)
         List<LocalDate> cookingDates = cookingRecordRepository
-                .findDistinctCookingDatesBetween(memberId, startOfToday, endDate);
+                .findDistinctCookingDatesBetween(memberId, startOfToday, endDate)
+                .stream()
+                .map(LocalDateTime::toLocalDate)
+                .distinct()
+                .toList();
 
         if (cookingDates == null || cookingDates.isEmpty()) {
             log.debug("연속 요리 일수 계산 완료 - memberId: {}, days: 0 (기록 없음)", memberId);

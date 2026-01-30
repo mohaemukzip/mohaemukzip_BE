@@ -392,8 +392,12 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         LocalDateTime end = today.minusDays(1).atTime(23,59,59);
 
         List<LocalDate> cookedDates = cookingRecordRepository
-                .findDistinctCookingDatesBetween(memberId, start, end);
-
+                .findDistinctCookingDatesBetween(memberId, start, end)
+                .stream()
+                .map(LocalDateTime::toLocalDate)
+                .distinct()
+                .toList();
+        
         Set<LocalDate> set = new HashSet<>(cookedDates);
 
         int streakBeforeToday = 0;
