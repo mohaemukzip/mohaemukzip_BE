@@ -5,8 +5,6 @@ import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.*;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Category;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.*;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
-import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
-import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,9 +23,7 @@ import static java.util.stream.Collectors.toList;
 public class IngredientQueryServiceImpl implements IngredientQueryService {
 
     private static final int PAGE_SIZE = 20;
-    private final RecentSearchService recentSearchService;
     private final IngredientRequestRepository ingredientRequestRepository;
-    private final MemberRepository memberRepository;
     private final IngredientRepository ingredientRepository;
     private final MemberIngredientRepository memberIngredientRepository;
     private final MemberFavoriteRepository memberFavoriteRepository;
@@ -74,12 +70,15 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
     //즐겨찾기 재료 리스트 조회
     @Override
     @Transactional(readOnly = true)
-    public List<IngredientResponseDTO.FavoriteDetail> getFavoriteList(Long memberId) {
+    public List<IngredientResponseDTO.Detail> getFavoriteList(Long memberId) {
 
         List<MemberFavorite> favoriteList = memberFavoriteRepository.findAllByMemberId(memberId);
 
         return favoriteList.stream()
-                .map(IngredientResponseDTO.FavoriteDetail::from)
+                .map(favorite -> IngredientResponseDTO.Detail.from(  // ✅ Ingredient 직접 전달
+                        favorite.getIngredient(),
+                        true
+                ))
                 .toList();
     }
 

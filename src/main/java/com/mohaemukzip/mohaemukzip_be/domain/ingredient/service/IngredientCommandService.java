@@ -11,16 +11,10 @@ public interface IngredientCommandService {
     // 냉장고 재료 삭제
     IngredientResponseDTO.DeleteFridgeIngredient  deleteIngredient(Long memberIngredientId, Long memberId);
 
-    //재료 즐겨찾기 등록
-    IngredientResponseDTO.AddFavorite addFavorite(Long memberId, Long ingredientId);
-
-    //재료 즐겨찾기 삭제
-    IngredientResponseDTO.DeleteFavorite deleteFavorite(Long memberId, Long favoriteId);
+    // 즐겨찾기 토글 (등록/삭제)
+    IngredientResponseDTO.ToggleFavorite toggleFavorite(Long memberId, Long ingredientId);
 
     //재료 요청하기
     void createIngredientRequest(Long memberId, IngredientRequestDTO.IngredientReq request);
-    
-    // 최근 검색어 삭제
-    void deleteRecentSearch(Long memberId, String keyword);
 
 }

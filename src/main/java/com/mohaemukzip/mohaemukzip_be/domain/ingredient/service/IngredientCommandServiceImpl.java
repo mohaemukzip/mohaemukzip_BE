@@ -69,7 +69,8 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
     }
 
     @Override
-    public IngredientResponseDTO.AddFavorite addFavorite(Long memberId, Long ingredientId) {
+    @Transactional
+    public IngredientResponseDTO.ToggleFavorite toggleFavorite(Long memberId, Long ingredientId) {
 
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
@@ -77,31 +78,37 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
         Ingredient ingredient = ingredientRepository.findById(ingredientId)
                 .orElseThrow(() -> new BusinessException(ErrorStatus.INGREDIENT_NOT_FOUND));
 
-        if (memberFavoriteRepository.existsByMemberAndIngredient(member, ingredient)) {
-            throw new BusinessException(ErrorStatus.ALREADY_FAVORITE);
+        Optional<MemberFavorite> existingFavorite =
+                memberFavoriteRepository.findByMemberAndIngredient(member, ingredient);
+
+        if (existingFavorite.isPresent()) {
+            // 이미 존재하면 삭제
+            MemberFavorite favorite = existingFavorite.get();
+            memberFavoriteRepository.delete(favorite);
+
+            return IngredientResponseDTO.ToggleFavorite.builder()
+                    .memberFavoriteId(favorite.getId())
+                    .ingredientId(ingredientId)
+                    .isFavorite(false)
+                    .build();
+        } else {
+            // 존재하지 않으면 등록
+            MemberFavorite memberFavorite = MemberFavorite.builder()
+                    .member(member)
+                    .ingredient(ingredient)
+                    .build();
+
+            MemberFavorite saved = memberFavoriteRepository.save(memberFavorite);
+
+            return IngredientResponseDTO.ToggleFavorite.builder()
+                    .memberFavoriteId(saved.getId())
+                    .ingredientId(ingredientId)
+                    .isFavorite(true)
+                    .build();
         }
-
-        MemberFavorite memberFavorite = MemberFavorite.builder()
-                .member(member)
-                .ingredient(ingredient)
-                .build();
-
-        MemberFavorite saved = memberFavoriteRepository.save(memberFavorite);
-
-        return new IngredientResponseDTO.AddFavorite(saved.getId(), ingredient.getId());
     }
 
-    @Override
-    public IngredientResponseDTO.DeleteFavorite deleteFavorite(Long memberId, Long favoriteId) {
 
-        MemberFavorite favorite = memberFavoriteRepository.findByIdAndMemberId(favoriteId, memberId)
-                .orElseThrow(() -> new BusinessException(ErrorStatus.FAVORITE_NOT_FOUND));
-
-        memberFavoriteRepository.delete(favorite);
-
-        return new IngredientResponseDTO.DeleteFavorite(favorite.getId());
-
-    }
 
 
     @Override
@@ -124,17 +131,5 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
                 .build();
 
         ingredientRequestRepository.save(newRequest);
-    }
-
-    @Override
-    @Transactional
-    public void deleteRecentSearch(Long memberId, String keyword) {
-
-        if (!memberRepository.existsById(memberId)) {
-            throw new BusinessException(ErrorStatus.MEMBER_NOT_FOUND);
-        }
-
-        recentSearchService.deleteRecentSearch(memberId, keyword);
-
     }
 }

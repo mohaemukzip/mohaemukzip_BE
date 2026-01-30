@@ -13,7 +13,7 @@ import java.util.Set;
 
 public interface MemberFavoriteRepository extends JpaRepository<MemberFavorite, Long> {
 
-    boolean existsByMemberAndIngredient(Member member, Ingredient ingredient);
+    Optional<MemberFavorite> findByMemberAndIngredient(Member member, Ingredient ingredient);
 
     @Query("SELECT mf.ingredient.id " +
             "FROM MemberFavorite mf " +
@@ -25,5 +25,4 @@ public interface MemberFavoriteRepository extends JpaRepository<MemberFavorite, 
             "WHERE mf.member.id = :memberId")
     List<MemberFavorite> findAllByMemberId(@Param("memberId") Long memberId);
 
-    Optional<MemberFavorite> findByIdAndMemberId(Long id, Long memberId);
 }
