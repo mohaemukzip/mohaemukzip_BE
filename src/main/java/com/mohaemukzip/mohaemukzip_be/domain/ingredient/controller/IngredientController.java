@@ -60,7 +60,7 @@ public class IngredientController {
 
     @Operation(summary = "즐겨찾기 재료 목록 조회")
     @GetMapping("/favorites")
-    public ApiResponse<List<IngredientResponseDTO.Detail>> getFavoriteList(
+    public ApiResponse<List<IngredientResponseDTO.FavoriteDetail>> getFavoriteList(
             @AuthenticationPrincipal CustomUserDetails customUserDetails
     ) {
         if (customUserDetails == null) {
@@ -68,7 +68,7 @@ public class IngredientController {
         }
         Long memberId = customUserDetails.getMember().getId();
 
-        List<IngredientResponseDTO.Detail> response = ingredientQueryService.getFavoriteList(memberId);
+        List<IngredientResponseDTO.FavoriteDetail> response = ingredientQueryService.getFavoriteList(memberId);
 
         return ApiResponse.onSuccess(response);
     }
@@ -92,10 +92,10 @@ public class IngredientController {
     }
 
     @Operation(summary = "즐겨찾기 재료 삭제")
-    @DeleteMapping("/favorites/{favoriteId}")
+    @DeleteMapping("/favorites/{memberFavoriteId}")
     public ApiResponse<IngredientResponseDTO.DeleteFavorite> deleteFavorite(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
-            @PathVariable Long favoriteId
+            @PathVariable Long memberFavoriteId
     ) {
         if (customUserDetails == null) {
             throw new BusinessException(ErrorStatus.TOKEN_MISSING);
@@ -103,7 +103,7 @@ public class IngredientController {
         Long memberId = customUserDetails.getMember().getId();
 
         IngredientResponseDTO.DeleteFavorite result =
-                ingredientCommandService.deleteFavorite(memberId, favoriteId);
+                ingredientCommandService.deleteFavorite(memberId, memberFavoriteId);
 
         return ApiResponse.onSuccess(result);
 
