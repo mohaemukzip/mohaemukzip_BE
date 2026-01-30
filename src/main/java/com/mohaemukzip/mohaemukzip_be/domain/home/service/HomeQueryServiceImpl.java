@@ -7,6 +7,8 @@ import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeStatsResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.MemberMission;
+import com.mohaemukzip.mohaemukzip_be.domain.mission.service.MissionAssignmentService;
+import com.mohaemukzip.mohaemukzip_be.domain.mission.service.MissionQueryService;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.CookingRecord;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.CookingRecordRepository;
@@ -29,16 +31,17 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class HomeQueryServiceImpl implements HomeQueryService {
-
     private final MemberRepository memberRepository;
+
     private final CookingRecordRepository cookingRecordRepository;
     private final RecipeRepository recipeRepository;
     private final MissionAssignmentService missionAssignmentService;
     private final LevelService levelService;
+    private final MissionQueryService missionQueryService;
 
     @Override
+    @Transactional(readOnly = true)
     public HomeResponseDTO getHome(Long memberId) {
 
         Member member = memberRepository.findById(memberId)
@@ -71,6 +74,58 @@ public class HomeQueryServiceImpl implements HomeQueryService {
                 todayMission,
                 recommendedRecipes
         );
+    }
+
+    @Override
+    public HomeStatsResponseDTO getStats(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
+
+        // 냉장고 점수
+        Integer fridgeScore = member.getFridgeScore() != null ? member.getFridgeScore() : 100;
+
+        // 누적 요리 횟수
+        Long totalCookingCount = cookingRecordRepository.countByMemberId(memberId);
+
+        // 도전 난이도 (평균 rating)
+        Double averageDifficulty = cookingRecordRepository.findAverageRatingByMemberId(memberId);
+
+        // 월별 집밥 횟수 (현재 연도)
+        int currentYear = LocalDate.now().getYear();
+        List<Object[]> monthlyData = cookingRecordRepository.countByMemberIdGroupByMonth(memberId, currentYear);
+
+        // 1~12월 데이터 생성 (없는 월은 0으로)
+        Map<Integer, Long> monthMap = new HashMap<>();
+        for (Object[] row : monthlyData) {
+            Integer month = (Integer) row[0];
+            Long count = (Long) row[1];
+            monthMap.put(month, count);
+        }
+
+        List<HomeStatsResponseDTO.MonthlyStat> monthlyCookingStats = new ArrayList<>();
+        for (int m = 1; m <= 12; m++) {
+            monthlyCookingStats.add(HomeConverter.toMonthlyStat(m, monthMap.getOrDefault(m, 0L)));
+        }
+
+        return HomeConverter.toHomeStatsResponseDTO(fridgeScore, totalCookingCount, averageDifficulty, monthlyCookingStats);
+    }
+
+    @Override
+    public HomeCalendarResponseDTO getCalendar(Long memberId, int year, int month) {
+        // 요리한 날짜 목록
+        List<Integer> cookedDates = cookingRecordRepository
+                .findCookedDaysByMemberIdAndYearMonth(memberId, year, month);
+
+        // 날짜별 요리 기록
+        Map<Integer, List<HomeCalendarResponseDTO.CookingRecordItem>> cookingRecords = new HashMap<>();
+
+        for (Integer day : cookedDates) {
+            LocalDate date = LocalDate.of(year, month, day);
+            List<CookingRecord> records = cookingRecordRepository.findByMemberIdAndDate(memberId, date);
+            cookingRecords.put(day, HomeConverter.toCookingRecordItems(records));
+        }
+
+        return HomeConverter.toHomeCalendarResponseDTO(year, month, cookedDates, cookingRecords);
     }
 
     /**
@@ -152,18 +207,17 @@ public class HomeQueryServiceImpl implements HomeQueryService {
     private HomeResponseDTO.TodayMissionDto getTodayMission(Long memberId) {
         LocalDate today = LocalDate.now();
 
+        Optional<MemberMission> existing =
+                missionQueryService.findTodayMission(memberId, today);
+
+        if (existing.isPresent()) {
+            return HomeConverter.toTodayMissionDto(existing.get());
+        }
+
         try {
             // 별도 트랜잭션 서비스를 통해 조회/할당
             MemberMission memberMission = missionAssignmentService
-                    .getOrAssignTodayMission(memberId, today);
-
-            if (memberMission == null) {
-                log.warn("오늘의 미션 조회/할당 실패 - memberId: {}", memberId);
-                return null;
-            }
-
-            log.debug("오늘의 미션 조회 완료 - memberId: {}, missionId: {}, status: {}",
-                    memberId, memberMission.getMission().getId(), memberMission.getStatus());
+                    .assignTodayMission(memberId, today);
 
             return HomeConverter.toTodayMissionDto(memberMission);
 
@@ -184,57 +238,5 @@ public class HomeQueryServiceImpl implements HomeQueryService {
         log.debug("추천 레시피 조회 완료 - count: {}", recipes.size());
 
         return HomeConverter.toRecommendedRecipeDtos(recipes);
-    }
-
-    @Override
-    public HomeStatsResponseDTO getStats(Long memberId) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
-
-        // 냉장고 점수
-        Integer fridgeScore = member.getFridgeScore() != null ? member.getFridgeScore() : 100;
-
-        // 누적 요리 횟수
-        Long totalCookingCount = cookingRecordRepository.countByMemberId(memberId);
-
-        // 도전 난이도 (평균 rating)
-        Double averageDifficulty = cookingRecordRepository.findAverageRatingByMemberId(memberId);
-
-        // 월별 집밥 횟수 (현재 연도)
-        int currentYear = LocalDate.now().getYear();
-        List<Object[]> monthlyData = cookingRecordRepository.countByMemberIdGroupByMonth(memberId, currentYear);
-
-        // 1~12월 데이터 생성 (없는 월은 0으로)
-        Map<Integer, Long> monthMap = new HashMap<>();
-        for (Object[] row : monthlyData) {
-            Integer month = (Integer) row[0];
-            Long count = (Long) row[1];
-            monthMap.put(month, count);
-        }
-
-        List<HomeStatsResponseDTO.MonthlyStat> monthlyCookingStats = new ArrayList<>();
-        for (int m = 1; m <= 12; m++) {
-            monthlyCookingStats.add(HomeConverter.toMonthlyStat(m, monthMap.getOrDefault(m, 0L)));
-        }
-
-        return HomeConverter.toHomeStatsResponseDTO(fridgeScore, totalCookingCount, averageDifficulty, monthlyCookingStats);
-    }
-
-    @Override
-    public HomeCalendarResponseDTO getCalendar(Long memberId, int year, int month) {
-        // 요리한 날짜 목록
-        List<Integer> cookedDates = cookingRecordRepository
-                .findCookedDaysByMemberIdAndYearMonth(memberId, year, month);
-
-        // 날짜별 요리 기록
-        Map<Integer, List<HomeCalendarResponseDTO.CookingRecordItem>> cookingRecords = new HashMap<>();
-
-        for (Integer day : cookedDates) {
-            LocalDate date = LocalDate.of(year, month, day);
-            List<CookingRecord> records = cookingRecordRepository.findByMemberIdAndDate(memberId, date);
-            cookingRecords.put(day, HomeConverter.toCookingRecordItems(records));
-        }
-
-        return HomeConverter.toHomeCalendarResponseDTO(year, month, cookedDates, cookingRecords);
     }
 }
