@@ -70,8 +70,6 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
     private final GeminiPromptBuilder geminiPromptBuilder;
     private final RecipeCrawler recipeCrawler;
 
-    public record SummaryCreateResult(boolean summaryExists, int stepCount) {}
-
     /**
      * videoId로 레시피 저장 (Recipe + RecipeIngredient)
      */

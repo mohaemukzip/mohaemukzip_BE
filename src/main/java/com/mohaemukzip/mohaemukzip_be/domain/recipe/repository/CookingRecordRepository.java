@@ -43,4 +43,35 @@ public interface CookingRecordRepository extends JpaRepository<CookingRecord, Lo
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+
+    // 전체 요리 횟수
+    long countByMemberId(Long memberId);
+
+    // 평균 rating
+    @Query("SELECT AVG(c.rating) FROM CookingRecord c WHERE c.member.id = :memberId")
+    Double findAverageRatingByMemberId(@Param("memberId") Long memberId);
+
+    // 월별 요리 횟수 (특정 연도)
+    @Query("SELECT MONTH(c.createdAt) as month, COUNT(c) as count " +
+            "FROM CookingRecord c " +
+            "WHERE c.member.id = :memberId AND YEAR(c.createdAt) = :year " +
+            "GROUP BY MONTH(c.createdAt)")
+    List<Object[]> countByMemberIdGroupByMonth(@Param("memberId") Long memberId, @Param("year") int year);
+
+    // 특정 월의 요리한 날짜 목록
+    @Query("SELECT DISTINCT DAY(c.createdAt) FROM CookingRecord c " +
+            "WHERE c.member.id = :memberId AND YEAR(c.createdAt) = :year AND MONTH(c.createdAt) = :month")
+    List<Integer> findCookedDaysByMemberIdAndYearMonth(
+            @Param("memberId") Long memberId,
+            @Param("year") int year,
+            @Param("month") int month
+    );
+
+    // 특정 날짜의 요리 기록 (Recipe JOIN FETCH)
+    @Query("SELECT c FROM CookingRecord c JOIN FETCH c.recipe " +
+            "WHERE c.member.id = :memberId AND DATE(c.createdAt) = :date")
+    List<CookingRecord> findByMemberIdAndDate(
+            @Param("memberId") Long memberId,
+            @Param("date") LocalDate date
+    );
 }
