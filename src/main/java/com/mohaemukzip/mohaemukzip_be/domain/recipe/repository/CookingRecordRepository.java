@@ -33,12 +33,15 @@ public interface CookingRecordRepository extends JpaRepository<CookingRecord, Lo
     long countByMember_IdAndCreatedAtBetween(Long memberId, LocalDateTime start, LocalDateTime end);
 
     //특정 기간 동안 요리한 날짜 목록 조회
-    @Query("SELECT DISTINCT FUNCTION('DATE', c.createdAt) " +
-            "FROM CookingRecord c " +
-            "WHERE c.member.id = :memberId " +
-            "AND c.createdAt >= :start AND c.createdAt < :end " +
-            "ORDER BY FUNCTION('DATE', c.createdAt) DESC")
-    List<LocalDate> findDistinctCookingDatesBetween(
+    @Query("""
+    SELECT DISTINCT c.createdAt
+    FROM CookingRecord c
+    WHERE c.member.id = :memberId
+      AND c.createdAt >= :start
+      AND c.createdAt < :end
+    ORDER BY c.createdAt DESC
+""")
+    List<LocalDateTime> findDistinctCookingDatesBetween(
             @Param("memberId") Long memberId,
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
