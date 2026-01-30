@@ -8,6 +8,9 @@ import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
 import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
 import lombok.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
@@ -49,8 +52,8 @@ public class HomeController {
     @GetMapping("/stats/calendar")
     public ApiResponse<HomeCalendarResponseDTO> getCalendar(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam int year,
-            @RequestParam int month) {
+            @RequestParam @Positive int year,
+            @RequestParam @Min(1) @Max(12) int month) {
         Long memberId = userDetails.getMember().getId();
         HomeCalendarResponseDTO response = homeQueryService.getCalendar(memberId, year, month);
         return ApiResponse.onSuccess(response);

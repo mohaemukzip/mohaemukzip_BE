@@ -49,7 +49,7 @@ public class FridgeScoreScheduler {
             if (delta != 0) {
                 member.updateFridgeScore(delta);
                 updatedCount++;
-                log.debug("사용자 {} 냉장고 점수가 {}로 업데이트", member.getId(), delta);
+                log.debug("사용자 {} 냉장고 점수 변경: {} (현재: {})", member.getId(), delta, member.getFridgeScore());
             }
         }
 
