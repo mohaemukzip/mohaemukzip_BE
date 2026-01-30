@@ -139,10 +139,6 @@ public class IngredientResponseDTO {
     public record DeleteFridgeIngredient(Long memberIngredientId) {
     }
 
-    //5. 재료 즐겨찾기 등록
-    @Builder
-    public record AddFavorite(Long memberFavoriteId, Long ingredientId) {
-    }
 
     // 6-1. 즐겨찾기 재료 조회
     @Builder
@@ -173,11 +169,15 @@ public class IngredientResponseDTO {
         }
     }
 
-
-    // 7. 즐겨찾기 재료 삭제
+    // 6-2. 즐겨찾기 토글 응답
     @Builder
-    public record DeleteFavorite(Long memberFavoriteId) {
+    public record ToggleFavorite(
+            Long memberFavoriteId,
+            Long ingredientId,
+            Boolean isFavorite  // true: 등록됨, false: 삭제됨
+    ) {
     }
+
 
     // 8-1. 최근 재료 검색 조회
     @Builder
