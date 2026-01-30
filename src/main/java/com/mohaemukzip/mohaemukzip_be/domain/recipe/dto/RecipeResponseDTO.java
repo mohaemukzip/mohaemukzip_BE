@@ -80,4 +80,9 @@ public class RecipeResponseDTO {
         private Boolean isBookmarked;
         private String message;
     }
+
+    public record SummaryCreateResponse(
+            boolean summaryExists,
+            int stepCount
+    ) {}
 }
