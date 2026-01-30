@@ -52,15 +52,15 @@ public class FridgeController {
     }
 
     @Operation(summary = "냉장고 재료 삭제")
-    @DeleteMapping("/ingredients/{ingredientId}")
+    @DeleteMapping("/ingredients/{memberIngredientId}")
     public ApiResponse<IngredientResponseDTO.DeleteFridgeIngredient> deleteFridgeIngredient(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
-            @PathVariable Long ingredientId
+            @PathVariable Long memberIngredientId
     ) {
         Long memberId = customUserDetails.getMember().getId();
 
         IngredientResponseDTO.DeleteFridgeIngredient result =
-                ingredientCommandService.deleteIngredient(ingredientId, memberId);
+                ingredientCommandService.deleteIngredient(memberIngredientId, memberId);
 
         return ApiResponse.onSuccess(result);
     }

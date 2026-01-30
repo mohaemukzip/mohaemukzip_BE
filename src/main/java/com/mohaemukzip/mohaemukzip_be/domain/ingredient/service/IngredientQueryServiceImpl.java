@@ -74,14 +74,12 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
     //즐겨찾기 재료 리스트 조회
     @Override
     @Transactional(readOnly = true)
-    public List<IngredientResponseDTO.Detail> getFavoriteList(Long memberId) {
+    public List<IngredientResponseDTO.FavoriteDetail> getFavoriteList(Long memberId) {
 
         List<MemberFavorite> favoriteList = memberFavoriteRepository.findAllByMemberId(memberId);
 
         return favoriteList.stream()
-                .map(favorite -> IngredientResponseDTO.Detail.from(
-                        favorite.getIngredient(),true
-                ))
+                .map(IngredientResponseDTO.FavoriteDetail::from)
                 .toList();
     }
 
