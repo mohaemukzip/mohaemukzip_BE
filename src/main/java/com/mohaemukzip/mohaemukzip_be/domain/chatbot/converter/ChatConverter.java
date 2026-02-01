@@ -25,10 +25,12 @@ public class ChatConverter {
                 .build();
     }
 
-    public static ChatMessage toChatMessage(ChatRoom chatRoom, SenderType senderType, String message) {
+    // title 파라미터 추가
+    public static ChatMessage toChatMessage(ChatRoom chatRoom, SenderType senderType, String title, String message) {
         return ChatMessage.builder()
                 .chatRoom(chatRoom)
                 .senderType(senderType)
+                .title(title)
                 .message(message)
                 .build();
     }
@@ -37,6 +39,7 @@ public class ChatConverter {
         return ChatResponse.builder()
                 .id(chatMessage.getId())
                 .senderType(chatMessage.getSenderType())
+                .title(chatMessage.getTitle()) // title 매핑
                 .message(chatMessage.getMessage())
                 .createdAt(chatMessage.getCreatedAt())
                 .formattedTime(formatTime(chatMessage.getCreatedAt()))
@@ -51,6 +54,7 @@ public class ChatConverter {
         return ChatResponse.builder()
                 .id(chatMessage.getId())
                 .senderType(chatMessage.getSenderType())
+                .title(chatMessage.getTitle()) // title 매핑
                 .message(chatMessage.getMessage())
                 .createdAt(chatMessage.getCreatedAt())
                 .formattedTime(formatTime(chatMessage.getCreatedAt()))

@@ -25,6 +25,9 @@ public class ChatMessage extends BaseEntity {
     @Column(name = "sender_type", nullable = false)
     private SenderType senderType;
 
+    @Column(name = "title") // 제목 필드 추가 (Nullable)
+    private String title;
+
     @Column(name = "message", nullable = false, columnDefinition = "TEXT")
     private String message;
 }

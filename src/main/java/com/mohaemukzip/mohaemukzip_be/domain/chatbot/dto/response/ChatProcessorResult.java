@@ -9,6 +9,7 @@ import java.util.List;
 @Getter
 @Builder
 public class ChatProcessorResult {
+    private String title; // 제목 필드 추가
     private String message;
     private List<Recipe> recipes;
 }
