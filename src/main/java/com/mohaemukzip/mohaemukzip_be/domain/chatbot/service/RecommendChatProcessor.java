@@ -31,7 +31,8 @@ public class RecommendChatProcessor implements ChatProcessor {
     private static final String GENERAL_SYSTEM_PROMPT = 
             "너는 자취생을 위한 다정한 요리 도우미 '요선생'이야. " +
             "친절하고, 이모티콘을 적절히 사용하며, 3문장 이내로 간결하게 답변해. " +
-            "요리나 식재료와 관련 없는 질문(정치, 코딩, 연애 등)에는 '저는 요리 이야기만 할 수 있어요 🍳'라고 정중히 거절해.";
+            "요리나 식재료와 관련 없는 질문(정치, 코딩, 연애 등)에는 '저는 요리 이야기만 할 수 있어요 🍳'라고 정중히 거절해. " +
+            "**답변 형식: 맨 첫 줄에 핵심 내용을 요약한 '제목'을 적고, `|||` (파이프 3개) 문자열로 구분한 뒤 본문을 작성해. (예: 돈까스 요리 꿀팁! ||| 돼지고기 등심은...)**";
 
     private static final String RECOMMEND_SYSTEM_PROMPT = 
             GENERAL_SYSTEM_PROMPT + 
@@ -50,83 +51,99 @@ public class RecommendChatProcessor implements ChatProcessor {
 
     @Override
     public ChatProcessorResult process(ChatRoom chatRoom, String userMessage, String intent) {
-        // NPE 방지: userMessage가 null일 경우 0으로 처리
-        log.info("ChatProcessor 처리 시작 - Intent: {}, UserMessage Length: {}", intent, (userMessage != null ? userMessage.length() : 0));
+        try {
+            log.info("ChatProcessor 처리 시작 - Intent: {}, UserMessage Length: {}", intent, (userMessage != null ? userMessage.length() : 0));
 
-        if (!"RECOMMENDATION".equals(intent)) {
-            String aiResponse = geminiService.generateChatResponse(GENERAL_SYSTEM_PROMPT, userMessage);
-            
-            if (aiResponse == null) {
-                log.warn("GENERAL 의도 처리 중 AI 응답 실패 -> Fallback 메시지 반환");
-                aiResponse = "죄송해요, 잠시 연결이 불안정해요 😢 '냉장고 파먹기'나 '메뉴 추천'이라고 말씀해 주시면 레시피를 찾아드릴게요!";
+            if (!"RECOMMENDATION".equals(intent)) {
+                String aiResponse = geminiService.generateChatResponse(GENERAL_SYSTEM_PROMPT, userMessage);
+                return parseResponse(aiResponse, "요선생의 답변", Collections.emptyList());
             }
 
+            Long memberId = chatRoom.getMemberId();
+            Set<Recipe> candidateSet = new HashSet<>();
+
+            String[] keywords = userMessage.split("\\s+");
+            for (String keyword : keywords) {
+                if (keyword.length() > 1) {
+                    candidateSet.addAll(recipeRepository.findByTitleContaining(keyword));
+                }
+            }
+
+            List<MemberIngredient> myIngredients = memberIngredientRepository.findAllByMemberIdOrderByExpireDateAsc(memberId);
+            List<String> urgentIngredientNames = new ArrayList<>();
+
+            if (!myIngredients.isEmpty()) {
+                urgentIngredientNames = myIngredients.stream()
+                        .limit(3)
+                        .map(mi -> mi.getIngredient().getName())
+                        .collect(Collectors.toList());
+
+                for (String ingredientName : urgentIngredientNames) {
+                    candidateSet.addAll(recipeRepository.findByTitleContaining(ingredientName));
+                }
+            }
+
+            LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+            List<MemberCookHistory> histories = memberCookHistoryRepository.findAllByMemberIdAndCookedAtAfter(memberId, sevenDaysAgo);
+            Set<Long> cookedRecipeIds = histories.stream().map(h -> h.getRecipe().getId()).collect(Collectors.toSet());
+
+            List<Recipe> filteredRecipes = candidateSet.stream()
+                    .filter(r -> !cookedRecipeIds.contains(r.getId()))
+                    .collect(Collectors.toList());
+
+            int neededCount = 5 - filteredRecipes.size();
+            if (neededCount > 0) {
+                List<Recipe> randomRecipes = recipeRepository.findRandomRecipes(neededCount);
+                
+                for (Recipe r : randomRecipes) {
+                    if (!cookedRecipeIds.contains(r.getId()) && !filteredRecipes.contains(r)) {
+                        filteredRecipes.add(r);
+                    }
+                }
+            }
+
+            List<Recipe> finalRecipes = filteredRecipes.stream().limit(5).collect(Collectors.toList());
+
+            String userPrompt = buildUserPrompt(userMessage, urgentIngredientNames, finalRecipes);
+            String aiResponse = geminiService.generateChatResponse(RECOMMEND_SYSTEM_PROMPT, userPrompt);
+
+            return parseResponse(aiResponse, "오늘의 추천 메뉴", finalRecipes);
+
+        } catch (Exception e) {
+            log.error("ChatProcessor 처리 중 예외 발생", e);
+            // 예외 발생 시에도 null 대신 안전한 Fallback 결과 반환
             return ChatProcessorResult.builder()
-                    .message(aiResponse)
+                    .title("일시적 오류")
+                    .message("죄송해요, 처리 중 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.")
                     .recipes(Collections.emptyList())
                     .build();
         }
+    }
 
-        Long memberId = chatRoom.getMemberId();
-        Set<Recipe> candidateSet = new HashSet<>();
-
-        String[] keywords = userMessage.split("\\s+");
-        for (String keyword : keywords) {
-            if (keyword.length() > 1) {
-                candidateSet.addAll(recipeRepository.findByTitleContaining(keyword));
-            }
-        }
-
-        List<MemberIngredient> myIngredients = memberIngredientRepository.findAllByMemberIdOrderByExpireDateAsc(memberId);
-        List<String> urgentIngredientNames = new ArrayList<>();
-
-        if (!myIngredients.isEmpty()) {
-            urgentIngredientNames = myIngredients.stream()
-                    .limit(3)
-                    .map(mi -> mi.getIngredient().getName())
-                    .collect(Collectors.toList());
-
-            for (String ingredientName : urgentIngredientNames) {
-                candidateSet.addAll(recipeRepository.findByTitleContaining(ingredientName));
-            }
-        }
-
-        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
-        List<MemberCookHistory> histories = memberCookHistoryRepository.findAllByMemberIdAndCookedAtAfter(memberId, sevenDaysAgo);
-        Set<Long> cookedRecipeIds = histories.stream().map(h -> h.getRecipe().getId()).collect(Collectors.toSet());
-
-        List<Recipe> filteredRecipes = candidateSet.stream()
-                .filter(r -> !cookedRecipeIds.contains(r.getId()))
-                .collect(Collectors.toList());
-
-        int neededCount = 5 - filteredRecipes.size();
-        if (neededCount > 0) {
-            List<Recipe> randomRecipes = recipeRepository.findRandomRecipes(neededCount);
-            
-            for (Recipe r : randomRecipes) {
-                if (!cookedRecipeIds.contains(r.getId()) && !filteredRecipes.contains(r)) {
-                    filteredRecipes.add(r);
-                }
-            }
-        }
-
-        List<Recipe> finalRecipes = filteredRecipes.stream().limit(5).collect(Collectors.toList());
-
-        String userPrompt = buildUserPrompt(userMessage, urgentIngredientNames, finalRecipes);
-        String aiResponse = geminiService.generateChatResponse(RECOMMEND_SYSTEM_PROMPT, userPrompt);
+    private ChatProcessorResult parseResponse(String aiResponse, String defaultTitle, List<Recipe> recipes) {
+        String title = defaultTitle;
+        String message = aiResponse;
 
         if (aiResponse == null) {
-            log.warn("RECOMMENDATION 의도 처리 중 AI 응답 실패 -> Fallback 메시지 반환");
-            String mainRecipe = finalRecipes.isEmpty() ? "맛있는 요리" : finalRecipes.get(0).getTitle();
-            aiResponse = String.format(
-                "죄송해요, 잠시 요선생의 연결이 불안정해요 😢 하지만 지금 상황에 딱 맞는 **%s** 레시피를 찾아왔어요!", 
-                mainRecipe
-            );
+            log.warn("AI 응답 실패 -> Fallback 메시지 반환");
+            if (!recipes.isEmpty()) {
+                String mainRecipe = recipes.get(0).getTitle();
+                message = String.format("죄송해요, 잠시 연결이 불안정해요 😢 하지만 지금 상황에 딱 맞는 **%s** 레시피를 찾아왔어요!", mainRecipe);
+            } else {
+                message = "죄송해요, 잠시 연결이 불안정해요 😢 '냉장고 파먹기'나 '메뉴 추천'이라고 말씀해 주시면 레시피를 찾아드릴게요!";
+            }
+        } else {
+            String[] parts = aiResponse.split("\\|\\|\\|");
+            if (parts.length >= 2) {
+                title = parts[0].trim();
+                message = parts[1].trim();
+            }
         }
 
         return ChatProcessorResult.builder()
-                .message(aiResponse)
-                .recipes(finalRecipes)
+                .title(title)
+                .message(message)
+                .recipes(recipes)
                 .build();
     }
 
