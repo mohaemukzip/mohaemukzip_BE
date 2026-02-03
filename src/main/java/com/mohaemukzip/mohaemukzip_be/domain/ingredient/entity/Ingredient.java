@@ -31,4 +31,7 @@ public class Ingredient extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "category")
     private Category category;
+
+    @Column(name = "expiration_days")
+    private Integer expirationDays;
 }

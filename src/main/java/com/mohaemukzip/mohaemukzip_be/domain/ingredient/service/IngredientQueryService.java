@@ -3,7 +3,6 @@ package com.mohaemukzip.mohaemukzip_be.domain.ingredient.service;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Category;
 import org.springframework.data.domain.Page;
-
 import java.util.List;
 
 public interface IngredientQueryService {
@@ -19,4 +18,11 @@ public interface IngredientQueryService {
 
     //관리자용 재료 요청 목록 조회
     List<IngredientResponseDTO.AdminRequestList> getIngredientRequestList();
+
+    // 재료 소비기한 추천 조회
+    IngredientResponseDTO.RecommendedExpirationDate getRecommendedExpirationDate(
+            Long ingredientId
+    );
+
+
 }
