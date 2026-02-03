@@ -4,6 +4,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.home.converter.HomeConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeCalendarResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeStatsResponseDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberIngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.MemberMission;
@@ -11,6 +12,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.mission.service.MissionAssignmentSe
 import com.mohaemukzip.mohaemukzip_be.domain.mission.service.MissionQueryService;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.CookingRecord;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.enums.Category;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.CookingRecordRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
@@ -18,6 +20,7 @@ import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import com.mohaemukzip.mohaemukzip_be.global.service.LevelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +42,9 @@ public class HomeQueryServiceImpl implements HomeQueryService {
     private final MissionAssignmentService missionAssignmentService;
     private final LevelService levelService;
     private final MissionQueryService missionQueryService;
+
+    // 추천 레시피용 Repository
+    private final MemberIngredientRepository memberIngredientRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -63,7 +69,7 @@ public class HomeQueryServiceImpl implements HomeQueryService {
         HomeResponseDTO.TodayMissionDto todayMission = getTodayMission(memberId);
 
         //추천 레시피
-        List<HomeResponseDTO.RecommendedRecipeDto> recommendedRecipes = getRecommendedRecipes();
+        List<HomeResponseDTO.RecommendedRecipeDto> recommendedRecipes = getRecommendedRecipes(memberId);
 
         return HomeConverter.toHomeResponseDTO(
                 levelProgress,
@@ -235,11 +241,63 @@ public class HomeQueryServiceImpl implements HomeQueryService {
 
     /**
      * 추천 레시피 목록 조회
+     * - 신규 사용자: 조회수 상위 5개
+     * - 기존 사용자: 2가지 기준으로 후보 수집 후 랜덤 5개 선택
+     *   1. 재료 기반 (유통기한 임박/다량 보유/장기 미소진 - 통합 쿼리)
+     *   2. 최근 요리 카테고리
      */
-    private List<HomeResponseDTO.RecommendedRecipeDto> getRecommendedRecipes() {
-        List<Recipe> recipes = recipeRepository.findTop5ByOrderByViewsDesc();
+    private List<HomeResponseDTO.RecommendedRecipeDto> getRecommendedRecipes(Long memberId) {
+        // 1. 신규 사용자 체크 (재료 없음 AND 요리 기록 없음)
+        boolean hasIngredients = memberIngredientRepository.existsByMemberId(memberId);
+        boolean hasCookingRecords = cookingRecordRepository.existsByMemberId(memberId);
 
-        log.debug("추천 레시피 조회 완료 - count: {}", recipes.size());
+        if (!hasIngredients && !hasCookingRecords) {
+            log.debug("신규 사용자 - 조회수 기반 추천 - memberId: {}", memberId);
+            List<Recipe> recipes = recipeRepository.findTop5ByOrderByViewsDesc();
+            return HomeConverter.toRecommendedRecipeDtos(recipes);
+        }
+
+        // 2. 후보 레시피 수집
+        Set<Long> candidateRecipeIds = new HashSet<>();
+
+        // 2-1. 재료 기반 추천 (유통기한 임박/다량 보유/장기 미소진 - 통합 쿼리)
+        LocalDate today = LocalDate.now();
+        LocalDate expireThreshold = today.plusDays(3);
+        LocalDateTime unusedThreshold = LocalDateTime.now().minusDays(10);
+
+        List<Long> ingredientBasedRecipeIds = memberIngredientRepository
+                .findRecommendedRecipeIds(memberId, today, expireThreshold, unusedThreshold);
+        candidateRecipeIds.addAll(ingredientBasedRecipeIds);
+        log.debug("재료 기반 레시피 후보 추가 - memberId: {}, count: {}", memberId, ingredientBasedRecipeIds.size());
+
+        // 2-2. 최근 요리 카테고리
+        List<CookingRecord> recentRecords = cookingRecordRepository
+                .findRecentByMemberId(memberId, PageRequest.of(0, 1));
+        if (!recentRecords.isEmpty()) {
+            Category recentCategory = recentRecords.get(0).getRecipe().getCategory();
+            if (recentCategory != null) {
+                List<Long> categoryRecipeIds = recipeRepository.findIdsByCategory(recentCategory);
+                candidateRecipeIds.addAll(categoryRecipeIds);
+                log.debug("최근 요리 카테고리 기반 레시피 후보 추가 - memberId: {}, category: {}", memberId, recentCategory);
+            }
+        }
+
+        // 3. 후보가 없으면 기본 추천
+        if (candidateRecipeIds.isEmpty()) {
+            log.debug("후보 레시피 없음 - 조회수 기반 추천 - memberId: {}", memberId);
+            List<Recipe> recipes = recipeRepository.findTop5ByOrderByViewsDesc();
+            return HomeConverter.toRecommendedRecipeDtos(recipes);
+        }
+
+        // 4. 후보 중 랜덤 5개 선택
+        List<Long> candidateList = new ArrayList<>(candidateRecipeIds);
+        Collections.shuffle(candidateList);
+        List<Long> selectedIds = candidateList.stream().limit(5).toList();
+
+        // 5. 레시피 조회 및 반환
+        List<Recipe> recipes = recipeRepository.findByIdIn(selectedIds);
+        log.debug("개인화 추천 레시피 조회 완료 - memberId: {}, candidateCount: {}, selectedCount: {}",
+                memberId, candidateRecipeIds.size(), recipes.size());
 
         return HomeConverter.toRecommendedRecipeDtos(recipes);
     }

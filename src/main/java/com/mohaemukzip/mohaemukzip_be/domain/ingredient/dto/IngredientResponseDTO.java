@@ -192,4 +192,25 @@ public class IngredientResponseDTO {
         }
     }
 
+    //10. 재료 추천 소비기한 받기
+    @Builder
+    public record RecommendedExpirationDate(
+            Long ingredientId,
+            String ingredientName,
+            LocalDate recommendedDate
+    ) {
+        public static RecommendedExpirationDate from(Ingredient ingredient, LocalDate registrationDate) {
+            LocalDate recommendedDate = null;
+            if (ingredient.getExpirationDays() != null && registrationDate != null) {
+                recommendedDate = registrationDate.plusDays(ingredient.getExpirationDays());
+            }
+
+            return RecommendedExpirationDate.builder()
+                    .ingredientId(ingredient.getId())
+                    .ingredientName(ingredient.getName())
+                    .recommendedDate(recommendedDate)
+                    .build();
+        }
+    }
+
 }

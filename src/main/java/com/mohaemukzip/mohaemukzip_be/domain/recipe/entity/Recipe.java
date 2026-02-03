@@ -61,6 +61,10 @@ public class Recipe extends BaseEntity {
     @Column(name = "channel_profile_image_url",  nullable = false)
     private String channelProfileImageUrl;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dish_id")
+    private Dish dish;
+
     public void addRating(int newRating) {
         if (newRating < 1 || newRating > 5) {
             throw new BusinessException(ErrorStatus.INVALID_RATING_VALUE);
