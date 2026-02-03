@@ -36,6 +36,7 @@ public class IngredientResponseDTO {
                     .build();
         }
     }
+
     //1-2. 재료 조회 api
     @Getter
     @Builder
@@ -199,12 +200,7 @@ public class IngredientResponseDTO {
             String ingredientName,
             LocalDate recommendedDate
     ) {
-        public static RecommendedExpirationDate from(Ingredient ingredient, LocalDate registrationDate) {
-            LocalDate recommendedDate = null;
-            if (ingredient.getExpirationDays() != null && registrationDate != null) {
-                recommendedDate = registrationDate.plusDays(ingredient.getExpirationDays());
-            }
-
+        public static RecommendedExpirationDate of(Ingredient ingredient, LocalDate recommendedDate) {
             return RecommendedExpirationDate.builder()
                     .ingredientId(ingredient.getId())
                     .ingredientName(ingredient.getName())
@@ -212,5 +208,4 @@ public class IngredientResponseDTO {
                     .build();
         }
     }
-
 }
