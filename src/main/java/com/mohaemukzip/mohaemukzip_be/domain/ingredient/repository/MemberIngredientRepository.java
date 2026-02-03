@@ -56,26 +56,28 @@ public interface MemberIngredientRepository extends JpaRepository<MemberIngredie
 
     // ===== 홈 화면 추천 레시피용 메서드 =====
 
-    // 유통기한 임박 재료 조회 (오늘 ~ D+3 이내, 이미 만료된 항목 제외)
-    @Query("SELECT mi FROM MemberIngredient mi JOIN FETCH mi.ingredient " +
-            "WHERE mi.member.id = :memberId AND mi.expireDate >= :startDate AND mi.expireDate <= :endDate")
-    List<MemberIngredient> findExpiringIngredients(
+    /**
+     * 재료 기반 추천 레시피 ID 조회 (통합 쿼리)
+     * - 유통기한 임박 (오늘 ~ D+3)
+     * - 다량 보유 (3인분 이상)
+     * - 장기 미소진 (등록 후 10일 이상)
+     */
+    @Query("""
+            SELECT DISTINCT ri.recipe.id
+            FROM MemberIngredient mi
+            JOIN RecipeIngredient ri ON ri.ingredient.id = mi.ingredient.id
+            WHERE mi.member.id = :memberId
+            AND (
+                (mi.expireDate >= :today AND mi.expireDate <= :expireThreshold) OR
+                mi.weight >= mi.ingredient.weight * 3 OR
+                mi.createdAt <= :unusedThreshold
+            )
+            """)
+    List<Long> findRecommendedRecipeIds(
             @Param("memberId") Long memberId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate
-    );
-
-    // 다량 보유 재료 조회 (weight >= Ingredient.weight * 3)
-    @Query("SELECT mi FROM MemberIngredient mi JOIN FETCH mi.ingredient i " +
-            "WHERE mi.member.id = :memberId AND mi.weight >= i.weight * 3")
-    List<MemberIngredient> findBulkIngredients(@Param("memberId") Long memberId);
-
-    // 장기 미소진 재료 조회 (등록 후 10일 이상)
-    @Query("SELECT mi FROM MemberIngredient mi JOIN FETCH mi.ingredient " +
-            "WHERE mi.member.id = :memberId AND mi.createdAt <= :thresholdDate")
-    List<MemberIngredient> findLongUnusedIngredients(
-            @Param("memberId") Long memberId,
-            @Param("thresholdDate") LocalDateTime thresholdDate
+            @Param("today") LocalDate today,
+            @Param("expireThreshold") LocalDate expireThreshold,
+            @Param("unusedThreshold") LocalDateTime unusedThreshold
     );
 
     // 사용자가 재료를 보유하고 있는지 확인

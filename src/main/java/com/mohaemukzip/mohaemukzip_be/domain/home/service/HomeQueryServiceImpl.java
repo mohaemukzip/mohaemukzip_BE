@@ -4,9 +4,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.home.converter.HomeConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeCalendarResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeStatsResponseDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberIngredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberIngredientRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.RecipeIngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.mission.entity.MemberMission;
@@ -47,7 +45,6 @@ public class HomeQueryServiceImpl implements HomeQueryService {
 
     // 추천 레시피용 Repository
     private final MemberIngredientRepository memberIngredientRepository;
-    private final RecipeIngredientRepository recipeIngredientRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -245,11 +242,9 @@ public class HomeQueryServiceImpl implements HomeQueryService {
     /**
      * 추천 레시피 목록 조회
      * - 신규 사용자: 조회수 상위 5개
-     * - 기존 사용자: 4가지 기준으로 후보 수집 후 랜덤 5개 선택
-     *   1. 유통기한 임박 재료 (D-3 이내)
-     *   2. 다량 보유 재료 (3인분 이상)
-     *   3. 장기 미소진 재료 (등록 후 10일 이상)
-     *   4. 최근 요리 카테고리
+     * - 기존 사용자: 2가지 기준으로 후보 수집 후 랜덤 5개 선택
+     *   1. 재료 기반 (유통기한 임박/다량 보유/장기 미소진 - 통합 쿼리)
+     *   2. 최근 요리 카테고리
      */
     private List<HomeResponseDTO.RecommendedRecipeDto> getRecommendedRecipes(Long memberId) {
         // 1. 신규 사용자 체크 (재료 없음 AND 요리 기록 없음)
@@ -262,45 +257,20 @@ public class HomeQueryServiceImpl implements HomeQueryService {
             return HomeConverter.toRecommendedRecipeDtos(recipes);
         }
 
-        // 2. 4가지 기준으로 후보 레시피 수집
+        // 2. 후보 레시피 수집
         Set<Long> candidateRecipeIds = new HashSet<>();
 
-        // 2-1. 유통기한 임박 재료 (오늘 ~ D+3 이내)
+        // 2-1. 재료 기반 추천 (유통기한 임박/다량 보유/장기 미소진 - 통합 쿼리)
         LocalDate today = LocalDate.now();
         LocalDate expireThreshold = today.plusDays(3);
-        List<MemberIngredient> expiringIngredients = memberIngredientRepository
-                .findExpiringIngredients(memberId, today, expireThreshold);
-        if (!expiringIngredients.isEmpty()) {
-            List<Long> ingredientIds = expiringIngredients.stream()
-                    .map(mi -> mi.getIngredient().getId())
-                    .toList();
-            candidateRecipeIds.addAll(recipeIngredientRepository.findRecipeIdsByIngredientIds(ingredientIds));
-            log.debug("유통기한 임박 재료 기반 레시피 후보 추가 - memberId: {}, ingredientCount: {}", memberId, ingredientIds.size());
-        }
-
-        // 2-2. 다량 보유 재료 (3인분 이상)
-        List<MemberIngredient> bulkIngredients = memberIngredientRepository.findBulkIngredients(memberId);
-        if (!bulkIngredients.isEmpty()) {
-            List<Long> ingredientIds = bulkIngredients.stream()
-                    .map(mi -> mi.getIngredient().getId())
-                    .toList();
-            candidateRecipeIds.addAll(recipeIngredientRepository.findRecipeIdsByIngredientIds(ingredientIds));
-            log.debug("다량 보유 재료 기반 레시피 후보 추가 - memberId: {}, ingredientCount: {}", memberId, ingredientIds.size());
-        }
-
-        // 2-3. 장기 미소진 재료 (10일 이상)
         LocalDateTime unusedThreshold = LocalDateTime.now().minusDays(10);
-        List<MemberIngredient> unusedIngredients = memberIngredientRepository
-                .findLongUnusedIngredients(memberId, unusedThreshold);
-        if (!unusedIngredients.isEmpty()) {
-            List<Long> ingredientIds = unusedIngredients.stream()
-                    .map(mi -> mi.getIngredient().getId())
-                    .toList();
-            candidateRecipeIds.addAll(recipeIngredientRepository.findRecipeIdsByIngredientIds(ingredientIds));
-            log.debug("장기 미소진 재료 기반 레시피 후보 추가 - memberId: {}, ingredientCount: {}", memberId, ingredientIds.size());
-        }
 
-        // 2-4. 최근 요리 카테고리
+        List<Long> ingredientBasedRecipeIds = memberIngredientRepository
+                .findRecommendedRecipeIds(memberId, today, expireThreshold, unusedThreshold);
+        candidateRecipeIds.addAll(ingredientBasedRecipeIds);
+        log.debug("재료 기반 레시피 후보 추가 - memberId: {}, count: {}", memberId, ingredientBasedRecipeIds.size());
+
+        // 2-2. 최근 요리 카테고리
         List<CookingRecord> recentRecords = cookingRecordRepository
                 .findRecentByMemberId(memberId, PageRequest.of(0, 1));
         if (!recentRecords.isEmpty()) {
