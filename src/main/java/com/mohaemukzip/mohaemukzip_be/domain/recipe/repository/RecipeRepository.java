@@ -47,4 +47,8 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
     // 특정 카테고리의 레시피 조회
     List<Recipe> findByCategory(Category category);
+
+    // 카테고리별 레시피 ID만 조회 (추천 레시피용)
+    @Query("SELECT r.id FROM Recipe r WHERE r.category = :category")
+    List<Long> findIdsByCategory(@Param("category") Category category);
 }

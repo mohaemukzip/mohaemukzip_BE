@@ -265,10 +265,11 @@ public class HomeQueryServiceImpl implements HomeQueryService {
         // 2. 4가지 기준으로 후보 레시피 수집
         Set<Long> candidateRecipeIds = new HashSet<>();
 
-        // 2-1. 유통기한 임박 재료 (D-3 이내)
-        LocalDate expireThreshold = LocalDate.now().plusDays(3);
+        // 2-1. 유통기한 임박 재료 (오늘 ~ D+3 이내)
+        LocalDate today = LocalDate.now();
+        LocalDate expireThreshold = today.plusDays(3);
         List<MemberIngredient> expiringIngredients = memberIngredientRepository
-                .findExpiringIngredients(memberId, expireThreshold);
+                .findExpiringIngredients(memberId, today, expireThreshold);
         if (!expiringIngredients.isEmpty()) {
             List<Long> ingredientIds = expiringIngredients.stream()
                     .map(mi -> mi.getIngredient().getId())
@@ -305,8 +306,8 @@ public class HomeQueryServiceImpl implements HomeQueryService {
         if (!recentRecords.isEmpty()) {
             Category recentCategory = recentRecords.get(0).getRecipe().getCategory();
             if (recentCategory != null) {
-                List<Recipe> categoryRecipes = recipeRepository.findByCategory(recentCategory);
-                candidateRecipeIds.addAll(categoryRecipes.stream().map(Recipe::getId).toList());
+                List<Long> categoryRecipeIds = recipeRepository.findIdsByCategory(recentCategory);
+                candidateRecipeIds.addAll(categoryRecipeIds);
                 log.debug("최근 요리 카테고리 기반 레시피 후보 추가 - memberId: {}, category: {}", memberId, recentCategory);
             }
         }

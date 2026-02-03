@@ -56,12 +56,13 @@ public interface MemberIngredientRepository extends JpaRepository<MemberIngredie
 
     // ===== 홈 화면 추천 레시피용 메서드 =====
 
-    // 유통기한 임박 재료 조회 (D-3 이내)
+    // 유통기한 임박 재료 조회 (오늘 ~ D+3 이내, 이미 만료된 항목 제외)
     @Query("SELECT mi FROM MemberIngredient mi JOIN FETCH mi.ingredient " +
-            "WHERE mi.member.id = :memberId AND mi.expireDate <= :expireDate")
+            "WHERE mi.member.id = :memberId AND mi.expireDate >= :startDate AND mi.expireDate <= :endDate")
     List<MemberIngredient> findExpiringIngredients(
             @Param("memberId") Long memberId,
-            @Param("expireDate") LocalDate expireDate
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
     );
 
     // 다량 보유 재료 조회 (weight >= Ingredient.weight * 3)
