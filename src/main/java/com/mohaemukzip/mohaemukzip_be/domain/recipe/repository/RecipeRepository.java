@@ -1,6 +1,7 @@
 package com.mohaemukzip.mohaemukzip_be.domain.recipe.repository;
 
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.enums.Category;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +10,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface RecipeRepository extends JpaRepository<Recipe, Long> {
@@ -37,4 +39,12 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
     List<Recipe> findTop5ByOrderByViewsDesc();
 
     boolean existsByIdAndTitleContaining(Long recipeId, String keyword);
+
+    // ===== 홈 화면 추천 레시피용 메서드 =====
+
+    // 특정 ID 목록에 해당하는 레시피 조회
+    List<Recipe> findByIdIn(Collection<Long> ids);
+
+    // 특정 카테고리의 레시피 조회
+    List<Recipe> findByCategory(Category category);
 }

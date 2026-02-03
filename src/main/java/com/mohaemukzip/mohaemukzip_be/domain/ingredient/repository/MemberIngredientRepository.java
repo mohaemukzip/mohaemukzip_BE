@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -52,4 +53,30 @@ public interface MemberIngredientRepository extends JpaRepository<MemberIngredie
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
     );
+
+    // ===== 홈 화면 추천 레시피용 메서드 =====
+
+    // 유통기한 임박 재료 조회 (D-3 이내)
+    @Query("SELECT mi FROM MemberIngredient mi JOIN FETCH mi.ingredient " +
+            "WHERE mi.member.id = :memberId AND mi.expireDate <= :expireDate")
+    List<MemberIngredient> findExpiringIngredients(
+            @Param("memberId") Long memberId,
+            @Param("expireDate") LocalDate expireDate
+    );
+
+    // 다량 보유 재료 조회 (weight >= Ingredient.weight * 3)
+    @Query("SELECT mi FROM MemberIngredient mi JOIN FETCH mi.ingredient i " +
+            "WHERE mi.member.id = :memberId AND mi.weight >= i.weight * 3")
+    List<MemberIngredient> findBulkIngredients(@Param("memberId") Long memberId);
+
+    // 장기 미소진 재료 조회 (등록 후 10일 이상)
+    @Query("SELECT mi FROM MemberIngredient mi JOIN FETCH mi.ingredient " +
+            "WHERE mi.member.id = :memberId AND mi.createdAt <= :thresholdDate")
+    List<MemberIngredient> findLongUnusedIngredients(
+            @Param("memberId") Long memberId,
+            @Param("thresholdDate") LocalDateTime thresholdDate
+    );
+
+    // 사용자가 재료를 보유하고 있는지 확인
+    boolean existsByMemberId(Long memberId);
 }
