@@ -1,4 +1,4 @@
-package com.mohaemukzip.mohaemukzip_be.domain.dish.entity;
+package com.mohaemukzip.mohaemukzip_be.domain.recipe.entity;
 
 import com.mohaemukzip.mohaemukzip_be.global.entity.BaseEntity;
 import jakarta.persistence.*;

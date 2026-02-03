@@ -1,6 +1,5 @@
 package com.mohaemukzip.mohaemukzip_be.domain.recipe.entity;
 
-import com.mohaemukzip.mohaemukzip_be.domain.dish.entity.Dish;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.enums.Category;
 import com.mohaemukzip.mohaemukzip_be.global.entity.BaseEntity;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
