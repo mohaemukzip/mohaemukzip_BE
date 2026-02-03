@@ -1,7 +1,7 @@
 package com.mohaemukzip.mohaemukzip_be.domain.search.service;
 
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeProjection;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.DishProjection;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.DishRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.search.converter.SearchConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResponseDTO;
 import lombok.extern.slf4j.Slf4j;
@@ -21,14 +21,14 @@ import java.time.Duration;
 @Transactional(readOnly = true)
 public class SearchQueryServiceImpl implements SearchQueryService {
 
-    private final RecipeRepository recipeRepository;
+    private final DishRepository dishRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private static final int DEFAULT_PAGE_SIZE = 20;
 
     public SearchQueryServiceImpl(
-            RecipeRepository recipeRepository,
+            DishRepository dishRepository,
             @Qualifier("redisCacheTemplate") RedisTemplate<String, Object> redisTemplate) {
-        this.recipeRepository = recipeRepository;
+        this.dishRepository = dishRepository;
         this.redisTemplate = redisTemplate;
     }
 
@@ -39,25 +39,33 @@ public class SearchQueryServiceImpl implements SearchQueryService {
         String strippedKeyword = sanitizedKeyword.replace(" ", "");
 
         String normalizedKeyword = strippedKeyword.toLowerCase();
-        String cacheKey = "search::recipe::" + normalizedKeyword + "::" + page;
+        
+        // 캐시 키 변경 (v1 추가)하여 기존 캐시 무시 및 갱신 유도
+        String cacheKey = "search::dish::v1::" + normalizedKeyword + "::" + page;
+        
         try {
             SearchResponseDTO cachedData = (SearchResponseDTO) redisTemplate.opsForValue().get(cacheKey);
             if (cachedData != null) {
+                log.info("Cache Hit! key={}", cacheKey);
                 return cachedData;
             }
         } catch (Exception e) {
             log.warn("Redis cache read failed. key={}", cacheKey, e);
         }
 
+        log.info("Cache Miss - DB Query. keyword={}, page={}", strippedKeyword, page);
+
         Pageable pageable = PageRequest.of(page, DEFAULT_PAGE_SIZE, Sort.by("id").ascending());
-        Page<RecipeProjection> resultPage = recipeRepository.findProjectedByTitleContaining(strippedKeyword, pageable);
+        Page<DishProjection> resultPage = dishRepository.findProjectedByNameContaining(strippedKeyword, pageable);
+
+        log.info("DB Search Result Count: {}", resultPage.getTotalElements());
 
         SearchResponseDTO response = SearchConverter.toSearchResponseDTO(resultPage);
 
         try {
             redisTemplate.opsForValue().set(cacheKey, response, Duration.ofMinutes(30));
         } catch (Exception e) {
-            log.warn("Redis cache read failed. key={}", cacheKey, e);
+            log.warn("Redis cache write failed. key={}", cacheKey, e);
         }
 
         return response;
