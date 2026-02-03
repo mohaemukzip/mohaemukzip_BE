@@ -4,7 +4,8 @@ import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDT
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.*;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.enums.Category;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.*;
-import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
+import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
+import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -91,6 +94,19 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
         return requests.stream()
                 .map(IngredientResponseDTO.AdminRequestList::from)
                 .toList();
+    }
+
+    // 재료 소비기한 추천
+    @Override
+    @Transactional(readOnly = true)
+    public IngredientResponseDTO.RecommendedExpirationDate getRecommendedExpirationDate(Long ingredientId) {
+
+        Ingredient ingredient = ingredientRepository.findById(ingredientId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.INGREDIENT_NOT_FOUND));
+
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+
+        return IngredientResponseDTO.RecommendedExpirationDate.from(ingredient, today);
     }
 
 }

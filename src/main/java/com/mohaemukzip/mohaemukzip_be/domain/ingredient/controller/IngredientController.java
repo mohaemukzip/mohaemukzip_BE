@@ -19,7 +19,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @Slf4j
@@ -140,6 +139,17 @@ public class IngredientController {
         return ApiResponse.onSuccess("소중한 의견 감사합니다 *.* ");
     }
 
+    @Operation(summary = "재료 추천 소비기한 조회")
+    @GetMapping("/{ingredientId}/recommended-expiration")
+    public ApiResponse<IngredientResponseDTO.RecommendedExpirationDate> getRecommendedExpirationDate(
+            @PathVariable Long ingredientId
+    ) {
+
+        IngredientResponseDTO.RecommendedExpirationDate response =
+                ingredientQueryService.getRecommendedExpirationDate(ingredientId);
+
+        return ApiResponse.onSuccess(response);
+    }
 }
 
 
