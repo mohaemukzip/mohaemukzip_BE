@@ -1,6 +1,7 @@
 package com.mohaemukzip.mohaemukzip_be.domain.recipe.repository;
 
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.CookingRecord;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -77,4 +78,15 @@ public interface CookingRecordRepository extends JpaRepository<CookingRecord, Lo
             @Param("memberId") Long memberId,
             @Param("date") LocalDate date
     );
+
+    // ===== 홈 화면 추천 레시피용 메서드 =====
+
+    // 최근 요리 기록 조회 (카테고리 확인용)
+    @Query("SELECT cr FROM CookingRecord cr JOIN FETCH cr.recipe " +
+            "WHERE cr.member.id = :memberId ORDER BY cr.createdAt DESC")
+    List<CookingRecord> findRecentByMemberId(@Param("memberId") Long memberId, Pageable pageable);
+
+    // 사용자가 요리 기록이 있는지 확인
+    boolean existsByMemberId(Long memberId);
 }
+
