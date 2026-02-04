@@ -15,7 +15,6 @@ public class HomeResponseDTO {
     private Integer score;
     private Integer nextLevelScore;
     private Integer consecutiveDays;
-    private String nickname;
     private WeeklyCookingDto weeklyCooking;
     private TodayMissionDto todayMission;
     private List<RecommendedRecipeDto> recommendedRecipes;

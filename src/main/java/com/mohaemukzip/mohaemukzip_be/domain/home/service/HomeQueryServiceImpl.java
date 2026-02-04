@@ -59,8 +59,6 @@ public class HomeQueryServiceImpl implements HomeQueryService {
 
         int monthlyCooking = calculateMonthlyCooking(memberId);
 
-        String nickname = member.getNickname();
-
         //연속 요리 일수 계산
         int consecutiveDays = calculateConsecutiveDays(memberId);
 
@@ -77,7 +75,6 @@ public class HomeQueryServiceImpl implements HomeQueryService {
                 levelProgress,
                 monthlyCooking,
                 currentScore,
-                nickname,
                 consecutiveDays,
                 weeklyCooking,
                 todayMission,
