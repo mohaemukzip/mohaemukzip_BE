@@ -13,7 +13,15 @@ import java.time.LocalDate;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
-@Table(name = "member_ingredients")
+@Table(
+        name = "member_ingredients",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_member_ingredient",
+                        columnNames = {"member_id", "ingredient_id"}
+                )
+        }
+)
 public class MemberIngredient extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -59,6 +67,8 @@ public class MemberIngredient extends BaseEntity {
 
     // 기존 냉장고 재료 갱신
     public void addQuantityAndRenewExpireDate(Double additionalWeight, LocalDate newExpireDate) {
+        if (additionalWeight == null || additionalWeight <= 0) return;
+        if (this.weight == null) this.weight = 0.0;
         this.weight += additionalWeight; // 무게 갱신
         this.expireDate = newExpireDate; // 날짜 갱신
     }
