@@ -9,23 +9,23 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
-@Table(name = "recipe_categories",
+@Table(name = "dish_categories",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_recipe_category",
-                        columnNames = {"recipe_id", "category_id"}
+                        name = "uk_dish_category",
+                        columnNames = {"dish_id", "category_id"}
                 )
         })
-public class RecipeCategory extends BaseEntity {
+public class DishCategory extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "recipe_category_id")
+    @Column(name = "dish_category_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recipe_id", nullable = false)
-    private Recipe recipe;
+    @JoinColumn(name = "dish_id", nullable = false)
+    private Dish dish;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
