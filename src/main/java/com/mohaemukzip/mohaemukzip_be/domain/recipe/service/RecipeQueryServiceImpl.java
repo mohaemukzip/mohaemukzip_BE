@@ -8,6 +8,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.RecipeConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.converter.RecipeDetailConverter;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeDetailResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Category;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.RecipeStep;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Summary;
