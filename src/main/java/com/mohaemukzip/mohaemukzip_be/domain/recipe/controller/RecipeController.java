@@ -8,11 +8,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.RecipeQueryService;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
 import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
@@ -85,20 +81,5 @@ public class RecipeController {
         return ApiResponse.onSuccess(
                 recipeCommandService.toggleBookmark(userDetails.getMember().getId(), recipeId)
         );
-    }
-
-    @GetMapping("/dish")
-    @Operation(summary = "요리(Dish)별 레시피 조회 API", description = "특정 요리(dishId)에 해당하는 레시피 목록을 조회합니다.")
-    @Parameters({
-            @Parameter(name = "dishId", description = "요리 ID", required = true),
-            @Parameter(name = "page", description = "페이지 번호 (0부터 시작)")
-    })
-    public ApiResponse<RecipeResponseDTO.RecipePreviewListDTO> getRecipesByDish(
-            @RequestParam(name = "dishId") @Positive Long dishId,
-            @RequestParam(name = "page", defaultValue = "0") @PositiveOrZero Integer page,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        Long memberId = (userDetails != null) ? userDetails.getMember().getId() : null;
-        return ApiResponse.onSuccess(recipeQueryService.getRecipesByDishId(dishId, page, memberId));
     }
 }
