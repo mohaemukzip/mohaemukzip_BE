@@ -56,4 +56,10 @@ public class MemberIngredient extends BaseEntity {
     public boolean isEmpty() {
         return this.weight == null || this.weight <= 0;
     }
+
+    // 기존 냉장고 재료 갱신
+    public void addQuantityAndRenewExpireDate(Double additionalWeight, LocalDate newExpireDate) {
+        this.weight += additionalWeight; // 무게 갱신
+        this.expireDate = newExpireDate; // 날짜 갱신
+    }
 }
