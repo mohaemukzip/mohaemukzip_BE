@@ -198,6 +198,9 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         int newScore = member.getScore();
         boolean leveledUp = levelService.shouldLevelUp(oldScore, newScore);
 
+        // 재료 차감 (점수 계산 이후)
+        deductMemberIngredients(memberId, recipeId);
+
         return RecipeResponseDTO.CookingRecordCreateResponseDTO.builder()
                 .cookingRecordId(record.getId())
                 .recipeId(recipe.getId())
@@ -415,6 +418,62 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         return 5; // 1일차(오늘 첫 요리)
     }
 
+    /**
+     * 요리 완료 시 사용자 재료 차감
+     * - 레시피 재료 중 사용자가 보유한 재료만 차감
+     * - 차감 후 0 이하면 삭제
+     */
+    private void deductMemberIngredients(Long memberId, Long recipeId) {
+        // 1. 레시피 재료 목록 조회 (ingredient_id, amount)
+        List<RecipeIngredient> recipeIngredients = recipeIngredientRepository.findAllByRecipeId(recipeId);
 
+        if (recipeIngredients.isEmpty()) {
+            return;
+        }
+
+        // 2. 재료 ID 목록 추출
+        List<Long> ingredientIds = recipeIngredients.stream()
+                .map(ri -> ri.getIngredient().getId())
+                .toList();
+
+        // 3. 사용자가 보유한 재료 중 매칭되는 것 조회
+        List<MemberIngredient> memberIngredients = memberIngredientRepository
+                .findAllByMemberIdAndIngredientIdIn(memberId, ingredientIds);
+
+        if (memberIngredients.isEmpty()) {
+            return;
+        }
+
+        // 4. ingredient_id -> RecipeIngredient.amount 매핑
+        Map<Long, Double> recipeAmountMap = recipeIngredients.stream()
+                .collect(Collectors.toMap(
+                        ri -> ri.getIngredient().getId(),
+                        ri -> ri.getAmount() != null ? ri.getAmount() : 0.0
+                ));
+
+        // 5. 차감 및 삭제 대상 분리
+        List<MemberIngredient> toDelete = new ArrayList<>();
+
+        for (MemberIngredient mi : memberIngredients) {
+            Long ingredientId = mi.getIngredient().getId();
+            Double amountToDeduct = recipeAmountMap.get(ingredientId);
+
+            if (amountToDeduct != null && amountToDeduct > 0) {
+                mi.subtractWeight(amountToDeduct);
+
+                if (mi.isEmpty()) {
+                    toDelete.add(mi);
+                }
+            }
+        }
+
+        // 6. 소진된 재료 삭제
+        if (!toDelete.isEmpty()) {
+            memberIngredientRepository.deleteAll(toDelete);
+        }
+
+        log.debug("재료 차감 완료 - memberId: {}, recipeId: {}, 차감: {}, 삭제: {}",
+                memberId, recipeId, memberIngredients.size(), toDelete.size());
+    }
 
 }

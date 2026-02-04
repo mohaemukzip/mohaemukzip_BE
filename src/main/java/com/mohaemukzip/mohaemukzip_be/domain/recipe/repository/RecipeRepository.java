@@ -51,4 +51,10 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
     // 카테고리별 레시피 ID만 조회 (추천 레시피용)
     @Query("SELECT r.id FROM Recipe r WHERE r.category = :category")
     List<Long> findIdsByCategory(@Param("category") Category category);
+
+    // DishCategory를 통해 카테고리별 레시피 조회
+    @Query("SELECT r FROM Recipe r " +
+            "JOIN DishCategory dc ON r.dish = dc.dish " +
+            "WHERE dc.category.id = :categoryId")
+    Page<Recipe> findRecipesByDishCategoryId(@Param("categoryId") Long categoryId, Pageable pageable);
 }
