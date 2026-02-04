@@ -19,7 +19,6 @@ public class HomeConverter {
             LevelService.LevelProgressDto levelProgress,
             int monthlyCooking,
             int score,
-            String nickname,
             int consecutiveDays,
             HomeResponseDTO.WeeklyCookingDto weeklyCooking,
             HomeResponseDTO.TodayMissionDto todayMission,
@@ -32,7 +31,6 @@ public class HomeConverter {
                 .score(score)
                 .nextLevelScore(levelProgress.nextLevelScore())
                 .consecutiveDays(consecutiveDays)
-                .nickname(nickname)
                 .weeklyCooking(weeklyCooking)
                 .todayMission(todayMission)
                 .recommendedRecipes(recommendedRecipes)
