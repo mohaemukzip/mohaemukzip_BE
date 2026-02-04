@@ -106,7 +106,13 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
 
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
 
-        return IngredientResponseDTO.RecommendedExpirationDate.from(ingredient, today);
+        LocalDate recommendedDate = null;
+        if (ingredient.getExpirationDays() != null) {
+            recommendedDate = today.plusDays(ingredient.getExpirationDays());
+        }
+
+        return IngredientResponseDTO.RecommendedExpirationDate.of(ingredient, recommendedDate);
+
     }
 
 }
