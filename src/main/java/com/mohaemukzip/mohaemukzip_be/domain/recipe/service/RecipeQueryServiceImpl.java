@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class RecipeQueryServiceImpl implements RecipeQueryService {
 
-    private final RecipeCategoryRepository recipeCategoryRepository;
     private final MemberRecipeRepository memberRecipeRepository;
     private static final int PAGE_SIZE = 10;
     private final RecipeRepository recipeRepository;
@@ -46,7 +45,7 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
 
     @Override
     public RecipeResponseDTO.RecipePreviewListDTO getRecipesByCategoryId(Long categoryId, Integer page, Long memberId) {
-        Page<Recipe> recipePage = recipeCategoryRepository.findRecipesByCategoryId(categoryId, PageRequest.of(page, PAGE_SIZE));
+        Page<Recipe> recipePage = recipeRepository.findRecipesByDishCategoryId(categoryId, PageRequest.of(page, PAGE_SIZE));
 
         // 첫 페이지인데 데이터가 없다면 -> 존재하지 않는 카테고리로 간주
         if (page == 0 && recipePage.isEmpty()) {
