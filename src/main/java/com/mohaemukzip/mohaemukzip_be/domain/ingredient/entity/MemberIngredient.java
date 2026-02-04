@@ -37,4 +37,23 @@ public class MemberIngredient extends BaseEntity {
 
     @Column(name = "weight")
     private Double weight;
+
+    /**
+     * 재료 사용량 차감
+     */
+    public void subtractWeight(Double amount) {
+        if (amount == null || amount <= 0) return;
+        if (this.weight == null) {
+            this.weight = 0.0;
+            return;
+        }
+        this.weight = this.weight - amount;
+    }
+
+    /**
+     * 재료가 소진되었는지 확인 (0 이하)
+     */
+    public boolean isEmpty() {
+        return this.weight == null || this.weight <= 0;
+    }
 }
