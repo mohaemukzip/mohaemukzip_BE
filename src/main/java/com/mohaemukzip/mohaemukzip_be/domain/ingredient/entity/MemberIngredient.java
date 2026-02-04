@@ -71,5 +71,9 @@ public class MemberIngredient extends BaseEntity {
         if (this.weight == null) this.weight = 0.0;
         this.weight += additionalWeight; // 무게 갱신
         this.expireDate = newExpireDate; // 날짜 갱신
+
+        if (newExpireDate != null) {
+            this.expireDate = newExpireDate;
+        }
     }
 }
