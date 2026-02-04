@@ -40,6 +40,7 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
     private final MemberIngredientRepository memberIngredientRepository;
     private final RecipeStepRepository recipeStepRepository;
     private final RecipeDetailConverter recipeDetailConverter;
+    private final DishRepository dishRepository;
 
     private final RecentlyViewedRecipeManager recentlyViewedRecipeManager;
 
@@ -53,16 +54,7 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
             throw new BusinessException(ErrorStatus.CATEGORY_NOT_FOUND);
         }
 
-        Set<Long> bookmarkedRecipeIds = Collections.emptySet();
-        if (memberId != null && !recipePage.isEmpty()) {
-            List<Long> recipeIds = recipePage.getContent().stream()
-                    .map(Recipe::getId)
-                    .collect(Collectors.toList());
-            bookmarkedRecipeIds = memberRecipeRepository
-                    .findBookmarkedRecipeIdsByMemberId(memberId, recipeIds);
-        }
-
-        return RecipeConverter.toRecipePreviewListDTO(recipePage, bookmarkedRecipeIds);
+        return createRecipePreviewList(recipePage, memberId);
     }
 
     @Override
@@ -102,6 +94,32 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
                 steps,
                 isBookmarked
         );
+    }
+
+    @Override
+    public RecipeResponseDTO.RecipePreviewListDTO getRecipesByDishId(Long dishId, Integer page, Long memberId) {
+        // Dish 존재 여부 확인 (유효성 검사 강화)
+        if (!dishRepository.existsById(dishId)) {
+             throw new BusinessException(ErrorStatus.DISH_NOT_FOUND);
+        }
+
+        Page<Recipe> recipePage = recipeRepository.findByDishId(dishId, PageRequest.of(page, PAGE_SIZE));
+
+        return createRecipePreviewList(recipePage, memberId);
+    }
+
+    // 공통 로직 추출: 북마크 확인 및 DTO 변환
+    private RecipeResponseDTO.RecipePreviewListDTO createRecipePreviewList(Page<Recipe> recipePage, Long memberId) {
+        Set<Long> bookmarkedRecipeIds = Collections.emptySet();
+        if (memberId != null && !recipePage.isEmpty()) {
+            List<Long> recipeIds = recipePage.getContent().stream()
+                    .map(Recipe::getId)
+                    .collect(Collectors.toList());
+            bookmarkedRecipeIds = memberRecipeRepository
+                    .findBookmarkedRecipeIdsByMemberId(memberId, recipeIds);
+        }
+
+        return RecipeConverter.toRecipePreviewListDTO(recipePage, bookmarkedRecipeIds);
     }
 
     private List<RecipeStep> fetchRecipeSteps(Long recipeId) {
