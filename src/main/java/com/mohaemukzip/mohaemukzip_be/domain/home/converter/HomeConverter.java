@@ -46,7 +46,7 @@ public class HomeConverter {
                 .title(mission.getTitle())
                 .description(mission.getDescription())
                 .reward(mission.getReward())
-                .keyword(mission.getKeyword())
+                .dishId(mission.getDishId())
                 .status(memberMission.getStatus().name())
                 .build();
     }

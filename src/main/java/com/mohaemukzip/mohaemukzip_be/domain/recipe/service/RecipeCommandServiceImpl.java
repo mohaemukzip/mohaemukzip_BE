@@ -183,7 +183,8 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         rewardScore += 5;
 
         // 2. 오늘 미션 매칭 시 완료 보상(예: +20)
-        rewardScore +=  completeTodayMissionIfMatched(memberId, recipeId); // 매칭되면 reward 반환, 아니면 0
+        Long dishId = recipe.getDish() != null ? recipe.getDish().getId() : null;
+        rewardScore += completeTodayMissionIfMatched(memberId, dishId);
 
         if (isFirstCookingToday) {
             //  재료 보너스(하루 1회)
@@ -348,7 +349,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         }
     }
 
-    private int completeTodayMissionIfMatched(Long memberId, Long recipeId) {
+    private int completeTodayMissionIfMatched(Long memberId, Long dishId) {
         LocalDate today = LocalDate.now();
 
         MemberMission mm = memberMissionRepository
@@ -358,11 +359,10 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         if (mm == null) return 0;
         if (mm.getStatus() != MissionStatus.ASSIGNED) return 0;
 
-        String keyword = mm.getMission().getKeyword();
-        if (keyword == null || keyword.isBlank()) return 0;
+        Long missionDishId = mm.getMission().getDishId();
+        if (missionDishId == null || dishId == null) return 0;
 
-        boolean matches = recipeRepository.existsByIdAndTitleContaining(recipeId, keyword);
-        if (!matches) return 0;
+        if (!missionDishId.equals(dishId)) return 0;
 
         mm.completeToday();
 
