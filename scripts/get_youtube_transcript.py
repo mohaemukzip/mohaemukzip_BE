@@ -15,14 +15,16 @@ def main():
     video_id = sys.argv[1]
 
     try:
-        # 한국어 우선, 없으면 영어
-        transcript = YouTubeTranscriptApi.get_transcript(
-            video_id,
-            languages=["ko", "en"]
-        )
+        # 1.24 버전 API: 인스턴스 생성 후 fetch 호출
+        api = YouTubeTranscriptApi()
+        result = api.fetch(video_id, languages=["ko", "en"])
 
-        # transcript item:
-        # { "text": "...", "start": 12.34, "duration": 3.21 }
+        # FetchedTranscriptSnippet → dict 변환 (기존 JSON 포맷 유지)
+        transcript = [
+            {"text": s.text, "start": s.start, "duration": s.duration}
+            for s in result
+        ]
+
         print(json.dumps(transcript, ensure_ascii=False))
 
     except (TranscriptsDisabled, NoTranscriptFound):
