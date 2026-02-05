@@ -29,7 +29,7 @@ public class HomeConverter {
                 .level(levelProgress.currentLevel())
                 .title(levelProgress.title())
                 .monthlyCooking(monthlyCooking)
-                .score(score)
+                .score(levelProgress.currentScore())
                 .nextLevelScore(levelProgress.nextLevelScore())
                 .consecutiveDays(consecutiveDays)
                 .nickname(nickname)
