@@ -1,6 +1,8 @@
 package com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository;
 
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberIngredient;
+import com.mohaemukzip.mohaemukzip_be.domain.member.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -82,4 +84,6 @@ public interface MemberIngredientRepository extends JpaRepository<MemberIngredie
 
     // 사용자가 재료를 보유하고 있는지 확인
     boolean existsByMemberId(Long memberId);
+
+    Optional<MemberIngredient> findByMemberAndIngredient(Member member, Ingredient ingredient);
 }

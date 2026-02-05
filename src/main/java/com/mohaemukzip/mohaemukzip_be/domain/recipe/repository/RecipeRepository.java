@@ -57,4 +57,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
             "JOIN DishCategory dc ON r.dish = dc.dish " +
             "WHERE dc.category.id = :categoryId")
     Page<Recipe> findRecipesByDishCategoryId(@Param("categoryId") Long categoryId, Pageable pageable);
+
+    // Dish ID로 레시피 조회
+    Page<Recipe> findByDishId(Long dishId, Pageable pageable);
 }

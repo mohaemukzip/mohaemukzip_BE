@@ -61,6 +61,9 @@ public enum ErrorStatus implements BaseCode {
     // 카테고리 관련 에러
     CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CATEGORY4001", "해당 카테고리를 찾을 수 없습니다."),
 
+    // 요리(Dish) 관련 에러
+    DISH_NOT_FOUND(HttpStatus.NOT_FOUND, "DISH4001", "해당 요리를 찾을 수 없습니다."),
+
     // 레시피 관련 에러
     RECIPE_NOT_FOUND(HttpStatus.NOT_FOUND, "RECIPE4001", "해당 레시피를 찾을 수 없습니다."),
     RECIPE_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "RECIPE4002", "이미 저장된 레시피입니다."),

@@ -59,8 +59,8 @@ public class LevelService {
             return new LevelProgressDto(
                     level,
                     title,
-                    currentScore,
-                    nextLevelScore,
+                    currentScore - LEVEL_SCORES[level],
+                    0,
                     0
             );
         }
@@ -70,8 +70,8 @@ public class LevelService {
         return new LevelProgressDto(
                 level,
                 title,
-                currentScore,
-                nextLevelScore,
+                currentScore - LEVEL_SCORES[level],
+                nextLevelScore - LEVEL_SCORES[level],
                 remainingScore
         );
     }
