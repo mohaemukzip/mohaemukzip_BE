@@ -39,22 +39,30 @@ public class IngredientCommandServiceImpl implements IngredientCommandService {
         Ingredient ingredient = ingredientRepository.findById(request.getIngredientId())
                 .orElseThrow(() -> new BusinessException(ErrorStatus.INGREDIENT_NOT_FOUND));
 
-        //엔티티 생성
-        MemberIngredient memberIngredient = MemberIngredient.builder()
-                .member(member)
-                .ingredient(ingredient)
-                .storageType(request.getStorageType()) // 냉장/냉동/실온
-                .expireDate(request.getExpireDate())   // 유통기한
-                .weight(request.getWeight())           // 용량
-                .build();
+        // 이미 냉장고에 있는 재료인지 확인
+        Optional<MemberIngredient> existingMemberIngredient =
+                memberIngredientRepository.findByMemberAndIngredient(member, ingredient);
 
-        // DB에 insert
-        MemberIngredient saved = memberIngredientRepository.save(memberIngredient);
+        MemberIngredient saved;
+        if (existingMemberIngredient.isPresent()) {
+            saved = existingMemberIngredient.get();
+            saved.addQuantityAndRenewExpireDate(request.getWeight(), request.getExpireDate());
+        } else {
+            // 새로운 엔티티 생성
+            MemberIngredient newMemberIngredient = MemberIngredient.builder()
+                    .member(member)
+                    .ingredient(ingredient)
+                    .storageType(request.getStorageType())
+                    .expireDate(request.getExpireDate())
+                    .weight(request.getWeight())
+                    .build();
+
+            saved = memberIngredientRepository.save(newMemberIngredient);
+        }
 
         return IngredientResponseDTO.AddFridgeResult.builder()
                 .memberIngredientId(saved.getId())
                 .build();
-
     }
 
     @Override
