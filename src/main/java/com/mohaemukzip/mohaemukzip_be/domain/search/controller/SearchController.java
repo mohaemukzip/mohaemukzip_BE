@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/search")
-@Tag(name = "Search", description = "통합 검색 및 카테고리 조회 API")
+@Tag(name = "Search", description = "메뉴 검색 및 카테고리 조회 API")
 @Validated
 public class SearchController {
 
@@ -34,7 +34,7 @@ public class SearchController {
     private final RecipeQueryService recipeQueryService;
 
     @GetMapping
-    @Operation(summary = "통합 검색 API", description = "레시피 제목을 검색합니다. (페이징 지원)")
+    @Operation(summary = "메뉴 검색 API", description = "메뉴를 검색합니다. (페이징 지원)")
     public ApiResponse<SearchResponseDTO> search(
             @Parameter(description = "검색어 (1자 이상)", required = true)
             @RequestParam @NotBlank(message = "검색어는 필수입니다.") @Size(min = 1, max = 100, message = "검색어는 1자 이상 100자 이하로 입력해주세요.") String keyword,
@@ -58,5 +58,20 @@ public class SearchController {
     ) {
         Long memberId = (userDetails != null) ? userDetails.getMember().getId() : null;
         return ApiResponse.onSuccess(recipeQueryService.getRecipesByCategoryId(categoryId, page, memberId));
+    }
+
+    @GetMapping("/recipes/dish")
+    @Operation(summary = "요리(Dish)별 레시피 조회 API", description = "특정 요리(dishId)에 해당하는 레시피 목록을 조회합니다.")
+    @Parameters({
+            @Parameter(name = "dishId", description = "요리 ID", required = true),
+            @Parameter(name = "page", description = "페이지 번호 (0부터 시작)")
+    })
+    public ApiResponse<RecipeResponseDTO.RecipePreviewListDTO> getRecipesByDish(
+            @RequestParam(name = "dishId") @Positive Long dishId,
+            @RequestParam(name = "page", defaultValue = "0") @PositiveOrZero Integer page,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = (userDetails != null) ? userDetails.getMember().getId() : null;
+        return ApiResponse.onSuccess(recipeQueryService.getRecipesByDishId(dishId, page, memberId));
     }
 }
