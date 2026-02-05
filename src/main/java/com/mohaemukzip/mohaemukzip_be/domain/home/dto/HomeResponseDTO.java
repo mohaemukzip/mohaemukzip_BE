@@ -43,7 +43,7 @@ public class HomeResponseDTO {
         private String title;
         private String description;
         private Integer reward;
-        private String keyword;
+        private Long dishId;
         private String status; // "ASSIGNED", "COMPLETED", "FAILED"
     }
 

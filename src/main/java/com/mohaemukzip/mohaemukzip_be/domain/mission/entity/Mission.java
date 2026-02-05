@@ -26,6 +26,6 @@ public class Mission extends BaseEntity {
     @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "keyword", nullable = false)
-    private String keyword; // 검색 및 완료 판정 기준 키워드
+    @Column(name = "dish_id", nullable = false)
+    private Long dishId;
 }
