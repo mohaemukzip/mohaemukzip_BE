@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,14 +35,12 @@ public class SearchQueryServiceImpl implements SearchQueryService {
     public SearchResponseDTO search(String keyword, Integer page) {
 
         String sanitizedKeyword = keyword.trim();
-        // DB 쿼리에서 REPLACE를 제거했으므로, 검색어 전처리도 단순화할 수 있지만
-        // 사용자 입력 실수(중간 공백)를 보정하기 위해 공백 제거는 유지하는 것이 안전함.
         String strippedKeyword = sanitizedKeyword.replace(" ", "");
 
         String normalizedKeyword = strippedKeyword.toLowerCase();
         
-        // 캐시 키 변경 (v3) - 쿼리 최적화(REPLACE 제거) 반영
-        String cacheKey = "search::dish::v3::" + normalizedKeyword + "::" + page;
+        // 캐시 키 변경 (v4) - 가중치 정렬 로직 반영
+        String cacheKey = "search::dish::v4::" + normalizedKeyword + "::" + page;
         
         try {
             SearchResponseDTO cachedData = (SearchResponseDTO) redisTemplate.opsForValue().get(cacheKey);
@@ -57,8 +54,8 @@ public class SearchQueryServiceImpl implements SearchQueryService {
 
         log.info("Cache Miss - DB Query. keyword={}, page={}", strippedKeyword, page);
 
-        Pageable pageable = PageRequest.of(page, DEFAULT_PAGE_SIZE, Sort.by("id").ascending());
-        Page<DishProjection> resultPage = dishRepository.findProjectedByNameStartingWith(strippedKeyword, pageable);
+        Pageable pageable = PageRequest.of(page, DEFAULT_PAGE_SIZE);
+        Page<DishProjection> resultPage = dishRepository.findProjectedByNameWeighted(strippedKeyword, pageable);
 
         log.info("DB Search Result Count: {}", resultPage.getTotalElements());
 

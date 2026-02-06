@@ -9,8 +9,20 @@ import org.springframework.data.repository.query.Param;
 
 public interface DishRepository extends JpaRepository<Dish, Long> {
 
-
-    // 주의: 첫 글자만 탐색하기 때문에 DB에 저장된 Dish 이름에 띄어쓰기가 있다면 검색되지 않을 수 있음 (예: DB '제 육 볶음' vs 검색어 '제육')
-    @Query("SELECT d.id as id, d.name as name FROM Dish d WHERE d.name LIKE CONCAT(:keyword, '%')")
-    Page<DishProjection> findProjectedByNameStartingWith(@Param("keyword") String keyword, Pageable pageable);
+    /**
+     * 검색 로직 개선:
+     * 1. 검색어 포함(LIKE %keyword%)하는 모든 결과 조회
+     * 2. 정렬 우선순위:
+     *    - 1순위: 검색어로 시작하는 경우 (CASE WHEN ... THEN 1)
+     *    - 2순위: 그 외 (CASE WHEN ... THEN 2)
+     *    - 3순위: 이름 길이 짧은 순 (LENGTH(d.name))
+     *    - 4순위: 가나다 순 (d.name)
+     */
+    @Query("SELECT d.id as id, d.name as name FROM Dish d " +
+           "WHERE d.name LIKE CONCAT('%', :keyword, '%') " +
+           "ORDER BY " +
+           "CASE WHEN d.name LIKE CONCAT(:keyword, '%') THEN 1 ELSE 2 END, " +
+           "LENGTH(d.name), " +
+           "d.name")
+    Page<DishProjection> findProjectedByNameWeighted(@Param("keyword") String keyword, Pageable pageable);
 }
