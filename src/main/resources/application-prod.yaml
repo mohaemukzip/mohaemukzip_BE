@@ -39,3 +39,6 @@ gemini:
 youtube:
   api:
     key: ${YOUTUBE_API_KEY}
+
+transcript:
+  proxy-url: ${TRANSCRIPT_PROXY_URL:}
