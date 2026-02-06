@@ -36,12 +36,14 @@ public class SearchQueryServiceImpl implements SearchQueryService {
     public SearchResponseDTO search(String keyword, Integer page) {
 
         String sanitizedKeyword = keyword.trim();
+        // DB 쿼리에서 REPLACE를 제거했으므로, 검색어 전처리도 단순화할 수 있지만
+        // 사용자 입력 실수(중간 공백)를 보정하기 위해 공백 제거는 유지하는 것이 안전함.
         String strippedKeyword = sanitizedKeyword.replace(" ", "");
 
         String normalizedKeyword = strippedKeyword.toLowerCase();
         
-        // 캐시 키 변경 (v1 추가)하여 기존 캐시 무시 및 갱신 유도
-        String cacheKey = "search::dish::v1::" + normalizedKeyword + "::" + page;
+        // 캐시 키 변경 (v3) - 쿼리 최적화(REPLACE 제거) 반영
+        String cacheKey = "search::dish::v3::" + normalizedKeyword + "::" + page;
         
         try {
             SearchResponseDTO cachedData = (SearchResponseDTO) redisTemplate.opsForValue().get(cacheKey);
@@ -56,7 +58,7 @@ public class SearchQueryServiceImpl implements SearchQueryService {
         log.info("Cache Miss - DB Query. keyword={}, page={}", strippedKeyword, page);
 
         Pageable pageable = PageRequest.of(page, DEFAULT_PAGE_SIZE, Sort.by("id").ascending());
-        Page<DishProjection> resultPage = dishRepository.findProjectedByNameContaining(strippedKeyword, pageable);
+        Page<DishProjection> resultPage = dishRepository.findProjectedByNameStartingWith(strippedKeyword, pageable);
 
         log.info("DB Search Result Count: {}", resultPage.getTotalElements());
 

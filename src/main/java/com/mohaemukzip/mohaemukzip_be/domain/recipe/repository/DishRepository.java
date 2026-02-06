@@ -9,6 +9,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface DishRepository extends JpaRepository<Dish, Long> {
 
-    @Query("SELECT d.id as id, d.name as name FROM Dish d WHERE REPLACE(d.name, ' ', '') LIKE CONCAT('%', :keyword, '%')")
-    Page<DishProjection> findProjectedByNameContaining(@Param("keyword") String keyword, Pageable pageable);
+
+    // 주의: 첫 글자만 탐색하기 때문에 DB에 저장된 Dish 이름에 띄어쓰기가 있다면 검색되지 않을 수 있음 (예: DB '제 육 볶음' vs 검색어 '제육')
+    @Query("SELECT d.id as id, d.name as name FROM Dish d WHERE d.name LIKE CONCAT(:keyword, '%')")
+    Page<DishProjection> findProjectedByNameStartingWith(@Param("keyword") String keyword, Pageable pageable);
 }
