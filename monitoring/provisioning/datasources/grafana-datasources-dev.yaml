@@ -1,0 +1,3 @@
+datasources:
+  - name: Prometheus
+    url: http://prometheus-mohaemukzip-dev:9090

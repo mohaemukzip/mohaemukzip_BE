@@ -28,6 +28,19 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
+    private static final String[] PUBLIC_ENDPOINTS = {
+            "/auth/signup",
+            "/auth/login",
+            "/auth/reissue",
+            "/auth/check-loginid",
+            "/auth/kakao-login",
+            "/auth/terms",
+            "/swagger-ui/**",
+            "/v3/api-docs/**",
+            "/actuator",
+            "/actuator/prometheus"
+    };
+
     @Bean
     public BCryptPasswordEncoder encoder(){
         return new BCryptPasswordEncoder();
@@ -48,13 +61,7 @@ public class SecurityConfig {
                     .accessDeniedHandler(jwtAccessDeniedHandler)) // 403
 
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers( "/auth/signup",
-                        "/auth/login",
-                        "/auth/reissue",
-                        "/auth/check-loginid",
-                        "/auth/kakao-login",
-                        "/auth/terms").permitAll()
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers( PUBLIC_ENDPOINTS).permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(

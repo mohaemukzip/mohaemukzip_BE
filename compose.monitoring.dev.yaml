@@ -1,0 +1,61 @@
+name: mohaemukzip-monitoring-dev
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-mohaemukzip-dev
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus-data-dev:/prometheus
+      - ./monitoring/prometheus-dev.yaml:/etc/prometheus/prometheus-dev.yaml:ro
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus-dev.yaml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: grafana-mohaemukzip-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD_DEV}
+    volumes:
+      - grafana-data-dev:/var/lib/grafana
+      - ./monitoring/provisioning/datasources/grafana-datasources-dev.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - ./monitoring/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # 서버 메트릭 (EC2 CPU/메모리)
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node-exporter-mohaemukzip-dev
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+    restart: unless-stopped
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: redis-exporter-mohaemukzip-dev
+    ports:
+      - "9121:9121"
+    environment:
+      - REDIS_ADDR=redis://host.docker.internal:6379
+    restart: unless-stopped
+
+volumes:
+  prometheus-data-dev:
+  grafana-data-dev:

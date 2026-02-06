@@ -1,0 +1,76 @@
+name: mohaemukzip-monitoring-prod
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-mohaemukzip-prod
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus-data:/prometheus
+      - ./monitoring/prometheus-prod.yaml:/etc/prometheus/prometheus-dev.yaml:ro
+    networks:
+      - mohaemukzip-api_spring-network
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus-prod.yaml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: grafana-mohaemukzip-prod
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/provisioning/datasources/grafana-datasources-prod.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - ./monitoring/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+    networks:
+      - mohaemukzip-api_spring-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # 서버 메트릭 (EC2 CPU/메모리)
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node-exporter-mohaemukzip-prod
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - mohaemukzip-api_spring-network
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+    restart: unless-stopped
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: redis-exporter-mohaemukzip-prod
+    ports:
+      - "9121:9121"
+    environment:
+      - REDIS_ADDR=redis://mohaemukzip-redis:6379
+    networks:
+      - mohaemukzip-api_spring-network
+    restart: unless-stopped
+
+networks:
+  mohaemukzip-api_spring-network:
+    external: true
+
+volumes:
+  prometheus-data:
+  grafana-data:
