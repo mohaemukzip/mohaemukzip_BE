@@ -1,7 +1,6 @@
 package com.mohaemukzip.mohaemukzip_be.domain.chatbot.service;
 
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.response.ChatProcessorResult;
-import com.mohaemukzip.mohaemukzip_be.domain.chatbot.entity.ChatRoom;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberIngredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberIngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.MemberCookHistory;
@@ -50,7 +49,7 @@ public class RecommendChatProcessor implements ChatProcessor {
     }
 
     @Override
-    public ChatProcessorResult process(ChatRoom chatRoom, String userMessage, String intent) {
+    public ChatProcessorResult process(Long memberId, String userMessage, String intent) {
         try {
             log.info("ChatProcessor 처리 시작 - Intent: {}, UserMessage Length: {}", intent, (userMessage != null ? userMessage.length() : 0));
 
@@ -59,7 +58,6 @@ public class RecommendChatProcessor implements ChatProcessor {
                 return parseResponse(aiResponse, "요선생의 답변", Collections.emptyList());
             }
 
-            Long memberId = chatRoom.getMemberId();
             Set<Recipe> candidateSet = new HashSet<>();
 
             String[] keywords = userMessage.split("\\s+");
@@ -111,7 +109,6 @@ public class RecommendChatProcessor implements ChatProcessor {
 
         } catch (Exception e) {
             log.error("ChatProcessor 처리 중 예외 발생", e);
-            // 예외 발생 시에도 null 대신 안전한 Fallback 결과 반환
             return ChatProcessorResult.builder()
                     .title("일시적 오류")
                     .message("죄송해요, 처리 중 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.")
