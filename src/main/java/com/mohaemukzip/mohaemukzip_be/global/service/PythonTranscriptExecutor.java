@@ -19,6 +19,9 @@ public class PythonTranscriptExecutor {
     @Value("${transcript.script-path}")
     private String scriptPath;
 
+    @Value("${transcript.proxy-url:}")
+    private String proxyUrl;
+
     @Value("${spring.profiles.active:dev}")
     private String activeProfile;
 
@@ -45,6 +48,12 @@ public class PythonTranscriptExecutor {
             );
 
             pb.directory(new File("/app"));
+
+            if (proxyUrl != null && !proxyUrl.isBlank()) {
+                pb.environment().put("HTTPS_PROXY", proxyUrl);
+                pb.environment().put("HTTP_PROXY", proxyUrl);
+            }
+
             pb.redirectErrorStream(true);
 
             Process process = pb.start();
