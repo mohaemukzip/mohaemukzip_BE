@@ -1,6 +1,8 @@
+import os
 import sys
 import json
 from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.proxies import GenericProxyConfig
 from youtube_transcript_api._errors import (
     TranscriptsDisabled,
     NoTranscriptFound,
@@ -15,8 +17,11 @@ def main():
     video_id = sys.argv[1]
 
     try:
-        # 1.24 버전 API: 인스턴스 생성 후 fetch 호출
-        api = YouTubeTranscriptApi()
+        proxy_url = os.environ.get("HTTPS_PROXY")
+        if proxy_url:
+            api = YouTubeTranscriptApi(proxy_config=GenericProxyConfig(https_url=proxy_url))
+        else:
+            api = YouTubeTranscriptApi()
         result = api.fetch(video_id, languages=["ko", "en"])
 
         # FetchedTranscriptSnippet → dict 변환 (기존 JSON 포맷 유지)
