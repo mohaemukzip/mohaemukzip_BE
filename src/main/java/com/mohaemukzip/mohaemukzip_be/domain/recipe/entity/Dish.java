@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Table(name = "dishes")
+@Table(name = "dishes", indexes = @Index(name = "idx_dish_name", columnList = "name"))
 public class Dish extends BaseEntity {
 
     @Id

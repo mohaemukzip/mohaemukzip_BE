@@ -22,6 +22,15 @@ server:
 jwt:
   secret: YOUR_JWT_SECRET
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus,health,metrics,info,gatling  # 개발시 필요
+  endpoint:
+    prometheus:
+      enabled: true
+
 cloud:
   aws:
     credentials:

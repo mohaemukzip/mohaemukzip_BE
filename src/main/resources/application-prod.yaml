@@ -23,12 +23,27 @@ server:
 jwt:
   secret: ${JWT_SECRET}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+    prometheus:
+      enabled: true
+      cache:
+        time-to-live: 10s
+  server:
+    port: 9091
+
 springdoc:
   api-docs:
     enabled: true
   swagger-ui:
     enabled: true
-    path: /swagger-ui/index.html
+    path: /swagger-ui
 
 gemini:
   recipe:
@@ -39,3 +54,6 @@ gemini:
 youtube:
   api:
     key: ${YOUTUBE_API_KEY}
+
+transcript:
+  proxy-url: ${TRANSCRIPT_PROXY_URL:}

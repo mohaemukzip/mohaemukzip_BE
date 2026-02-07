@@ -1,55 +1,78 @@
 package com.mohaemukzip.mohaemukzip_be.domain.chatbot.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.converter.ChatConverter;
+import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.RedisChatMessage;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.request.ChatPostRequest;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.response.ChatProcessorResult;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.response.ChatResponse;
-import com.mohaemukzip.mohaemukzip_be.domain.chatbot.entity.ChatMessage;
-import com.mohaemukzip.mohaemukzip_be.domain.chatbot.entity.ChatRoom;
-import com.mohaemukzip.mohaemukzip_be.domain.chatbot.entity.enums.ChatState;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.entity.enums.SenderType;
-import com.mohaemukzip.mohaemukzip_be.domain.chatbot.repository.ChatMessageRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.chatbot.repository.ChatRoomRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class ChatCommandServiceImpl implements ChatCommandService {
 
-    private final ChatRoomRepository chatRoomRepository;
-    private final ChatMessageRepository chatMessageRepository;
     private final ChatProcessor chatProcessor;
+    
+    @Qualifier("redisCacheTemplate")
+    private final RedisTemplate<String, Object> redisTemplate;
+    
+    private final ObjectMapper objectMapper;
+
+    private static final long CHAT_TTL_MINUTES = 30;
 
     @Override
-    @Transactional
     public ChatResponse processMessage(Long memberId, ChatPostRequest request) {
-        // 1. 채팅방 조회 또는 생성
-        ChatRoom chatRoom = getOrCreateChatRoom(memberId);
+        String redisKey = getRedisKey(memberId);
 
-        // 2. 사용자 메시지 저장
-        ChatMessage userMessage = ChatConverter.toChatMessage(chatRoom, SenderType.USER, null, request.getMessage());
-        chatMessageRepository.save(userMessage);
+        // 1. 사용자 메시지 Redis 저장
+        RedisChatMessage userMessage = RedisChatMessage.builder()
+                .sender(SenderType.USER)
+                .content(request.getMessage())
+                .timestamp(LocalDateTime.now().toString())
+                .build();
+        saveToRedis(redisKey, userMessage);
 
-        // 3. Processor를 통해 의도 파악 및 로직 수행 (항상 유효한 결과 반환 보장)
+        // 2. Processor를 통해 의도 파악 및 로직 수행
         String intent = chatProcessor.analyzeIntent(request.getMessage());
-        ChatProcessorResult result = chatProcessor.process(chatRoom, request.getMessage(), intent);
+        ChatProcessorResult result = chatProcessor.process(memberId, request.getMessage(), intent);
 
-        // 4. 봇 메시지(멘트) 저장
-        ChatMessage botMessage = ChatConverter.toChatMessage(chatRoom, SenderType.BOT, result.getTitle(), result.getMessage());
-        chatMessageRepository.save(botMessage);
+        // 3. 봇 메시지 Redis 저장
+        RedisChatMessage botMessage = RedisChatMessage.builder()
+                .sender(SenderType.BOT)
+                .title(result.getTitle())
+                .content(result.getMessage())
+                .timestamp(LocalDateTime.now().toString())
+                .build();
+        saveToRedis(redisKey, botMessage);
+
+        // 4. TTL 갱신 (마지막 활동 기준 30분 연장)
+        redisTemplate.expire(redisKey, CHAT_TTL_MINUTES, TimeUnit.MINUTES);
 
         // 5. 최종 응답 DTO 변환
-        return ChatConverter.toChatResponse(botMessage, result.getRecipes());
+        return ChatConverter.toChatResponse(result);
     }
 
-    private ChatRoom getOrCreateChatRoom(Long memberId) {
-        return chatRoomRepository.findByMemberIdAndState(memberId, ChatState.ING)
-                .orElseGet(() -> {
-                    ChatRoom newChatRoom = ChatConverter.toChatRoom(memberId);
-                    return chatRoomRepository.save(newChatRoom);
-                });
+    private void saveToRedis(String key, RedisChatMessage message) {
+        try {
+            String json = objectMapper.writeValueAsString(message);
+            redisTemplate.opsForList().rightPush(key, json);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize chat message", e);
+        }
+    }
+
+    private String getRedisKey(Long memberId) {
+        return "chat:room:" + memberId + ":messages";
     }
 }
