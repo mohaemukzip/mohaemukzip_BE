@@ -19,7 +19,7 @@ def main():
     try:
         proxy_url = os.environ.get("HTTPS_PROXY")
         if proxy_url:
-            api = YouTubeTranscriptApi(proxy_config=GenericProxyConfig(proxy_url))
+            api = YouTubeTranscriptApi(proxy_config=GenericProxyConfig(https_url=proxy_url))
         else:
             api = YouTubeTranscriptApi()
         result = api.fetch(video_id, languages=["ko", "en"])
