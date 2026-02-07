@@ -1,3 +1,7 @@
 datasources:
   - name: Prometheus
+    type: prometheus
+    access: proxy
     url: http://prometheus-mohaemukzip-prod:9090
+    isDefault: true
+    editable: false

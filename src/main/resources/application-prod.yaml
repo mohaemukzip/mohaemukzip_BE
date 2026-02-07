@@ -31,10 +31,10 @@ management:
   endpoint:
     health:
       show-details: when-authorized
-  prometheus:
-    enabled: true
-    cache:
-      time-to-live: 10s
+    prometheus:
+      enabled: true
+      cache:
+        time-to-live: 10s
   server:
     port: 9091
 
