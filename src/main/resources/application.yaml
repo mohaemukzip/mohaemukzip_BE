@@ -12,6 +12,15 @@ spring:
     active: dev
     # include: openai  <-- 제거 (통합하므로 불필요)
 
+management:
+  endpoints:
+    web:
+      base-path: /actuator         # /actuator/prometheus
+  endpoint:
+    health:
+      db:
+        enabled: true
+        
 cloud:
   aws:
     region:
