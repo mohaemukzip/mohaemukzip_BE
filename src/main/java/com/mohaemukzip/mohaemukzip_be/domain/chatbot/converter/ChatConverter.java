@@ -16,7 +16,7 @@ public class ChatConverter {
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("a h:mm", Locale.KOREA);
 
-    public static ChatResponse toChatResponse(ChatProcessorResult result) {
+    public static ChatResponse toChatResponse(ChatProcessorResult result, String id) {
         List<ChatRecipeResponse> recipeCards = null;
         if (result.getRecipes() != null && !result.getRecipes().isEmpty()) {
             recipeCards = result.getRecipes().stream()
@@ -26,6 +26,7 @@ public class ChatConverter {
 
         LocalDateTime now = LocalDateTime.now();
         return ChatResponse.builder()
+                .id(id)
                 .senderType(SenderType.BOT)
                 .title(result.getTitle())
                 .message(result.getMessage())
