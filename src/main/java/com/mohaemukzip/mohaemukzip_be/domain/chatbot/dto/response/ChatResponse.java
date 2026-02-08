@@ -19,7 +19,7 @@ import java.util.List;
 public class ChatResponse {
     
     @Schema(description = "메시지 ID", example = "10")
-    private Long id;
+    private String id;
 
     @Schema(description = "발신자 타입 (USER/BOT)", example = "BOT")
     private SenderType senderType;

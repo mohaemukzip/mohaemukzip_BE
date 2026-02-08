@@ -60,7 +60,7 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         redisTemplate.expire(redisKey, CHAT_TTL_MINUTES, TimeUnit.MINUTES);
 
         // 5. 최종 응답 DTO 변환
-        return ChatConverter.toChatResponse(result);
+        return ChatConverter.toChatResponse(result, botMessage.getId());
     }
 
     private void saveToRedis(String key, RedisChatMessage message) {

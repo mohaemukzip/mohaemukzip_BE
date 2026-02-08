@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RedisChatMessage {
+    @Builder.Default
+    private String id = java.util.UUID.randomUUID().toString();
     private SenderType sender;
     private String title;   // 봇 응답 제목 (사용자는 null)
     private String content; // 메시지 내용

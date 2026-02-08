@@ -1,5 +1,3 @@
-name: mohaemukzip-monitoring-prod
-
 services:
   prometheus:
     image: prom/prometheus:latest
