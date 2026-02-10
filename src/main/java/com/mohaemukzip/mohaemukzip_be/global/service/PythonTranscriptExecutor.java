@@ -4,6 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
+import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -75,12 +78,18 @@ public class PythonTranscriptExecutor {
 
             String output = outputFuture.get(1, TimeUnit.SECONDS);
 
-            if (process.exitValue() != 0) {
+            int exitCode = process.exitValue();
+            if (exitCode == 2) {
+                throw new BusinessException(ErrorStatus.TRANSCRIPT_NOT_AVAILABLE);
+            }
+            if (exitCode != 0) {
                 throw new RuntimeException("Transcript script failed: " + output);
             }
 
             return output;
 
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("Failed to fetch youtube transcript", e);
         }
