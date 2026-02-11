@@ -33,7 +33,7 @@ public class SecurityConfig {
             "/auth/login",
             "/auth/reissue",
             "/auth/check-loginid",
-            "/auth/kakao-login",
+            "/auth/login/kakao",
             "/auth/terms",
             "/swagger-ui/**",
             "/v3/api-docs/**",
