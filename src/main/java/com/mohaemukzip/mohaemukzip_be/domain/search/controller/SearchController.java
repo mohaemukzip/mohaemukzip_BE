@@ -1,15 +1,14 @@
 package com.mohaemukzip.mohaemukzip_be.domain.search.controller;
 
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.RecipeQueryService;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.query.RecipeQueryService;
 import com.mohaemukzip.mohaemukzip_be.domain.search.dto.SearchResponseDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.search.service.SearchQueryService;
+import com.mohaemukzip.mohaemukzip_be.domain.search.service.query.SearchQueryService;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
 import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;

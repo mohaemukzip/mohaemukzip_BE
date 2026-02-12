@@ -2,11 +2,9 @@ package com.mohaemukzip.mohaemukzip_be.domain.chatbot.controller;
 
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.request.ChatPostRequest;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.response.ChatResponse;
-import com.mohaemukzip.mohaemukzip_be.domain.chatbot.service.ChatCommandService;
+import com.mohaemukzip.mohaemukzip_be.domain.chatbot.service.command.ChatCommandService;
 import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

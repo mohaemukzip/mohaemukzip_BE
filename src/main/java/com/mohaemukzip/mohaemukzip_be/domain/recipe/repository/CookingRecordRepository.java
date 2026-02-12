@@ -88,5 +88,8 @@ public interface CookingRecordRepository extends JpaRepository<CookingRecord, Lo
 
     // 사용자가 요리 기록이 있는지 확인
     boolean existsByMemberId(Long memberId);
+
+    // 특정 시점 이후의 요리 기록 조회 (추천 시 최근 요리 필터링용)
+    List<CookingRecord> findAllByMemberIdAndCreatedAtAfter(Long memberId, LocalDateTime startDate);
 }
 
