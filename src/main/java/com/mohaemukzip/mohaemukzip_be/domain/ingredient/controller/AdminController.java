@@ -2,11 +2,8 @@ package com.mohaemukzip.mohaemukzip_be.domain.ingredient.controller;
 
 
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.service.IngredientQueryService;
-import com.mohaemukzip.mohaemukzip_be.domain.member.entity.enums.Role;
-import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.service.query.IngredientQueryService;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
-import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

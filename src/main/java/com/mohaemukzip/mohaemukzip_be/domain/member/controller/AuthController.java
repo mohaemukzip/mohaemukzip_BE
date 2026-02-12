@@ -2,12 +2,11 @@ package com.mohaemukzip.mohaemukzip_be.domain.member.controller;
 
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.AuthResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.AuthRequestDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.member.dto.TermRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.TermResponseDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.member.service.AuthCommandService;
-import com.mohaemukzip.mohaemukzip_be.domain.member.service.AuthQueryService;
-import com.mohaemukzip.mohaemukzip_be.domain.member.service.TermCommandService;
-import com.mohaemukzip.mohaemukzip_be.domain.member.service.TermQueryService;
+import com.mohaemukzip.mohaemukzip_be.domain.member.service.command.auth.AuthCommandService;
+import com.mohaemukzip.mohaemukzip_be.domain.member.service.query.auth.AuthQueryService;
+import com.mohaemukzip.mohaemukzip_be.domain.member.service.command.term.TermCommandService;
+import com.mohaemukzip.mohaemukzip_be.domain.member.service.query.term.TermQueryService;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.jwt.JwtProvider;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
@@ -20,8 +19,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor

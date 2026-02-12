@@ -2,8 +2,8 @@ package com.mohaemukzip.mohaemukzip_be.domain.member.controller;
 
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.MemberRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.MemberResponseDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.member.service.MemberCommandService;
-import com.mohaemukzip.mohaemukzip_be.domain.member.service.MemberQueryService;
+import com.mohaemukzip.mohaemukzip_be.domain.member.service.command.member.MemberCommandService;
+import com.mohaemukzip.mohaemukzip_be.domain.member.service.query.member.MemberQueryService;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
 import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;

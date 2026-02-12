@@ -3,7 +3,7 @@ package com.mohaemukzip.mohaemukzip_be.domain.recipe.converter;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.Ingredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.RecipeIngredient;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.RecipeCrawler;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.crawler.RecipeCrawler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

@@ -3,7 +3,7 @@ package com.mohaemukzip.mohaemukzip_be.domain.home.controller;
 import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeCalendarResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.home.dto.HomeStatsResponseDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.home.service.HomeQueryService;
+import com.mohaemukzip.mohaemukzip_be.domain.home.service.query.HomeQueryService;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
 import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
