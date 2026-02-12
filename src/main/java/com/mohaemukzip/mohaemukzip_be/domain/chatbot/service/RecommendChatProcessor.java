@@ -3,8 +3,8 @@ package com.mohaemukzip.mohaemukzip_be.domain.chatbot.service;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.response.ChatProcessorResult;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberIngredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberIngredientRepository;
-import com.mohaemukzip.mohaemukzip_be.domain.member.entity.MemberCookHistory;
-import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberCookHistoryRepository;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.CookingRecord;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.CookingRecordRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 public class RecommendChatProcessor implements ChatProcessor {
 
     private final MemberIngredientRepository memberIngredientRepository;
-    private final MemberCookHistoryRepository memberCookHistoryRepository;
+    private final CookingRecordRepository cookingRecordRepository;
     private final RecipeRepository recipeRepository;
     private final GeminiService geminiService;
 
@@ -82,7 +82,7 @@ public class RecommendChatProcessor implements ChatProcessor {
             }
 
             LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
-            List<MemberCookHistory> histories = memberCookHistoryRepository.findAllByMemberIdAndCookedAtAfter(memberId, sevenDaysAgo);
+            List<CookingRecord> histories = cookingRecordRepository.findAllByMemberIdAndCreatedAtAfter(memberId, sevenDaysAgo);
             Set<Long> cookedRecipeIds = histories.stream().map(h -> h.getRecipe().getId()).collect(Collectors.toSet());
 
             List<Recipe> filteredRecipes = candidateSet.stream()
