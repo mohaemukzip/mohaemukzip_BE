@@ -31,7 +31,6 @@ public class AdminController {
     @GetMapping("/ingredients/requests")
     @Operation(summary = "관리자용 재료 요청 목록 조회")
     public ApiResponse<List<IngredientResponseDTO.AdminRequestList>> getIngredientRequests(
-            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         List<IngredientResponseDTO.AdminRequestList> result =
                 ingredientQueryService.getIngredientRequestList();
