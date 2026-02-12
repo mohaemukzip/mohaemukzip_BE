@@ -3,7 +3,7 @@ package com.mohaemukzip.mohaemukzip_be.domain.recipe.converter;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.enums.Category;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
-import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.RecipeCrawler;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.crawler.RecipeCrawler;
 import com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import com.mohaemukzip.mohaemukzip_be.global.util.TimeFormatter;

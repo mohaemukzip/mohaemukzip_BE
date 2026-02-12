@@ -3,8 +3,8 @@ package com.mohaemukzip.mohaemukzip_be.domain.ingredient.controller;
 
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDTO;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.service.IngredientCommandService;
-import com.mohaemukzip.mohaemukzip_be.domain.ingredient.service.IngredientQueryService;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.service.command.IngredientCommandService;
+import com.mohaemukzip.mohaemukzip_be.domain.ingredient.service.query.IngredientQueryService;
 import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
 import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
