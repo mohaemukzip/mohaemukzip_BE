@@ -16,7 +16,9 @@ public class CustomUserDetails implements UserDetails {
 
     public CustomUserDetails(Member member) {
         this.member = member;
-        this.authorities = List.of(new SimpleGrantedAuthority(member.getRole().name()));
+        this.authorities = List.of(
+                new SimpleGrantedAuthority(member.getRole().name())
+        );
     }
 
     public CustomUserDetails(Member member, Collection<? extends GrantedAuthority> authorities) {
