@@ -9,7 +9,7 @@ import lombok.Getter;
 
 import java.time.LocalDate;
 
-
+//ci/cd 테스트용주석
 public class IngredientRequestDTO {
 
     //냉장고 재료 추가
