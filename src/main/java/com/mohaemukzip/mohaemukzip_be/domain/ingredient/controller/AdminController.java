@@ -1,6 +1,6 @@
 package com.mohaemukzip.mohaemukzip_be.domain.ingredient.controller;
 
-//
+
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.service.IngredientQueryService;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.enums.Role;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-//
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin")
