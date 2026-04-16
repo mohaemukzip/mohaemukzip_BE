@@ -1,6 +1,6 @@
 package com.mohaemukzip.mohaemukzip_be.domain.ingredient.controller;
 
-
+//
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.dto.IngredientResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.service.IngredientQueryService;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.enums.Role;
