@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import java.time.Duration;
 import java.util.List;
 
 @Slf4j
@@ -36,7 +37,7 @@ public class RapidApiTranscriptClient implements TranscriptClient {
                             .build())
                     .retrieve()
                     .bodyToMono(RapidApiTranscriptResponse.class)
-                    .block();
+                    .block(Duration.ofSeconds(12)); // HttpClient responseTimeout보다 약간 크게 설정하여 경합 조건 방지
 
             if (response == null || !response.success() || response.transcript() == null || response.transcript().isEmpty()) {
                 log.warn("자막 데이터 없음 또는 API 응답 실패 - videoId: {}", videoId);
