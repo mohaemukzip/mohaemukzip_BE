@@ -7,9 +7,11 @@ import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.List;
@@ -28,38 +30,55 @@ public class RapidApiTranscriptClient implements TranscriptClient {
     public List<TranscriptSegment> fetchTranscript(String videoId) {
         log.info("RapidAPI 자막 조회 시작 - videoId: {}", videoId);
 
-        try {
-            RapidApiTranscriptResponse response = webClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/api/transcript")
-                            .queryParam("videoId", videoId)
-                            .queryParam("lang", "ko") // 한국어 요청 복구
-                            .build())
-                    .retrieve()
-                    .bodyToMono(RapidApiTranscriptResponse.class)
-                    .block(Duration.ofSeconds(12)); // HttpClient responseTimeout보다 약간 크게 설정하여 경합 조건 방지
+        // 책임 1+2: HTTP 호출 및 상태코드 → 예외 변환을 reactive chain 내에서 처리
+        RapidApiTranscriptResponse response = webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/transcript")
+                        .queryParam("videoId", videoId)
+                        .queryParam("lang", "ko") // 한국어 요청 복구
+                        .build())
+                .retrieve()
+                .onStatus(this::isAuthOrEndpointError, this::handleAuthOrEndpointError)
+                .onStatus(HttpStatusCode::isError, this::handleGenericHttpError)
+                .bodyToMono(RapidApiTranscriptResponse.class)
+                // BusinessException은 그대로 전파, 나머지는 INTERNAL_SERVER_ERROR로 변환
+                .onErrorMap(e -> !(e instanceof BusinessException),
+                        e -> {
+                            log.error("자막 추출 중 예기치 못한 오류 - videoId: {}", videoId, e);
+                            return new BusinessException(ErrorStatus.INTERNAL_SERVER_ERROR);
+                        })
+                .block(Duration.ofSeconds(12)); // HttpClient responseTimeout보다 약간 크게 설정하여 경합 조건 방지
 
-            if (response == null || !response.success() || response.transcript() == null || response.transcript().isEmpty()) {
-                log.warn("자막 데이터 없음 또는 API 응답 실패 - videoId: {}", videoId);
-                throw new BusinessException(ErrorStatus.TRANSCRIPT_NOT_AVAILABLE);
-            }
+        // 책임 3: 응답 데이터 검증
+        return validateTranscript(response, videoId);
+    }
 
-            return response.transcript();
+    // HTTP 상태코드 분류 (책임 2 보조)
+    private boolean isAuthOrEndpointError(HttpStatusCode status) {
+        return status == HttpStatus.NOT_FOUND
+                || status == HttpStatus.FORBIDDEN
+                || status == HttpStatus.UNAUTHORIZED;
+    }
 
-        } catch (WebClientResponseException e) {
-            log.error("RapidAPI 통신 오류 - status: {}, body: {}", e.getStatusCode(), e.getResponseBodyAsString());
-            
-            // 에러 세분화 (404/403 등)
-            if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
-                throw new BusinessException(ErrorStatus.EXTERNAL_API_ERROR); // API 엔드포인트 틀렸을 때 명확히 구분
-            } else if (e.getStatusCode() == HttpStatus.FORBIDDEN || e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
-                throw new BusinessException(ErrorStatus.EXTERNAL_API_ERROR); // 인증/할당량 오류
-            }
-            
-            throw new BusinessException(ErrorStatus.TRANSCRIPT_NOT_AVAILABLE); // 기타(400 등)는 자막 추출 실패로 간주
-        } catch (Exception e) {
-            log.error("자막 추출 중 예외 발생 - videoId: {}, 에러: {}", videoId, e.getMessage(), e);
-            throw new BusinessException(ErrorStatus.INTERNAL_SERVER_ERROR);
+    private Mono<? extends Throwable> handleAuthOrEndpointError(ClientResponse clientResponse) {
+        return clientResponse.bodyToMono(String.class)
+                .doOnNext(body -> log.error("RapidAPI 인증/엔드포인트 오류 - status: {}, body: {}", clientResponse.statusCode(), body))
+                .thenReturn(new BusinessException(ErrorStatus.EXTERNAL_API_ERROR));
+    }
+
+    private Mono<? extends Throwable> handleGenericHttpError(ClientResponse clientResponse) {
+        return clientResponse.bodyToMono(String.class)
+                .doOnNext(body -> log.error("RapidAPI 통신 오류 - status: {}, body: {}", clientResponse.statusCode(), body))
+                .thenReturn(new BusinessException(ErrorStatus.TRANSCRIPT_NOT_AVAILABLE));
+    }
+
+    // 응답 검증 (책임 3)
+    private List<TranscriptSegment> validateTranscript(RapidApiTranscriptResponse response, String videoId) {
+        if (response == null || !response.success()
+                || response.transcript() == null || response.transcript().isEmpty()) {
+            log.warn("자막 데이터 없음 또는 API 응답 실패 - videoId: {}", videoId);
+            throw new BusinessException(ErrorStatus.TRANSCRIPT_NOT_AVAILABLE);
         }
+        return response.transcript();
     }
 }
