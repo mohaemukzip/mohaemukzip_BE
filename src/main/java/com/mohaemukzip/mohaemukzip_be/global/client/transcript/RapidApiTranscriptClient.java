@@ -62,12 +62,14 @@ public class RapidApiTranscriptClient implements TranscriptClient {
 
     private Mono<? extends Throwable> handleAuthOrEndpointError(ClientResponse clientResponse) {
         return clientResponse.bodyToMono(String.class)
+                .defaultIfEmpty("(empty body)")
                 .doOnNext(body -> log.error("RapidAPI 인증/엔드포인트 오류 - status: {}, body: {}", clientResponse.statusCode(), body))
                 .thenReturn(new BusinessException(ErrorStatus.EXTERNAL_API_ERROR));
     }
 
     private Mono<? extends Throwable> handleGenericHttpError(ClientResponse clientResponse) {
         return clientResponse.bodyToMono(String.class)
+                .defaultIfEmpty("(empty body)")
                 .doOnNext(body -> log.error("RapidAPI 통신 오류 - status: {}, body: {}", clientResponse.statusCode(), body))
                 .thenReturn(new BusinessException(ErrorStatus.TRANSCRIPT_NOT_AVAILABLE));
     }
