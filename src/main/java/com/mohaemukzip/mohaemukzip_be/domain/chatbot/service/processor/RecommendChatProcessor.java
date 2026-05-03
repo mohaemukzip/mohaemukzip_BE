@@ -13,7 +13,6 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Recipe;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.repository.RecipeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -21,7 +20,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
-@Primary
 @RequiredArgsConstructor
 @Slf4j
 public class RecommendChatProcessor implements ChatProcessor {
