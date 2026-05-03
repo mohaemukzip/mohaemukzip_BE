@@ -20,14 +20,14 @@ import lombok.NoArgsConstructor;
 public class RecipeCardResponse {
 
     @JsonProperty("recipe_id")
-    @Schema(description = "레시피 DB ID", example = "42")
+    @Schema(description = "레시피 DB ID", example = "2")
     private Long recipeId;
 
-    @Schema(description = "레시피 제목", example = "매콤 두부 조림")
+    @Schema(description = "레시피 제목", example = "1등🥇 식당처럼 맛있게 [돼지고기 김치찌개] 끓이는법! 한 숟갈만 드셔도 극찬이~ 실패는 없다!")
     private String title;
 
     @JsonProperty("recommend_reason")
-    @Schema(description = "AI가 생성한 추천 이유 (2~3문장)", example = "냉장고에 있는 두부를 활용할 수 있어요! 최근 드신 메뉴와 겹치지 않아 딱 좋습니다.")
+    @Schema(description = "AI가 생성한 추천 이유 (2~3문장)", example = "등록된 냉장고 재료나 최근 식사 이력이 없어 비 오는 날의 일반적인 선호도를 고려했습니다. 비 오는 날 따뜻하고 칼칼한 국물이 생각날 때, 돼지고기 김치찌개는 몸과 마음을 녹여줄 완벽한 선택입니다.")
     private String recommendReason;
 
     @JsonProperty("ingredients_match_rate")
