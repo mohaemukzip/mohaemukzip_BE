@@ -58,4 +58,13 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
     // Dish ID로 레시피 조회
     Page<Recipe> findByDishId(Long dishId, Pageable pageable);
+
+    // ===== 임베딩 배치 처리용 =====
+
+    /**
+     * embedding 컬럼이 null인 레시피 목록을 조회합니다.
+     * RecipeEmbeddingService의 배치 작업에서 사용됩니다.
+     * (임베딩이 아직 생성되지 않은 레시피만 처리하기 위함)
+     */
+    List<Recipe> findByEmbeddingIsNull();
 }
