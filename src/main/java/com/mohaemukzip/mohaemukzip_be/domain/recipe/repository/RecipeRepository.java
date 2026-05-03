@@ -66,5 +66,16 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
      * RecipeEmbeddingService의 배치 작업에서 사용됩니다.
      * (임베딩이 아직 생성되지 않은 레시피만 처리하기 위함)
      */
+    /**
+     * embedding 컬럼이 null인 레시피 목록을 조회합니다.
+     * RecipeEmbeddingService의 배치 작업에서 사용됩니다.
+     * (임베딩이 아직 생성되지 않은 레시피만 처리하기 위함)
+     */
     List<Recipe> findByEmbeddingIsNull();
+
+    /**
+     * embedding 컬럼이 null이 아닌 레시피 목록을 조회합니다.
+     * RecipeSearchService의 벡터 검색 작업에서 사용됩니다.
+     */
+    List<Recipe> findByEmbeddingIsNotNull();
 }
