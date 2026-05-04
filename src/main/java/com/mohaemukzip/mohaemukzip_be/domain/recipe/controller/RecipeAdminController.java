@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * [역할]
  * - 일반 사용자용 RecipeController와 분리하여 관리자 전용 기능을 모아두는 컨트롤러입니다.
- * - GET /api/admin/recipes/embedding 호출 시 임베딩 배치 작업을 수동으로 트리거합니다.
+ * - POST /api/admin/recipes/embedding 호출 시 임베딩 배치 작업을 수동으로 트리거합니다.
  *
  * [보안 주의사항]
  * - 이 엔드포인트는 관리자만 접근해야 합니다.
@@ -38,7 +38,7 @@ public class RecipeAdminController {
      *
      * @return 처리 결과 요약 (예: "전체 100건 중 성공: 98건, 실패: 2건")
      */
-    @GetMapping("/embedding")
+    @PostMapping("/embedding")
     @Operation(
             summary = "레시피 임베딩 배치 실행 API",
             description = "DB에서 embedding이 null인 레시피를 모두 찾아 FastAPI 서버로 임베딩 요청을 보내고 결과를 저장합니다."
