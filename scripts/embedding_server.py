@@ -1,7 +1,7 @@
 import logging
 import warnings
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from FlagEmbedding import BGEM3FlagModel
 
@@ -31,11 +31,17 @@ def load_model():
 # POST 방식으로 /embed 주소에 요청이 오면 실행되는 함수
 @app.post("/embed")
 def generate_embedding(request: EmbeddingRequest):
+    if model is None:
+        raise HTTPException(status_code=503, detail="Embedding model is not ready")
+
     # 1. Java가 보낸 텍스트 꺼내기
     text_to_embed = request.text
 
     # 2. 임베딩 계산
-    embeddings = model.encode([text_to_embed], batch_size=1, max_length=8192)['dense_vecs']
+    try:
+        embeddings = model.encode([text_to_embed], batch_size=1, max_length=8192)['dense_vecs']
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Embedding generation failed: {e}")
 
     # 3. Python Numpy 배열을 기본 리스트로 변환 (JSON 직렬화를 위해)
     vector_list = embeddings[0].tolist()
