@@ -5,6 +5,7 @@ import com.mohaemukzip.mohaemukzip_be.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/recipes")
 @Tag(name = "Recipe Admin", description = "레시피 관리자 전용 API")
+@PreAuthorize("hasRole('ADMIN')")
 public class RecipeAdminController {
 
     private final RecipeEmbeddingService recipeEmbeddingService;
