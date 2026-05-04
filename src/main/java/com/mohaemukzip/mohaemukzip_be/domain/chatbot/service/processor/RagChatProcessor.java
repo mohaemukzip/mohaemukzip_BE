@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  * 1. [Retrieval] RecipeSearchService를 통해 사용자 질문과 유사한 레시피 상위 3개를 벡터 검색으로 찾음
  * 2. [Context 수집] 사용자의 냉장고 재료(임박 순) + 최근 7일 식사 이력을 조회
  * 3. [Generation] 위 정보를 엄격한 System Prompt와 함께 Gemini에 전달
- *    → Gemini는 반드시 JSON 배열 형태로만 응답해야 함 (추천 이유, 재료 매칭률 포함)
+ * → Gemini는 반드시 JSON 배열 형태로만 응답해야 함 (추천 이유, 재료 매칭률 포함)
  * 4. Gemini 응답 JSON을 파싱하여 RecipeCardResponse 리스트로 반환
  *
  * @Primary: 기존 RecommendChatProcessor를 대체함 (기존 코드 삭제 없이 교체)
@@ -57,8 +57,7 @@ public class RagChatProcessor implements ChatProcessor {
      * Gemini가 JSON 배열 이외의 텍스트를 절대 출력하지 않도록 강제합니다.
      * 마크다운 코드 블록(```json ... ```)도 붙이지 않도록 명시합니다.
      */
-    private static final String SYSTEM_PROMPT =
-            "당신은 요리 레시피 추천 전문 AI입니다.\n" +
+    private static final String SYSTEM_PROMPT = "당신은 요리 레시피 추천 전문 AI입니다.\n" +
             "당신의 유일한 역할은 주어진 레시피 후보와 사용자 상황을 분석하여 아래 JSON 배열 형식으로만 응답하는 것입니다.\n\n" +
             "[엄격한 규칙 - 반드시 준수]\n" +
             "1. 응답은 반드시 순수한 JSON 배열([ ... ])로만 시작하고 끝나야 합니다.\n" +
@@ -149,9 +148,9 @@ public class RagChatProcessor implements ChatProcessor {
      * 검색된 레시피 정보, 냉장고 재료, 최근 식사 이력을 구체적인 컨텍스트로 제공합니다.
      */
     private String buildRagPrompt(String userMessage,
-                                   List<RecipeSearchResponseDto> topRecipes,
-                                   List<String> fridgeIngredients,
-                                   Set<String> recentMeals) {
+            List<RecipeSearchResponseDto> topRecipes,
+            List<String> fridgeIngredients,
+            Set<String> recentMeals) {
         StringBuilder sb = new StringBuilder();
 
         sb.append("[사용자 질문]\n\"").append(userMessage).append("\"\n\n");
@@ -177,7 +176,7 @@ public class RagChatProcessor implements ChatProcessor {
         }
 
         sb.append("\n위 정보를 바탕으로 추천 레시피 후보 중에서 사용자 상황에 가장 적합한 것들을 선택하여 ")
-          .append("지정된 JSON 형식으로만 응답하세요.");
+                .append("지정된 JSON 형식으로만 응답하세요.");
 
         return sb.toString();
     }
@@ -187,7 +186,7 @@ public class RagChatProcessor implements ChatProcessor {
      * 파싱 실패 시 검색 결과를 기반으로 Fallback 카드를 생성합니다.
      */
     private List<RecipeCardResponse> parseJsonResponse(String aiResponse,
-                                                        List<RecipeSearchResponseDto> fallbackRecipes) {
+            List<RecipeSearchResponseDto> fallbackRecipes) {
         if (aiResponse == null || aiResponse.isBlank()) {
             log.warn("[RAG 챗봇] Gemini 응답이 null 또는 비어있음 → Fallback 적용");
             return buildFallbackCards(fallbackRecipes);
@@ -200,9 +199,10 @@ public class RagChatProcessor implements ChatProcessor {
                     .replaceAll("(?s)```\\s*", "")
                     .trim();
 
-            return objectMapper.readValue(cleaned, new TypeReference<List<RecipeCardResponse>>() {});
+            return objectMapper.readValue(cleaned, new TypeReference<List<RecipeCardResponse>>() {
+            });
         } catch (Exception e) {
-            log.error("[RAG 챗봇] JSON 파싱 실패, Fallback 적용. 원본 응답: {}", aiResponse, e);
+            log.error("[RAG 챗봇] JSON 파싱 실패, Fallback 적용. 응답 길이: {}", aiResponse.length(), e);
             return buildFallbackCards(fallbackRecipes);
         }
     }
