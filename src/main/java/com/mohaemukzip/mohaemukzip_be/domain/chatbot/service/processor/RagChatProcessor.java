@@ -8,6 +8,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.response.ChatProcessorR
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.dto.response.RecipeCardResponse;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.entity.enums.SenderType;
 import com.mohaemukzip.mohaemukzip_be.domain.chatbot.service.external.GeminiService;
+import com.mohaemukzip.mohaemukzip_be.domain.chatbot.service.helper.ChatContextHelper;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.entity.MemberIngredient;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberIngredientRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeSearchResponseDto;
@@ -48,6 +49,7 @@ public class RagChatProcessor implements ChatProcessor {
     private final MemberIngredientRepository memberIngredientRepository;
     private final CookingRecordRepository cookingRecordRepository;
     private final GeminiService geminiService;
+    private final ChatContextHelper chatContextHelper;
     private final ObjectMapper objectMapper;
 
     /**
@@ -108,19 +110,8 @@ public class RagChatProcessor implements ChatProcessor {
             // ──────────────────────────────────────────
             // 4. [Generation] Gemini 프롬프트 조합 및 호출
             // ──────────────────────────────────────────
-            List<GeminiRequestDTO.Content> contents = new ArrayList<>();
-
-            // 이전 대화 기록 주입 (최근 N턴)
-            for (RedisChatMessage msg : history) {
-                String role = msg.getSender() == SenderType.USER ? "user" : "model";
-                String text = msg.getSender() == SenderType.USER
-                        ? msg.getContent()
-                        : (msg.getTitle() != null ? msg.getTitle() + " ||| " + msg.getContent() : msg.getContent());
-                contents.add(GeminiRequestDTO.Content.builder()
-                        .role(role)
-                        .parts(List.of(GeminiRequestDTO.Part.builder().text(text).build()))
-                        .build());
-            }
+            // 이전 대화 기록 주입 (최근 12턴 제한)
+            List<GeminiRequestDTO.Content> contents = chatContextHelper.buildHistoryContents(history, 12);
 
             // 현재 사용자 메시지 + 컨텍스트 조합
             String userPrompt = buildRagPrompt(userMessage, topRecipes, fridgeIngredients, recentMeals);
