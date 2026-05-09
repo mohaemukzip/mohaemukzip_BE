@@ -1,6 +1,7 @@
 package com.mohaemukzip.mohaemukzip_be.domain.recipe.service;
 
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.command.RecipeEmbeddingService;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
  * 웹(Controller)을 거치지 않아 Spring Security(401) 등 권한 문제를 우회하여
  * DB에 초기 임베딩 데이터를 밀어넣을 때 사용합니다.
  */
+@Disabled("수동 1회성 임베딩 배치 실행용")
 @SpringBootTest
 public class RecipeEmbeddingServiceTest {
 
