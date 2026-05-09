@@ -1,6 +1,7 @@
 import logging
 import warnings
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from FlagEmbedding import BGEM3FlagModel
@@ -10,8 +11,6 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 warnings.filterwarnings("ignore")
 logging.getLogger("transformers").setLevel(logging.ERROR)
 
-app = FastAPI()
-
 # 전역 변수로 모델 선언
 model = None
 
@@ -19,14 +18,30 @@ model = None
 class EmbeddingRequest(BaseModel):
     text: str
 
-# 서버가 시작될 때 딱 한 번만 실행되는 함수
-@app.on_event("startup")
-def load_model():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    서버의 시작과 종료 시점에 실행되는 로직을 관리합니다. (기존 startup/shutdown 대체)
+    AI 모델 로딩 실패 시 서버가 즉시 종료되지 않도록 예외 처리를 수행합니다.
+    """
     global model
     print("AI 모델 로딩 중... (처음 1번만 실행됩니다)")
-    # use_fp16=True 로 설정하여 메모리 사용량 절약 및 속도 향상
-    model = BGEM3FlagModel('BAAI/bge-m3', use_fp16=True)
-    print("AI 모델 로딩 완료! 서버가 준비되었습니다.")
+    try:
+        # BGE-M3 모델 로드 (use_fp16=True로 메모리 절약)
+        # 실패 가능 원인: 
+        # 1. 메모리(RAM/VRAM) 부족 (OOM)
+        # 2. 모델 다운로드를 위한 인터넷 연결 끊김
+        # 3. CUDA/PyTorch 관련 환경 설정 오류
+        model = BGEM3FlagModel('BAAI/bge-m3', use_fp16=True)
+        print("AI 모델 로딩 완료! 서버가 준비되었습니다.")
+    except Exception as e:
+        logging.error(f"AI 모델 로딩 실패! 원인: {e}")
+        print(f"❌ [CRITICAL] 모델 로드 중 오류 발생: {e}")
+        print("💡 팁: 메모리(RAM) 용량이나 인터넷 연결 상태를 확인해주세요.")
+        # 모델을 None으로 유지하여 /embed 요청 시 503 에러를 반환하게 합니다.
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 # POST 방식으로 /embed 주소에 요청이 오면 실행되는 함수
 @app.post("/embed")
