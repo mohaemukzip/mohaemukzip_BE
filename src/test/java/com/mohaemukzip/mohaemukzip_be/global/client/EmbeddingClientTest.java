@@ -6,6 +6,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 @SpringBootTest
 class EmbeddingClientTest {
 
@@ -17,10 +20,8 @@ class EmbeddingClientTest {
         // 1. 파이썬 서버로 "김치볶음밥" 변환 요청
         List<Double> result = embeddingClient.getEmbedding("김치볶음밥");
 
-        // 2. 결과 출력
-        System.out.println("=====================================");
-        System.out.println("임베딩 크기: " + result.size());
-        System.out.println("임베딩 앞 5개 숫자: " + result.subList(0, 5));
-        System.out.println("=====================================");
+        // 2. 최소 검증 (1024차원 여부 확인)
+        assertNotNull(result);
+        assertEquals(1024, result.size());
     }
 }
