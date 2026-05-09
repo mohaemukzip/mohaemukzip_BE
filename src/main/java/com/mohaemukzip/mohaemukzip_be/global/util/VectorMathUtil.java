@@ -26,8 +26,13 @@ public class VectorMathUtil {
         double normB = 0.0;
 
         for (int i = 0; i < vectorA.size(); i++) {
-            double a = vectorA.get(i);
-            double b = vectorB.get(i);
+            Double aValue = vectorA.get(i);
+            Double bValue = vectorB.get(i);
+            if (aValue == null || bValue == null) {
+                return 0.0;
+            }
+            double a = aValue;
+            double b = bValue;
             dotProduct += a * b;
             normA += Math.pow(a, 2);
             normB += Math.pow(b, 2);
