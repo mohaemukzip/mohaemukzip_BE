@@ -13,6 +13,8 @@ import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -90,7 +92,10 @@ public class RecipeController {
     @GetMapping("/vector-search")
     @Operation(summary = "레시피 벡터 검색 API (RAG용)", description = "사용자의 자연어 질문을 기반으로 가장 유사한 레시피 3개를 벡터 검색으로 찾아옵니다.")
     public ApiResponse<List<RecipeSearchResponseDto>> searchRecipesByVector(
-            @RequestParam String query
+            @RequestParam
+            @NotBlank
+            @Size(max = 200)
+            String query
     ) {
         return ApiResponse.onSuccess(recipeSearchService.searchTop3ByVector(query));
     }
