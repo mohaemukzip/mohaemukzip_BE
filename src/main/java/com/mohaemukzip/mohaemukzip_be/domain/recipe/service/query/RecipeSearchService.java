@@ -43,11 +43,15 @@ public class RecipeSearchService {
 
         // 3. 코사인 유사도 계산 및 상위 3개 정렬
         return recipesWithEmbedding.stream()
+                .filter(recipe -> recipe.getEmbedding() != null)
+                .filter(recipe -> !recipe.getEmbedding().isEmpty())
+                .filter(recipe -> recipe.getEmbedding().size() == queryVector.size())
                 .map(recipe -> RecipeSearchResponseDto.builder()
                         .id(recipe.getId())
                         .title(recipe.getTitle())
                         .similarity(VectorMathUtil.cosineSimilarity(queryVector, recipe.getEmbedding()))
                         .build())
+                .filter(dto -> Double.isFinite(dto.getSimilarity()))
                 .sorted(Comparator.comparing(RecipeSearchResponseDto::getSimilarity).reversed()) // 유사도 높은 순
                 .limit(3) // 상위 3개
                 .collect(Collectors.toList());
