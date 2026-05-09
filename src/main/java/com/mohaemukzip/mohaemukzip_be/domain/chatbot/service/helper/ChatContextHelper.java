@@ -27,8 +27,12 @@ public class ChatContextHelper {
             return new ArrayList<>();
         }
 
+        if (maxTurns <= 0) {
+            return new ArrayList<>();
+        }
+
         List<GeminiRequestDTO.Content> contents = new ArrayList<>();
-        
+
         // 최근 N턴 계산
         int fromIndex = Math.max(0, history.size() - maxTurns);
         List<RedisChatMessage> recentHistory = history.subList(fromIndex, history.size());
