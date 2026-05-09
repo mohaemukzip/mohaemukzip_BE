@@ -27,6 +27,8 @@ public class RecipeEmbeddingService {
     private final RecipeRepository recipeRepository;
     private final EmbeddingClient embeddingClient;
 
+    private static final int EMBEDDING_DIMENSION = 1024;
+
     /**
      * embedding이 null인 모든 레시피에 임베딩 벡터를 생성하고 저장합니다.
      *
@@ -55,6 +57,13 @@ public class RecipeEmbeddingService {
 
                 // 레시피 제목으로 임베딩 벡터 요청 (FastAPI → HuggingFace 모델)
                 List<Double> embedding = embeddingClient.getEmbedding(recipe.getTitle());
+
+                // 임베딩 응답 검증 (차원 불일치 시 검색 품질 저하 방지)
+                if (embedding == null || embedding.size() != EMBEDDING_DIMENSION) {
+                    int actualSize = (embedding == null) ? 0 : embedding.size();
+                    throw new IllegalStateException(String.format(
+                            "유효하지 않은 임베딩 응답 (기대: %d, 실제: %d)", EMBEDDING_DIMENSION, actualSize));
+                }
 
                 // 엔티티 업데이트 (updateEmbedding 메서드가 직접 필드를 갱신)
                 recipe.updateEmbedding(embedding);
