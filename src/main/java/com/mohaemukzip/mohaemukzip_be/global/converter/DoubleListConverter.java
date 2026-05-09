@@ -15,10 +15,11 @@ import java.util.List;
  * JPA AttributeConverter: List<Double> ↔ JSON 문자열 (TEXT 컬럼)
  *
  * MySQL은 List<Double> 같은 Java 컬렉션 타입을 직접 저장할 수 없습니다.
- * 이 Converter가 엔티티를 저장할 때는  → JSON 문자열("[0.1, 0.2, ...]")로 변환하고,
+ * 이 Converter가 엔티티를 저장할 때는 → JSON 문자열("[0.1, 0.2, ...]")로 변환하고,
  * 불러올 때는 JSON 문자열 → List<Double>로 역변환 해줍니다.
  *
- * autoApply = false: @Convert(converter = DoubleListConverter.class)를 붙인 필드에만 적용됩니다.
+ * autoApply = false: @Convert(converter = DoubleListConverter.class)를 붙인 필드에만
+ * 적용됩니다.
  */
 @Slf4j
 @Converter
@@ -53,9 +54,10 @@ public class DoubleListConverter implements AttributeConverter<List<Double>, Str
             return Collections.emptyList();
         }
         try {
-            return objectMapper.readValue(dbData, new TypeReference<List<Double>>() {});
+            return objectMapper.readValue(dbData, new TypeReference<List<Double>>() {
+            });
         } catch (IOException e) {
-            log.error("JSON 문자열을 List<Double>로 역변환하는 중 오류 발생. 원본: {}", dbData, e);
+            log.error("JSON 문자열을 List<Double>로 역변환하는 중 오류 발생. 원본 길이: {}", dbData.length(), e);
             throw new IllegalArgumentException("JSON → List<Double> 변환 실패", e);
         }
     }
