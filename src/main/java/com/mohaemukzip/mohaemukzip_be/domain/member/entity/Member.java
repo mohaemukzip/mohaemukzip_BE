@@ -53,7 +53,7 @@ public class Member extends BaseEntity {
     private LoginType loginType;
 
     @Column(name = "oauth_id", unique = true)
-    private Long oauthId;
+    private String oauthId;
 
     @Column(name = "score")
     private Integer score;

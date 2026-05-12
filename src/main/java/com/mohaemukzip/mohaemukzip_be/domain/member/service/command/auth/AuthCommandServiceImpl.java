@@ -85,10 +85,12 @@ public class AuthCommandServiceImpl implements AuthCommandService {
 
         AtomicBoolean isNewMember = new AtomicBoolean(false);
 
-        Member member = memberRepository.findByOauthId(kakaoUserInfo.getId())
+        String kakaoId = kakaoUserInfo.getId();
+
+        Member member = memberRepository.findByOauthId(kakaoId)
                 .orElseGet(() -> {
                     isNewMember.set(true);
-                    return createKakaoMember(kakaoUserInfo.getId(), nickname);
+                    return createKakaoMember(kakaoId, nickname);
                 });
 
         if (member.isInactive()) {
@@ -109,7 +111,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         return "카카오 사용자_" + kakaoUserInfo.getId();
     }
 
-    private Member createKakaoMember(Long kakaoId, String nickname) {
+    private Member createKakaoMember(String kakaoId, String nickname) {
         Member newMember = Member.builder()
                 .oauthId(kakaoId)
                 .nickname(nickname)

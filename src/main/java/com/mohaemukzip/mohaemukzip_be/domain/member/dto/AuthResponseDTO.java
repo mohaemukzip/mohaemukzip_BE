@@ -58,7 +58,7 @@ public class AuthResponseDTO {
     @Getter
     @NoArgsConstructor
     public static class GetKakaoUserInfoDTO {
-        private Long id;
+        private String id;
 
         @JsonProperty("kakao_account")
         private KakaoAccount kakaoAccount;
