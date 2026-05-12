@@ -28,8 +28,12 @@ public enum ErrorStatus implements BaseCode {
     UNSUPPORTED_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH4010", "지원하지 않는 토큰 유형입니다."),
     ILLEGAL_ARGUMENT_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH4011", "토큰의 인수가 올바르지 않습니다."),
     TOKEN_PARSING_ERROR(HttpStatus.UNAUTHORIZED, "AUTH4012", "토큰 파싱 중 오류가 발생했습니다."),
+    // 카카오 로그인 관련 에러
     KAKAO_API_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AUTH5001", "카카오 API 호출 중 오류가 발생했습니다."),
     INVALID_KAKAO_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH4013", "유효하지 않은 카카오 액세스 토큰입니다."),
+    // 애플 로그인 관련 에러
+    APPLE_PUBLIC_KEY_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AUTH5002", "애플 공개키 조회에 실패했습니다."),
+    INVALID_APPLE_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH4014", "유효하지 않은 애플 토큰입니다."),
 
     // 멤버 관련 에러
     MEMBER_NOT_FOUND(HttpStatus.BAD_REQUEST, "MEMBER4001", "사용자가 없습니다."),
@@ -70,6 +74,7 @@ public enum ErrorStatus implements BaseCode {
     INVALID_RATING_VALUE(HttpStatus.BAD_REQUEST, "RECIPE4003",   "난이도는 1부터 5 사이의 값입니다."),
     TRANSCRIPT_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "RECIPE4004", "해당 영상에 자막이 없어 요약을 생성할 수 없습니다."),
 
+
     // Gemini 관련 에러
     GEMINI_BAD_REQUEST(HttpStatus.BAD_REQUEST, "GEMINI4001", "잘못된 Gemini 요청입니다."),
     GEMINI_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GEMINI5001", "Gemini 서버 오류입니다."),
@@ -81,4 +86,5 @@ public enum ErrorStatus implements BaseCode {
     private final HttpStatus httpStatus;
     private final String code;
     private final String message;
+
 }
