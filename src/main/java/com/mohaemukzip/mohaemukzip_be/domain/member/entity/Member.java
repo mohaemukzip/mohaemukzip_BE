@@ -52,7 +52,7 @@ public class Member extends BaseEntity {
     @Column(name = "login_type", nullable = false)
     private LoginType loginType;
 
-    @Column(name = "oauth_id", unique = true)
+    @Column(name = "oauth_id")
     private String oauthId;
 
     @Column(name = "score")

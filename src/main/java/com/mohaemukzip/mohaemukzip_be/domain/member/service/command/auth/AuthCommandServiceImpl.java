@@ -14,6 +14,7 @@ import com.mohaemukzip.mohaemukzip_be.global.jwt.TokenBlacklistService;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -81,20 +82,25 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     public AuthResponseDTO.GetUserDTO kakaoLogin(AuthRequestDTO.KakaoLoginRequest kakaoLoginRequest){
         AuthResponseDTO.GetKakaoUserInfoDTO kakaoUserInfo = getKakaoUserInfo(kakaoLoginRequest.kakaoAccessToken());
 
+        String kakaoId = kakaoUserInfo.getId();
         String nickname = extractNickname(kakaoUserInfo);
 
         AtomicBoolean isNewMember = new AtomicBoolean(false);
 
-        String kakaoId = kakaoUserInfo.getId();
 
-        Member member = memberRepository.findByOauthId(kakaoId)
-                .orElseGet(() -> {
-                    isNewMember.set(true);
-                    return createKakaoMember(kakaoId, nickname);
-                });
+        Member member;
+        try {
+            member = memberRepository.findByLoginTypeAndOauthId(LoginType.KAKAO, kakaoId)
+                    .orElseGet(() -> {
+                        isNewMember.set(true);
+                        return createKakaoMember(kakaoId, nickname);
+                    });
+        } catch (DataIntegrityViolationException e) {
+            member = memberRepository.findByLoginTypeAndOauthId(LoginType.KAKAO, kakaoId)
+                    .orElseThrow(() -> new BusinessException(ErrorStatus.KAKAO_API_ERROR));
+        }
 
         if (member.isInactive()) {
-            log.warn("Withdrawn member attempted kakao login - memberId: {}", member.getId());
             throw new BusinessException(ErrorStatus.ALREADY_WITHDRAWN_MEMBER);
         }
 
