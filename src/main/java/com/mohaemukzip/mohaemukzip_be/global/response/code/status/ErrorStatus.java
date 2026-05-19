@@ -48,6 +48,9 @@ public enum ErrorStatus implements BaseCode {
     SEARCH_NOT_FOUND(HttpStatus.NOT_FOUND, "SEARCH4001", "존재하지 않는 검색어입니다."),
     MEMBER_NOT_MATCH(HttpStatus.FORBIDDEN, "MEMBER4004", "해당 검색어를 삭제할 권한이 없습니다."),
     INGREDIENT_ALREADY_REQUESTED(HttpStatus.BAD_REQUEST, "INGREDIENT4009", "이미 요청한 재료입니다."),
+    MEMBER_INGREDIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "INGREDIENT404", "해당 재료를 찾을 수 없습니다."),
+
+
 
     //점수 관련 에러
     INVALID_SCORE(HttpStatus.BAD_REQUEST, "SCORE4001", "유효하지 않은 점수입니다."),
