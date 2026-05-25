@@ -125,7 +125,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         } catch (DataIntegrityViolationException e) {
 
             member = memberRepository.findByLoginTypeAndOauthId(LoginType.APPLE, appleId)
-                    .orElseThrow(() -> new BusinessException(ErrorStatus.APPLE_PUBLIC_KEY_ERROR));
+                    .orElseThrow(() -> new BusinessException(ErrorStatus.KAKAO_API_ERROR));
         }
 
         if (member.isInactive()) {
@@ -138,7 +138,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     private Member createAppleMember(String appleId) {
         Member newMember = Member.builder()
                 .oauthId(appleId)
-                .nickname("애플 사용자_" + appleId.substring(0, 6))
+                .nickname("애플 사용자_" + (appleId.length() >= 6 ? appleId.substring(0, 6) : appleId))
                 .loginType(LoginType.APPLE)
                 .role(Role.ROLE_USER)
                 .score(0)

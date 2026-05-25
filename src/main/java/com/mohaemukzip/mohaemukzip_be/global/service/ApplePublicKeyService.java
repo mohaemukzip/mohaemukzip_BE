@@ -37,7 +37,7 @@ public class ApplePublicKeyService {
             // 3. kid 매칭되는 공개키 찾기
             RSAKey rsaKey = (RSAKey) jwkSet.getKeyByKeyId(kid);
             if (rsaKey == null) {
-                throw new BusinessException(ErrorStatus.APPLE_PUBLIC_KEY_ERROR);
+                throw new BusinessException(ErrorStatus.INVALID_APPLE_TOKEN);
             }
 
             // 4. 서명 검증
@@ -55,11 +55,27 @@ public class ApplePublicKeyService {
                 throw new BusinessException(ErrorStatus.INVALID_APPLE_TOKEN);
             }
 
+            // 발급자 검증
+            if (!"https://appleid.apple.com".equals(claims.getIssuer())) {
+                throw new BusinessException(ErrorStatus.INVALID_APPLE_TOKEN);
+            }
+
+            // 만료 시간 검증
+            if (claims.getExpirationTime() == null ||
+                    claims.getExpirationTime().before(new java.util.Date())) {
+                throw new BusinessException(ErrorStatus.INVALID_APPLE_TOKEN);
+            }
+
+
+
             // 7. sub 반환 (애플 유저 ID)
             return claims.getSubject();
 
         } catch (BusinessException e) {
             throw e;
+        } catch (java.io.IOException e) {
+            log.error("Apple 공개키 조회 실패", e);
+            throw new BusinessException(ErrorStatus.APPLE_PUBLIC_KEY_ERROR);
         } catch (Exception e) {
             log.error("Apple identity token 검증 실패", e);
             throw new BusinessException(ErrorStatus.INVALID_APPLE_TOKEN);
