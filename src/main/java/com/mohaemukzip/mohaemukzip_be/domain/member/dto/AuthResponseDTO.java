@@ -73,4 +73,11 @@ public class AuthResponseDTO {
             private String nickname;
         }
     }
+
+    @Getter
+    @NoArgsConstructor
+    public static class GetAppleUserInfoDTO {
+        private String sub;    // 애플 유저 ID
+        private String email;  // 이메일 (최초 로그인 시에만 옴)
+    }
 }
