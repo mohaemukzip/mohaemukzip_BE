@@ -61,6 +61,9 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
 
         List<MemberIngredient> memberIngredients = memberIngredientRepository.findAllByMemberId(memberId);
 
+        Set<Long> favoriteIngredientIds = memberFavoriteRepository.findIngredientIdsByMemberId(memberId);
+
+
         List<IngredientResponseDTO.FridgeIngredient> dtoList = memberIngredients.stream()
                 .map(IngredientResponseDTO.FridgeIngredient::from)
                 .collect(toList());

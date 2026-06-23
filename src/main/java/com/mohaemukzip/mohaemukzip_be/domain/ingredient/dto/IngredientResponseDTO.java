@@ -73,6 +73,7 @@ public class IngredientResponseDTO {
     @Builder
     public static class FridgeIngredient {
         private Long memberIngredientId;
+        private Long ingredientId;
         private String name;
         private String storageType;
         private LocalDate expiryDate;
@@ -80,6 +81,7 @@ public class IngredientResponseDTO {
         private String unit;
         private String dDay;
         private String statusColor;
+        private Boolean isFavorite;
 
         // D-day 계산 & 색상 표시
         public static FridgeIngredient from(MemberIngredient entity) {
