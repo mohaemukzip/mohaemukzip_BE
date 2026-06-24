@@ -65,7 +65,11 @@ public class IngredientQueryServiceImpl implements IngredientQueryService {
 
 
         List<IngredientResponseDTO.FridgeIngredient> dtoList = memberIngredients.stream()
-                .map(IngredientResponseDTO.FridgeIngredient::from)
+                .map(entity -> {
+                    Long ingredientId = entity.getIngredient() != null ? entity.getIngredient().getId() : null;
+                    boolean isFavorite = ingredientId != null && favoriteIngredientIds.contains(ingredientId);
+                    return IngredientResponseDTO.FridgeIngredient.from(entity, isFavorite);
+                })
                 .collect(toList());
 
         return IngredientResponseDTO.FridgeIngredientList.builder()

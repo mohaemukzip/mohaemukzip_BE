@@ -84,7 +84,7 @@ public class IngredientResponseDTO {
         private Boolean isFavorite;
 
         // D-day 계산 & 색상 표시
-        public static FridgeIngredient from(MemberIngredient entity) {
+        public static FridgeIngredient from(MemberIngredient entity, boolean isFavorite) {
             Ingredient ingredient = entity.getIngredient();
 
             String dDayString = null;
@@ -125,6 +125,8 @@ public class IngredientResponseDTO {
                     .unit(ingredient != null && ingredient.getUnit() != null ? ingredient.getUnit().getLabel() : null)
                     .dDay(dDayString)
                     .statusColor(color)
+                    .ingredientId(ingredient != null ? ingredient.getId() : null)
+                    .isFavorite(isFavorite)
                     .build();
         }
     }
