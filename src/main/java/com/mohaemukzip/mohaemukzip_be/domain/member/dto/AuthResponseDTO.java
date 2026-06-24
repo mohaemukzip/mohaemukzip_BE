@@ -83,4 +83,8 @@ public class AuthResponseDTO {
         private String sub;    // 애플 유저 ID
         private String email;  // 이메일 (최초 로그인 시에만 옴)
     }
+
+    public record ResetPasswordResponse(
+            String message
+    ) {}
 }

@@ -129,6 +129,15 @@ public class AuthController {
         return ApiResponse.onSuccess(response);
     }
 
+    @Operation(summary = "비밀번호 재설정")
+    @PatchMapping("/reset-password")
+    public ApiResponse<AuthResponseDTO.ResetPasswordResponse> resetPassword(
+            @Valid @RequestBody AuthRequestDTO.ResetPasswordRequest request) {
+
+        AuthResponseDTO.ResetPasswordResponse response = authCommandService.resetPassword(request);
+        return ApiResponse.onSuccess(response);
+    }
+
     @Operation(summary = "회원탈퇴")
     @DeleteMapping("/withdrawal")
     public ApiResponse<AuthResponseDTO.WithdrawalResponse> withdrawal(

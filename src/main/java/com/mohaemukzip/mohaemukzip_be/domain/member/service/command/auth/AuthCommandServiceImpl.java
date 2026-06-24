@@ -55,6 +55,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         Member member = Member.builder()
                 .nickname(request.nickname())
                 .loginId(request.loginId())
+                .email(request.loginId())
                 .password(passwordEncoder.encode(request.password()))
                 .role(Role.ROLE_USER)
                 .loginType(LoginType.GENERAL)
@@ -265,6 +266,17 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         redisTemplate.delete(REFRESH_TOKEN_PREFIX + memberId);
 
         return AuthConverter.toWithdrawalResponseDTO();
+    }
+
+    // 비밀번호 변경
+    @Transactional
+    public AuthResponseDTO.ResetPasswordResponse resetPassword(AuthRequestDTO.ResetPasswordRequest request) {
+        Member member = memberRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
+
+        member.updatePassword(passwordEncoder.encode(request.newPassword()));
+
+        return new AuthResponseDTO.ResetPasswordResponse("비밀번호가 변경되었습니다.");
     }
 
     private AuthResponseDTO.GetKakaoUserInfoDTO getKakaoUserInfo(String accessToken) {
