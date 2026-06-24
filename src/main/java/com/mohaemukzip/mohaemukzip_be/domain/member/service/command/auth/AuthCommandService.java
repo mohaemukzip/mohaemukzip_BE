@@ -11,4 +11,6 @@ public interface AuthCommandService {
     AuthResponseDTO.TokenResponse reissueToken(String refreshToken);
     AuthResponseDTO.LogoutResponse logout(String accessToken);
     AuthResponseDTO.WithdrawalResponse withdrawal(Long memberId);
+    AuthResponseDTO.SendAuthCodeResponse sendAuthCode(AuthRequestDTO.SendAuthCodeRequest request);
+    AuthResponseDTO.VerifyAuthCodeResponse verifyAuthCode(AuthRequestDTO.VerifyAuthCodeRequest request);
 }

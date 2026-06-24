@@ -2,6 +2,7 @@ package com.mohaemukzip.mohaemukzip_be.domain.member.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
@@ -70,5 +71,23 @@ public class AuthRequestDTO {
             @Schema(description = "애플 identity token")
             @NotBlank(message = "애플 identity token은 필수입니다.")
             String identityToken
+    ) {}
+
+    public record SendAuthCodeRequest(
+            @Schema(description = "이메일", example = "test@naver.com")
+            @NotBlank(message = "이메일을 입력해주세요.")
+            @Email(message = "이메일 형식이 아닙니다.")
+            String email
+    ) {}
+
+    public record VerifyAuthCodeRequest(
+            @Schema(description = "이메일", example = "test@naver.com")
+            @NotBlank(message = "이메일을 입력해주세요.")
+            @Email(message = "이메일 형식이 아닙니다.")
+            String email,
+
+            @Schema(description = "인증번호", example = "123456")
+            @NotBlank(message = "인증번호를 입력해주세요.")
+            String authCode
     ) {}
 }
