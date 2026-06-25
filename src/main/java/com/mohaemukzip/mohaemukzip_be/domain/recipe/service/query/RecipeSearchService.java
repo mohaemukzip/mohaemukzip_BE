@@ -41,7 +41,7 @@ public class RecipeSearchService {
         // 2. DB에서 임베딩이 존재하는 모든 레시피 조회
         List<Recipe> recipesWithEmbedding = recipeRepository.findByEmbeddingIsNotNull();
 
-        // 3. 코사인 유사도 계산 및 상위 3개 정렬
+        // 3. 코사인 유사도 계산 및 상위 3개 정렬 (유사도 0.75 이상만)
         return recipesWithEmbedding.stream()
                 .filter(recipe -> recipe.getEmbedding() != null)
                 .filter(recipe -> !recipe.getEmbedding().isEmpty())
@@ -52,6 +52,7 @@ public class RecipeSearchService {
                         .similarity(VectorMathUtil.cosineSimilarity(queryVector, recipe.getEmbedding()))
                         .build())
                 .filter(dto -> Double.isFinite(dto.getSimilarity()))
+                .filter(dto -> dto.getSimilarity() >= 0.75) // [수정] 고차원 벡터 특성을 고려하여 임계값을 0.75로 대폭 상향
                 .sorted(Comparator.comparing(RecipeSearchResponseDto::getSimilarity).reversed()) // 유사도 높은 순
                 .limit(3) // 상위 3개
                 .collect(Collectors.toList());

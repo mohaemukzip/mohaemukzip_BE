@@ -54,26 +54,36 @@ public class RagChatProcessor implements ChatProcessor {
 
     /**
      * [System Prompt - 엄격 모드]
-     * Gemini가 JSON 배열 이외의 텍스트를 절대 출력하지 않도록 강제합니다.
+     * Gemini가 JSON 객체 이외의 텍스트를 절대 출력하지 않도록 강제합니다.
      * 마크다운 코드 블록(```json ... ```)도 붙이지 않도록 명시합니다.
      */
     private static final String SYSTEM_PROMPT = "당신은 요리 레시피 추천 전문 AI입니다.\n" +
-            "당신의 유일한 역할은 주어진 레시피 후보와 사용자 상황을 분석하여 아래 JSON 배열 형식으로만 응답하는 것입니다.\n\n" +
+            "당신의 유일한 역할은 주어진 레시피 후보와 사용자 상황을 분석하여 아래 JSON 객체 형식으로만 응답하는 것입니다.\n\n" +
             "[엄격한 규칙 - 반드시 준수]\n" +
-            "1. 응답은 반드시 순수한 JSON 배열([ ... ])로만 시작하고 끝나야 합니다.\n" +
+            "1. 응답은 반드시 순수한 JSON 객체({ ... })로만 시작하고 끝나야 합니다.\n" +
             "2. ```json 같은 마크다운 코드 블록, 설명 문구, 인사말은 절대 포함하지 마세요.\n" +
             "3. JSON 외의 어떤 텍스트도 앞뒤로 절대 붙이지 마세요.\n" +
-            "4. ingredients_match_rate는 사용자의 냉장고 재료와 레시피 재료의 예상 매칭률(0~100 정수)입니다.\n" +
-            "5. recommend_reason은 사용자 상황(냉장고 재료, 최근 식사 이력)을 구체적으로 언급하며 2~3문장으로 작성하세요.\n" +
-            "6. 반드시 아래 JSON 구조를 정확히 따르세요:\n\n" +
-            "[\n" +
-            "  {\n" +
-            "    \"recipe_id\": 숫자,\n" +
-            "    \"title\": \"레시피 제목\",\n" +
-            "    \"recommend_reason\": \"추천 이유 2~3문장\",\n" +
-            "    \"ingredients_match_rate\": 0~100 사이 정수\n" +
-            "  }\n" +
-            "]";
+            "4. 'main_title'은 사용자의 질문 의도를 반영한 톡톡 튀는 짧은 제목입니다. (예: \"그렇다면 이런 요리는 어때요?\")\n" +
+            "5. 'main_message'는 레시피들을 추천하는 부드럽고 친절한 안내 멘트입니다. (예: \"비오는 날에 어울리는 얼큰한 집밥 몇 가지를 추천해드릴게요.\")\n" +
+            "6. 'ingredients_match_rate'는 사용자의 냉장고 재료와 레시피 재료의 예상 매칭률(0~100 정수)입니다.\n" +
+            "7. 'recommend_reason'은 사용자 상황(냉장고 재료, 최근 식사 이력)을 구체적으로 언급하며 2~3문장으로 작성하세요.\n" +
+            "8. [예외 처리] 만약 사용자의 질문이 요리, 식재료, 레시피 추천과 전혀 무관하다면(예: 비트코인, 날씨 등), 강제로 레시피를 추천하지 마세요. 이 경우 'recipe_cards' 배열을 비우고, 'main_title'과 'main_message'에 \"저는 요리 추천 챗봇 모해먹집이에요. 음식이나 레시피에 대해 물어봐주세요!\"와 같이 부드럽게 거절하는 멘트를 작성하세요.\n" +
+            "9. 반드시 아래 JSON 구조를 정확히 따르세요:\n\n" +
+            "{\n" +
+            "  \"main_title\": \"챗봇 응답 제목\",\n" +
+            "  \"main_message\": \"챗봇 응답 메시지\",\n" +
+            "  \"recipe_cards\": [\n" +
+            "    {\n" +
+            "      \"recipe_id\": 숫자,\n" +
+            "      \"title\": \"레시피 제목\",\n" +
+            "      \"recommend_reason\": \"추천 이유 2~3문장\",\n" +
+            "      \"ingredients_match_rate\": 0~100 사이 정수\n" +
+            "    }\n" +
+            "  ]\n" +
+            "}";
+
+    // 내부 파싱용 DTO
+    record GeminiRagResponse(String main_title, String main_message, List<RecipeCardResponse> recipe_cards) {}
 
     @Override
     public ChatProcessorResult process(Long memberId, String userMessage, List<RedisChatMessage> history) {
@@ -81,10 +91,20 @@ public class RagChatProcessor implements ChatProcessor {
             log.info("[RAG 챗봇] 처리 시작 - memberId: {}, query: {}", memberId, userMessage);
 
             // ──────────────────────────────────────────
-            // 1. [Retrieval] 벡터 검색으로 관련 레시피 TOP 3 조회
+            // 1. [Retrieval] 벡터 검색으로 관련 레시피 TOP 3 조회 (임계값 0.5 적용)
             // ──────────────────────────────────────────
             List<RecipeSearchResponseDto> topRecipes = recipeSearchService.searchTop3ByVector(userMessage);
             log.info("[RAG 챗봇] 벡터 검색 완료 - {}건 발견", topRecipes.size());
+
+            // [Fast-fail] 요리와 완전 무관한 질문이라 유사도가 모두 낮아 검색 결과가 0건인 경우
+            if (topRecipes.isEmpty()) {
+                log.info("[RAG 챗봇] 검색 결과 0건 (유사도 미달) -> Fast-fail 처리");
+                return ChatProcessorResult.builder()
+                        .title("레시피를 찾을 수 없어요 \uD83D\uDE22")
+                        .message("말씀하신 내용과 어울리는 레시피를 찾지 못했어요. 저는 요리 추천 챗봇 모해먹집이에요. 음식이나 레시피에 대해 물어봐주시면 친절하게 답변해 드릴게요!")
+                        .recipeCards(Collections.emptyList())
+                        .build();
+            }
 
             // ──────────────────────────────────────────
             // 2. [Context] 냉장고 재료 조회 (유통기한 임박 순 상위 5개)
@@ -123,14 +143,14 @@ public class RagChatProcessor implements ChatProcessor {
             log.info("[RAG 챗봇] Gemini 응답 수신 완료");
 
             // ──────────────────────────────────────────
-            // 5. JSON 응답 파싱 → RecipeCardResponse 리스트 변환
+            // 5. JSON 응답 파싱 → RecipeCardResponse 리스트 및 텍스트 변환
             // ──────────────────────────────────────────
-            List<RecipeCardResponse> recipeCards = parseJsonResponse(aiResponse, topRecipes);
+            GeminiRagResponse parsedResponse = parseJsonResponse(aiResponse, topRecipes);
 
             return ChatProcessorResult.builder()
-                    .title("맞춤 레시피 추천")
-                    .message("회원님의 상황에 맞는 레시피를 찾아봤어요! 아래 카드를 확인해 보세요 🍳")
-                    .recipeCards(recipeCards)
+                    .title(parsedResponse.main_title() != null ? parsedResponse.main_title() : "맞춤 레시피 추천")
+                    .message(parsedResponse.main_message() != null ? parsedResponse.main_message() : "회원님의 상황에 맞는 레시피를 찾아봤어요! 아래 카드를 확인해 보세요 🍳")
+                    .recipeCards(parsedResponse.recipe_cards() != null ? parsedResponse.recipe_cards() : Collections.emptyList())
                     .build();
 
         } catch (Exception e) {
@@ -182,14 +202,14 @@ public class RagChatProcessor implements ChatProcessor {
     }
 
     /**
-     * Gemini의 JSON 응답 문자열을 RecipeCardResponse 리스트로 파싱합니다.
-     * 파싱 실패 시 검색 결과를 기반으로 Fallback 카드를 생성합니다.
+     * Gemini의 JSON 응답 문자열을 GeminiRagResponse 객체로 파싱합니다.
+     * 파싱 실패 시 검색 결과를 기반으로 Fallback 데이터를 생성합니다.
      */
-    private List<RecipeCardResponse> parseJsonResponse(String aiResponse,
+    private GeminiRagResponse parseJsonResponse(String aiResponse,
             List<RecipeSearchResponseDto> fallbackRecipes) {
         if (aiResponse == null || aiResponse.isBlank()) {
             log.warn("[RAG 챗봇] Gemini 응답이 null 또는 비어있음 → Fallback 적용");
-            return buildFallbackCards(fallbackRecipes);
+            return createFallbackResponse(fallbackRecipes);
         }
 
         try {
@@ -199,12 +219,22 @@ public class RagChatProcessor implements ChatProcessor {
                     .replaceAll("(?s)```\\s*", "")
                     .trim();
 
-            return objectMapper.readValue(cleaned, new TypeReference<List<RecipeCardResponse>>() {
-            });
+            return objectMapper.readValue(cleaned, GeminiRagResponse.class);
         } catch (Exception e) {
             log.error("[RAG 챗봇] JSON 파싱 실패, Fallback 적용. 응답 길이: {}", aiResponse.length(), e);
-            return buildFallbackCards(fallbackRecipes);
+            return createFallbackResponse(fallbackRecipes);
         }
+    }
+
+    /**
+     * Fallback 처리 시 사용자에게 명확한 안내를 포함하는 DTO를 생성합니다.
+     */
+    private GeminiRagResponse createFallbackResponse(List<RecipeSearchResponseDto> fallbackRecipes) {
+        return new GeminiRagResponse(
+                "서버 접속자 폭주로 인한 지연 안내 ⏳",
+                "현재 AI 추천 서버 접속자가 많아 맞춤 분석이 일시적으로 지연되고 있어요. 대신 질문과 연관성이 높은 레시피를 우선 보여드릴게요! 잠시 후 다시 질문해 주시면 더욱 정확한 맞춤 추천이 가능합니다.",
+                buildFallbackCards(fallbackRecipes)
+        );
     }
 
     /**
@@ -215,7 +245,7 @@ public class RagChatProcessor implements ChatProcessor {
                 .map(r -> RecipeCardResponse.builder()
                         .recipeId(r.getId())
                         .title(r.getTitle())
-                        .recommendReason("지금 찾고 계신 요리와 가장 유사한 레시피예요!")
+                        .recommendReason("AI 맞춤 분석 지연으로 질문과 가장 연관성이 높은 레시피를 우선 추천해 드려요.")
                         .ingredientsMatchRate(0)
                         .build())
                 .collect(Collectors.toList());

@@ -1,7 +1,9 @@
 package com.mohaemukzip.mohaemukzip_be.global.client;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -9,47 +11,67 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Gemini API와 통신하여 텍스트를 임베딩(벡터)으로 변환하는 클라이언트.
+ */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class EmbeddingClient {
 
-    // (팁) 나중에 application.yml에 파이썬 서버 URL을 빼두시면 배포 시 관리가 편합니다.
-    private final String PYTHON_SERVER_URL = "http://localhost:8000";
-    private final WebClient webClient = WebClient.create(PYTHON_SERVER_URL);
+    private final WebClient webClient;
+    private final String geminiApiUrl;
+
+    public EmbeddingClient(
+            @Value("${gemini.embedding.api-url:https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent}") String geminiApiUrl,
+            @Value("${gemini.recipe.api-key}") String geminiApiKey,
+            WebClient.Builder webClientBuilder) {
+
+        this.geminiApiUrl = geminiApiUrl;
+        this.webClient = webClientBuilder
+                .defaultHeader("x-goog-api-key", geminiApiKey)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+        log.info("[EmbeddingClient] Gemini 임베딩 클라이언트 초기화 완료");
+    }
 
     /**
-     * FastAPI 서버로 텍스트를 보내고 임베딩 벡터를 받아옵니다.
-     * 
-     * @param text 임베딩할 텍스트 (예: "치즈 떡볶이")
-     * @return 1024차원의 임베딩 벡터
+     * Gemini API로 텍스트를 보내고 임베딩 벡터를 받아옵니다.
+     *
+     * @param text 임베딩할 텍스트
+     * @return 768차원의 임베딩 벡터
      */
     public List<Double> getEmbedding(String text) {
         try {
-            // FastAPI에서 정의한 {"text": "..."} 형태의 Body를 만듭니다.
-            Map<String, String> requestBody = Map.of("text", text);
+            // Gemini API 요청 Body 구성 (gemini-embedding-2 모델 및 768차원 지정)
+            Map<String, Object> requestBody = Map.of(
+                    "model", "models/gemini-embedding-2",
+                    "outputDimensionality", 768,
+                    "content", Map.of(
+                            "parts", List.of(Map.of("text", text))
+                    )
+            );
 
-            // API 호출
-            EmbeddingResponse response = webClient.post()
-                    .uri("/embed")
+            // API 호출 (최대 10초 대기)
+            GeminiEmbeddingResponse response = webClient.post()
+                    .uri(geminiApiUrl)
                     .bodyValue(requestBody)
                     .retrieve()
-                    .bodyToMono(EmbeddingResponse.class)
-                    .block(Duration.ofSeconds(8)); // 최대 대기 시간 제한 (8초)
+                    .bodyToMono(GeminiEmbeddingResponse.class)
+                    .block(Duration.ofSeconds(10));
 
-            if (response == null || response.embedding() == null) {
-                throw new RuntimeException("파이썬 서버로부터 임베딩을 받지 못했습니다.");
+            if (response == null || response.embedding() == null || response.embedding().values() == null) {
+                throw new RuntimeException("Gemini 서버로부터 임베딩을 받지 못했습니다.");
             }
 
-            return response.embedding();
+            return response.embedding().values();
 
         } catch (Exception e) {
-            log.error("임베딩 추출 중 오류 발생", e);
-            throw new RuntimeException("Embedding API call failed", e);
+            log.error("[EmbeddingClient] Gemini 임베딩 추출 중 오류 발생 - text: {}", text, e);
+            throw new RuntimeException("Gemini Embedding API call failed", e);
         }
     }
 
-    // 파이썬 서버의 JSON 응답({"embedding": [...]})을 매핑할 내부 Record
-    record EmbeddingResponse(List<Double> embedding) {
-    }
+    // Gemini의 JSON 응답을 매핑할 내부 Record
+    record GeminiEmbeddingResponse(EmbeddingData embedding) {}
+    record EmbeddingData(List<Double> values) {}
 }

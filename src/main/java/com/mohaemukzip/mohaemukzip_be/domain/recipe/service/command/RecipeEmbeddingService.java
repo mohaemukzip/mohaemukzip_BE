@@ -14,10 +14,11 @@ import java.util.List;
  * 레시피 임베딩 배치 처리 서비스.
  *
  * [동작 흐름]
- * 1. DB에서 embedding 컬럼이 null인 레시피 목록을 모두 가져옵니다.
- * 2. 각 레시피에 대해 EmbeddingClient를 통해 FastAPI 서버에 임베딩 요청을 보냅니다.
- * 3. 받아온 1024차원 벡터를 Recipe 엔티티에 업데이트하고 저장합니다.
- * 4. 오류가 발생한 레시피는 로그로 남기고 스킵합니다(다음 레시피 처리 계속).
+ * 1. DB에서 모든 레시피 목록을 가져옵니다.
+ * 2. embedding 컬럼이 null이거나 1536차원이 아닌(과거 1024차원) 레시피를 타겟으로 필터링합니다.
+ * 3. 각 타겟 레시피에 대해 OpenAI 서버에 임베딩 요청을 보냅니다.
+ * 4. 받아온 1536차원 벡터를 Recipe 엔티티에 업데이트하고 저장합니다.
+ * 5. 오류가 발생한 레시피는 로그로 남기고 스킵합니다.
  */
 @Slf4j
 @Service
@@ -27,35 +28,38 @@ public class RecipeEmbeddingService {
     private final RecipeRepository recipeRepository;
     private final EmbeddingClient embeddingClient;
 
-    private static final int EMBEDDING_DIMENSION = 1024;
+    private static final int EMBEDDING_DIMENSION = 768;
 
     /**
-     * embedding이 null인 모든 레시피에 임베딩 벡터를 생성하고 저장합니다.
+     * embedding이 없거나 차원이 다른(1024 등) 모든 레시피에 임베딩 벡터를 생성하고 덮어씁니다.
      *
-     * @return 처리 결과 요약 문자열 (예: "전체 100건 중 98건 성공, 2건 실패")
+     * @return 처리 결과 요약 문자열
      */
     @Transactional
     public String generateMissingEmbeddings() {
-        // 1. embedding이 null인 레시피 목록 조회
-        List<Recipe> recipesWithoutEmbedding = recipeRepository.findByEmbeddingIsNull();
+        // 1. 모든 레시피 조회 후, 임베딩이 없거나 768차원이 아닌 레시피만 필터링
+        List<Recipe> allRecipes = recipeRepository.findAll();
+        List<Recipe> targetRecipes = allRecipes.stream()
+                .filter(recipe -> recipe.getEmbedding() == null || recipe.getEmbedding().size() != EMBEDDING_DIMENSION)
+                .toList();
 
-        int total = recipesWithoutEmbedding.size();
+        int total = targetRecipes.size();
         int successCount = 0;
         int failCount = 0;
 
-        log.info("[임베딩 배치] 시작 - 처리 대상 레시피: {}건", total);
+        log.info("[임베딩 배치] 시작 - 전체 레시피 {}건 중 갱신 필요 레시피: {}건", allRecipes.size(), total);
 
         if (total == 0) {
-            log.info("[임베딩 배치] 처리할 레시피가 없습니다. 모든 레시피에 임베딩이 존재합니다.");
-            return "처리할 레시피가 없습니다. 모든 레시피에 임베딩이 이미 존재합니다.";
+            log.info("[임베딩 배치] 처리할 레시피가 없습니다. 모든 레시피가 최신 768차원 임베딩을 가집니다.");
+            return "처리할 레시피가 없습니다. 모든 레시피가 이미 최신 규격의 임베딩을 가집니다.";
         }
 
-        // 2. 각 레시피를 순회하며 임베딩 생성 및 저장
-        for (Recipe recipe : recipesWithoutEmbedding) {
+        // 2. 각 레시피를 순회하며 임베딩 갱신
+        for (Recipe recipe : targetRecipes) {
             try {
                 log.info("[임베딩 배치] 처리 중 - ID: {}, 제목: {}", recipe.getId(), recipe.getTitle());
 
-                // 레시피 제목으로 임베딩 벡터 요청 (FastAPI → HuggingFace 모델)
+                // 레시피 제목으로 임베딩 벡터 요청 (Gemini API)
                 List<Double> embedding = embeddingClient.getEmbedding(recipe.getTitle());
 
                 // 임베딩 응답 검증 (차원 불일치 시 검색 품질 저하 방지)
