@@ -269,7 +269,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         return AuthConverter.toWithdrawalResponseDTO();
     }
 
-    @Transactional
+
     public AuthResponseDTO.SendAuthCodeResponse sendAuthCode(AuthRequestDTO.SendAuthCodeRequest request) {
         // 이메일 중복 확인
         if (memberRepository.existsByEmail(request.email())) {

@@ -88,6 +88,7 @@ public class AuthRequestDTO {
 
             @Schema(description = "인증번호", example = "123456")
             @NotBlank(message = "인증번호를 입력해주세요.")
+            @Pattern(regexp = "^\\d{6}$", message = "인증번호는 6자리 숫자입니다.")
             String authCode
     ) {}
 }

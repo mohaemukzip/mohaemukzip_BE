@@ -7,7 +7,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
-import java.util.Random;
+import java.security.SecureRandom;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class EmailService {
 
+    private final SecureRandom secureRandom = new SecureRandom();
     private final JavaMailSender mailSender;
     private final RedisTemplate<String, String> redisTemplate;
 
@@ -49,11 +50,14 @@ public class EmailService {
             return false; // 만료
         }
 
-        return storedCode.equals(inputCode);
+        boolean matched = storedCode.equals(inputCode);
+        if (matched) {
+            redisTemplate.delete(EMAIL_AUTH_PREFIX + email);
+        }
+        return matched;
     }
 
     private String generateAuthCode() {
-        Random random = new Random();
-        return String.format("%06d", random.nextInt(1000000));
+        return String.format("%06d", secureRandom.nextInt(1000000));
     }
 }
