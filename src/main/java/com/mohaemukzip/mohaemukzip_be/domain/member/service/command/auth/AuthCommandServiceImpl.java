@@ -166,9 +166,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
                 .score(0)
                 .build();
 
-        Member savedMember = memberRepository.save(newMember);
-
-        return savedMember;
+        return memberRepository.save(newMember);
     }
 
     private AuthResponseDTO.GetUserDTO generateAndSaveTokens(Member member, boolean isNewUser) {
@@ -275,6 +273,8 @@ public class AuthCommandServiceImpl implements AuthCommandService {
                 .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
 
         member.updatePassword(passwordEncoder.encode(request.newPassword()));
+
+        redisTemplate.delete(REFRESH_TOKEN_PREFIX + member.getId());
 
         return new AuthResponseDTO.ResetPasswordResponse("비밀번호가 변경되었습니다.");
     }
