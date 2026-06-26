@@ -10,6 +10,7 @@ import java.util.List;
 public class GeminiResponseDTO {
     
     private List<Candidate> candidates;
+    private UsageMetadata usageMetadata;
 
     @Getter
     @NoArgsConstructor
@@ -27,5 +28,13 @@ public class GeminiResponseDTO {
     @NoArgsConstructor
     public static class Part {
         private String text;
+    }
+
+    @Getter
+    @NoArgsConstructor
+    public static class UsageMetadata {
+        private int promptTokenCount;
+        private int candidatesTokenCount;
+        private int totalTokenCount;
     }
 }
