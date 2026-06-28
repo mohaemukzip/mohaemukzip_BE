@@ -12,8 +12,10 @@ import java.util.List;
 public class AuthRequestDTO {
     @Schema(description = "로그인 요청")
     public record LoginRequest(
+
             @Schema(description = "로그인 ID", example = "test@naver.com")
             @NotBlank
+            @Email(message = "이메일 형식이 아닙니다.")
             String loginId,
 
             @Schema(description = "비밀번호", example = "Test1234!")
@@ -58,6 +60,21 @@ public class AuthRequestDTO {
             @NotBlank(message = "이메일을 입력해주세요.")
             @Email(message = "이메일 형식이 아닙니다.")
             String loginId
+    ) {}
+
+    public record ResetPasswordRequest(
+            @Schema(description = "이메일", example = "test@naver.com")
+            @NotBlank(message = "이메일을 입력해주세요.")
+            @Email(message = "이메일 형식이 아닙니다.")
+            String email,
+
+            @Schema(description = "새 비밀번호", example = "NewPassword123!")
+            @NotBlank(message = "새 비밀번호는 필수입니다.")
+            @Pattern(
+                    regexp = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*#?&]{10,}$",
+                    message = "비밀번호는 영문과 숫자를 포함해 10자 이상 입력해 주세요."
+            )
+            String newPassword
     ) {}
 
     public record KakaoLoginRequest(

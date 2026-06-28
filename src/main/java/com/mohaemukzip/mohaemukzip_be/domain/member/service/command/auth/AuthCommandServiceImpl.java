@@ -57,6 +57,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         Member member = Member.builder()
                 .nickname(request.nickname())
                 .loginId(request.loginId())
+                .email(request.loginId())
                 .password(passwordEncoder.encode(request.password()))
                 .role(Role.ROLE_USER)
                 .loginType(LoginType.GENERAL)
@@ -168,9 +169,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
                 .score(0)
                 .build();
 
-        Member savedMember = memberRepository.save(newMember);
-
-        return savedMember;
+        return memberRepository.save(newMember);
     }
 
     private AuthResponseDTO.GetUserDTO generateAndSaveTokens(Member member, boolean isNewUser) {
@@ -270,6 +269,18 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         return AuthConverter.toWithdrawalResponseDTO();
     }
 
+    // 비밀번호 변경
+    @Transactional
+    public AuthResponseDTO.ResetPasswordResponse resetPassword(AuthRequestDTO.ResetPasswordRequest request) {
+        Member member = memberRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
+
+        member.updatePassword(passwordEncoder.encode(request.newPassword()));
+
+        redisTemplate.delete(REFRESH_TOKEN_PREFIX + member.getId());
+
+        return new AuthResponseDTO.ResetPasswordResponse("비밀번호가 변경되었습니다.");
+    }
 
     public AuthResponseDTO.SendAuthCodeResponse sendAuthCode(AuthRequestDTO.SendAuthCodeRequest request) {
         // 이메일 중복 확인
