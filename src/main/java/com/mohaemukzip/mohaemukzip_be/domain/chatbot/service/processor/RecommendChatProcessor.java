@@ -110,7 +110,7 @@ public class RecommendChatProcessor implements ChatProcessor {
                     .parts(List.of(GeminiRequestDTO.Part.builder().text(finalUserPrompt).build()))
                     .build());
 
-            String aiResponse = geminiService.generateChatResponse(SYSTEM_PROMPT, contents);
+            String aiResponse = geminiService.generateChatResponse(memberId, SYSTEM_PROMPT, contents);
 
             return parseResponse(aiResponse, "오늘의 추천 메뉴", finalRecipes);
 

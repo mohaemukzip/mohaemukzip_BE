@@ -14,10 +14,14 @@ import reactor.util.retry.Retry;
 
 import java.time.Duration;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 @Slf4j
 public class GeminiService {
+
+    private static final Logger chatbotMonitorLog = LoggerFactory.getLogger("CHATBOT_MONITOR");
 
     private final WebClient geminiWebClient;
     private final ObjectMapper objectMapper;
@@ -34,7 +38,7 @@ public class GeminiService {
         this.objectMapper = objectMapper;
     }
 
-    public String generateChatResponse(String systemPrompt, List<GeminiRequestDTO.Content> contents) {
+    public String generateChatResponse(Long memberId, String systemPrompt, List<GeminiRequestDTO.Content> contents) {
         GeminiRequestDTO request = GeminiRequestDTO.builder()
                 .systemInstruction(GeminiRequestDTO.SystemInstruction.builder()
                         .parts(List.of(GeminiRequestDTO.Part.builder().text(systemPrompt).build()))
@@ -81,10 +85,18 @@ public class GeminiService {
                     GeminiResponseDTO.Candidate candidate = response.getCandidates().get(0);
                     if (candidate.getContent() != null && candidate.getContent().getParts() != null && !candidate.getContent().getParts().isEmpty()) {
                         String text = candidate.getContent().getParts().get(0).getText();
-                        
                         // 보안 강화: 전체 내용은 DEBUG 레벨로, INFO 레벨에는 길이만 출력
                         log.debug("Gemini 응답 텍스트: {}", text);
                         log.info("Gemini 응답 텍스트 추출 성공 (length: {})", text.length());
+                        
+                        // [모니터링] 토큰 사용량 비동기 JSON 로깅
+                        if (response.getUsageMetadata() != null) {
+                            int totalTokens = response.getUsageMetadata().getTotalTokenCount();
+                            int promptTokens = response.getUsageMetadata().getPromptTokenCount();
+                            int completionTokens = response.getUsageMetadata().getCandidatesTokenCount();
+                            chatbotMonitorLog.info("{\"action\": \"CHATBOT_USAGE\", \"memberId\": {}, \"promptTokens\": {}, \"completionTokens\": {}, \"totalTokens\": {}, \"status\": \"SUCCESS\"}",
+                                    memberId, promptTokens, completionTokens, totalTokens);
+                        }
                         
                         return text;
                     }

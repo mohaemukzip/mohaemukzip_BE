@@ -40,3 +40,7 @@ out/
 /.env
 /src/main/resources/application-dev.yaml
 venv/
+
+# Logs
+logs/
+*.log

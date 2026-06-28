@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 기본 콘솔 로그 출력 (Spring 기본값 사용) -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <!-- 챗봇 모니터링용 전용 파일 어펜더 (JSON) -->
+    <appender name="CHATBOT_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/chatbot-monitoring.log</file>
+        <!-- 매일 새로운 파일로 백업 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/chatbot-monitoring-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <!-- Logstash JSON 포맷으로 변환 -->
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <!-- 기본 제공되는 스택트레이스, 타임스탬프 등을 커스텀 가능 -->
+            <includeContext>false</includeContext>
+        </encoder>
+    </appender>
+
+    <!-- 성능 저하 방지를 위한 AsyncAppender -->
+    <appender name="ASYNC_CHATBOT" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="CHATBOT_FILE" />
+        <queueSize>500</queueSize>
+        <!-- 큐가 80% 차더라도 로그를 버리지 않고 모두 기록 (에러 추적 중요 시) -->
+        <discardingThreshold>0</discardingThreshold>
+        <!-- 메인 스레드 블로킹 방지 (버퍼 가득차면 새로운 로그 버림, 시스템 다운 방지용) -->
+        <!-- <neverBlock>true</neverBlock> -->
+    </appender>
+
+    <!-- 모니터링 로거 세팅 -->
+    <!-- name 속성으로 패키지를 지정하거나 로거 이름을 지정할 수 있음 -->
+    <logger name="CHATBOT_MONITOR" level="INFO" additivity="false">
+        <appender-ref ref="ASYNC_CHATBOT" />
+        <!-- 콘솔에도 동시에 보고 싶다면 아래 주석 해제 -->
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <!-- 전체 애플리케이션 로그 레벨 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration>

@@ -52,7 +52,7 @@ public class RecipeSearchService {
                         .similarity(VectorMathUtil.cosineSimilarity(queryVector, recipe.getEmbedding()))
                         .build())
                 .filter(dto -> Double.isFinite(dto.getSimilarity()))
-                .filter(dto -> dto.getSimilarity() >= 0.75) // [수정] 고차원 벡터 특성을 고려하여 임계값을 0.75로 대폭 상향
+                .filter(dto -> dto.getSimilarity() >= 0.7) // [수정] 임계값을 0.7로 조정하여 검색률을 높임
                 .sorted(Comparator.comparing(RecipeSearchResponseDto::getSimilarity).reversed()) // 유사도 높은 순
                 .limit(3) // 상위 3개
                 .collect(Collectors.toList());
