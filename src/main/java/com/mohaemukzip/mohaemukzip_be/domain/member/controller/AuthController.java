@@ -149,4 +149,22 @@ public class AuthController {
         AuthResponseDTO.WithdrawalResponse response = authCommandService.withdrawal(memberId);
         return ApiResponse.onSuccess(response);
     }
+
+    @Operation(summary = "이메일 인증번호 발송")
+    @PostMapping("/email/send")
+    public ApiResponse<AuthResponseDTO.SendAuthCodeResponse> sendAuthCode(
+            @Valid @RequestBody AuthRequestDTO.SendAuthCodeRequest request) {
+
+        AuthResponseDTO.SendAuthCodeResponse response = authCommandService.sendAuthCode(request);
+        return ApiResponse.onSuccess(response);
+    }
+
+    @Operation(summary = "이메일 인증번호 검증")
+    @PostMapping("/email/verify")
+    public ApiResponse<AuthResponseDTO.VerifyAuthCodeResponse> verifyAuthCode(
+            @Valid @RequestBody AuthRequestDTO.VerifyAuthCodeRequest request) {
+
+        AuthResponseDTO.VerifyAuthCodeResponse response = authCommandService.verifyAuthCode(request);
+        return ApiResponse.onSuccess(response);
+    }
 }

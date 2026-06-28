@@ -22,6 +22,8 @@ public enum ErrorStatus implements BaseCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH4004", "유효하지 않은 토큰입니다."),
     REFRESH_TOKEN_MISMATCH(HttpStatus.FORBIDDEN, "AUTH4005", "Refresh Token이 일치하지 않습니다."),
     DUPLICATE_LOGIN_ID(HttpStatus.BAD_REQUEST, "AUTH4006", "중복된 로그인 아이디입니다."),
+    DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST, "AUTH4015", "이미 사용 중인 이메일입니다."),
+    INVALID_AUTH_CODE(HttpStatus.BAD_REQUEST, "AUTH4016", "인증번호가 일치하지 않거나 만료되었습니다."),
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "AUTH4007", "비밀번호가 올바르지 않습니다."),
     MALFORMED_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH4008", "토큰의 형식이 올바르지 않습니다."),
     INVALID_SIGNATURE(HttpStatus.UNAUTHORIZED, "AUTH4009", "토큰의 서명이 올바르지 않습니다."),

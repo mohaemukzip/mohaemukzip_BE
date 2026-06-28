@@ -25,7 +25,7 @@ public class GeminiService {
     @Value("${gemini.recipe.api-url}")
     private String apiUrl;
 
-    private static final String MODEL_NAME = "gemini-2.5-flash";
+    private static final String MODEL_NAME = "gemini-flash-latest";
 
     public GeminiService(
             @Qualifier("geminiRecipeWebClient") WebClient geminiWebClient,
