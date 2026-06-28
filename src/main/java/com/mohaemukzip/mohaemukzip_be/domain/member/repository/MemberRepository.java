@@ -17,9 +17,9 @@ public interface MemberRepository extends JpaRepository<Member,Long> {
     Boolean existsByOauthId(String oauthId);
     Optional<Member> findByLoginId(String loginId);
     Boolean existsByLoginId(String loginId);
+    Boolean existsByEmail(String email);
     Optional<Member> findByEmail(String email);
-
-    @Lock(LockModeType.PESSIMISTIC_WRITE) // 동시성 방지용 (같은 사용자가 2번 complete 호출 경우)
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select m from Member m where m.id = :memberId")
     Optional<Member> findByIdForUpdate(@Param("memberId") Long memberId);
 }

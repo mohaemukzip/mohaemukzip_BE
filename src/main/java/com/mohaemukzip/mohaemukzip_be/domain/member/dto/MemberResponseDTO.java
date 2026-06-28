@@ -1,5 +1,7 @@
 package com.mohaemukzip.mohaemukzip_be.domain.member.dto;
 
+import com.mohaemukzip.mohaemukzip_be.domain.member.entity.enums.LoginType;
+
 import java.util.List;
 
 public class MemberResponseDTO {
@@ -19,4 +21,9 @@ public class MemberResponseDTO {
             String videoDuration,
             Boolean isBookmarked
     ) { }
+
+    public record AccountSettingDTO(
+            String email,
+            LoginType loginType
+    ) {}
 }

@@ -12,12 +12,13 @@ import java.util.List;
 public class AuthRequestDTO {
     @Schema(description = "로그인 요청")
     public record LoginRequest(
-            @Schema(description = "이메일", example = "test@naver.com")
+
+            @Schema(description = "로그인 ID", example = "test@naver.com")
             @NotBlank
             @Email(message = "이메일 형식이 아닙니다.")
             String loginId,
 
-            @Schema(description = "비밀번호", example = "mohaemukzip123!")
+            @Schema(description = "비밀번호", example = "Test1234!")
             @NotBlank
             String password
     ) { }
@@ -86,5 +87,24 @@ public class AuthRequestDTO {
             @Schema(description = "애플 identity token")
             @NotBlank(message = "애플 identity token은 필수입니다.")
             String identityToken
+    ) {}
+
+    public record SendAuthCodeRequest(
+            @Schema(description = "이메일", example = "test@naver.com")
+            @NotBlank(message = "이메일을 입력해주세요.")
+            @Email(message = "이메일 형식이 아닙니다.")
+            String email
+    ) {}
+
+    public record VerifyAuthCodeRequest(
+            @Schema(description = "이메일", example = "test@naver.com")
+            @NotBlank(message = "이메일을 입력해주세요.")
+            @Email(message = "이메일 형식이 아닙니다.")
+            String email,
+
+            @Schema(description = "인증번호", example = "123456")
+            @NotBlank(message = "인증번호를 입력해주세요.")
+            @Pattern(regexp = "^\\d{6}$", message = "인증번호는 6자리 숫자입니다.")
+            String authCode
     ) {}
 }

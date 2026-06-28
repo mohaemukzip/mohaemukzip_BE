@@ -79,4 +79,16 @@ public class MemberController {
 
         return ApiResponse.onSuccess(bookmarkedRecipes);
     }
+
+    @GetMapping("/me/account-setting")
+    @Operation(summary = "계정 설정 조회 API", description = "이메일과 로그인 타입을 반환합니다.")
+    public ApiResponse<MemberResponseDTO.AccountSettingDTO> getAccountSetting(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        MemberResponseDTO.AccountSettingDTO response = memberQueryService.getAccountSetting(
+                userDetails.getMember().getId()
+        );
+        return ApiResponse.onSuccess(response);
+    }
 }
+

@@ -13,6 +13,7 @@ import com.mohaemukzip.mohaemukzip_be.global.jwt.JwtProvider;
 import com.mohaemukzip.mohaemukzip_be.global.jwt.TokenBlacklistService;
 import com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus;
 import com.mohaemukzip.mohaemukzip_be.global.service.ApplePublicKeyService;
+import com.mohaemukzip.mohaemukzip_be.global.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -41,6 +42,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     private final WebClient webClient;
     private final TokenBlacklistService tokenBlacklistService;
     private final ApplePublicKeyService applePublicKeyService;
+    private final EmailService emailService;
 
     private static final String KAKAO_USER_INFO_URI = "https://kapi.kakao.com/v2/user/me";
     private static final String REFRESH_TOKEN_PREFIX = "RT:";
@@ -96,7 +98,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
             member = memberRepository.findByLoginTypeAndOauthId(LoginType.KAKAO, kakaoId)
                     .orElseGet(() -> {
                         isNewMember.set(true);
-                        return createKakaoMember(kakaoId, nickname);
+                        return createKakaoMember(kakaoId, nickname, kakaoUserInfo.getKakaoAccount().getEmail());
                     });
         } catch (DataIntegrityViolationException e) {
             member = memberRepository.findByLoginTypeAndOauthId(LoginType.KAKAO, kakaoId)
@@ -157,10 +159,11 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         return "카카오 사용자_" + kakaoUserInfo.getId();
     }
 
-    private Member createKakaoMember(String kakaoId, String nickname) {
+    private Member createKakaoMember(String kakaoId, String nickname, String email) {
         Member newMember = Member.builder()
                 .oauthId(kakaoId)
                 .nickname(nickname)
+                .email(email)
                 .loginType(LoginType.KAKAO)
                 .role(Role.ROLE_USER)
                 .score(0)
@@ -277,6 +280,26 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         redisTemplate.delete(REFRESH_TOKEN_PREFIX + member.getId());
 
         return new AuthResponseDTO.ResetPasswordResponse("비밀번호가 변경되었습니다.");
+
+    public AuthResponseDTO.SendAuthCodeResponse sendAuthCode(AuthRequestDTO.SendAuthCodeRequest request) {
+        // 이메일 중복 확인
+        if (memberRepository.existsByEmail(request.email())) {
+            throw new BusinessException(ErrorStatus.DUPLICATE_EMAIL);
+        }
+
+        emailService.sendAuthCode(request.email());
+
+        return new AuthResponseDTO.SendAuthCodeResponse("인증번호가 발송되었습니다.");
+    }
+
+    public AuthResponseDTO.VerifyAuthCodeResponse verifyAuthCode(AuthRequestDTO.VerifyAuthCodeRequest request) {
+        boolean verified = emailService.verifyAuthCode(request.email(), request.authCode());
+
+        if (!verified) {
+            return new AuthResponseDTO.VerifyAuthCodeResponse(false, "인증번호가 일치하지 않거나 만료되었습니다.");
+        }
+
+        return new AuthResponseDTO.VerifyAuthCodeResponse(true, "인증이 완료되었습니다.");
     }
 
     private AuthResponseDTO.GetKakaoUserInfoDTO getKakaoUserInfo(String accessToken) {

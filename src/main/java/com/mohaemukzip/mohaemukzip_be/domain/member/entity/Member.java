@@ -23,6 +23,10 @@ import java.time.LocalDate;
                 @UniqueConstraint(
                         name = "uk_provider_oauth_id",
                         columnNames = {"login_type", "oauth_id"}
+                ),
+                @UniqueConstraint(
+                        name = "uk_member_email",
+                        columnNames = {"email"}
                 )
         }
 )

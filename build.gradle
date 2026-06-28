@@ -41,6 +41,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.apache.httpcomponents.client5:httpclient5'
 
+
+	//Mail
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	//jwt
 	implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'

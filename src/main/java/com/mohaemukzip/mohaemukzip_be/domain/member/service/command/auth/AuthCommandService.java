@@ -12,4 +12,6 @@ public interface AuthCommandService {
     AuthResponseDTO.LogoutResponse logout(String accessToken);
     AuthResponseDTO.WithdrawalResponse withdrawal(Long memberId);
     AuthResponseDTO.ResetPasswordResponse resetPassword(AuthRequestDTO.ResetPasswordRequest request);
+    AuthResponseDTO.SendAuthCodeResponse sendAuthCode(AuthRequestDTO.SendAuthCodeRequest request);
+    AuthResponseDTO.VerifyAuthCodeResponse verifyAuthCode(AuthRequestDTO.VerifyAuthCodeRequest request);
 }

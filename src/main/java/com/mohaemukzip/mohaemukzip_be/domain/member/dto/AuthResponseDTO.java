@@ -58,6 +58,15 @@ public class AuthResponseDTO {
             String message
     ) { }
 
+    public record SendAuthCodeResponse(
+            String message
+    ) {}
+
+    public record VerifyAuthCodeResponse(
+            boolean verified,
+            String message
+    ) {}
+
     @Getter
     @NoArgsConstructor
     public static class GetKakaoUserInfoDTO {
@@ -69,6 +78,7 @@ public class AuthResponseDTO {
         @Getter @NoArgsConstructor
         public static class KakaoAccount {
             private Profile profile;
+            private String email;
         }
 
         @Getter @NoArgsConstructor
