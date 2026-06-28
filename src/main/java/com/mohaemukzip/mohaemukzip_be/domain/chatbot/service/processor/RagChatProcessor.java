@@ -21,6 +21,8 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -44,6 +46,8 @@ import java.util.stream.Collectors;
 @Primary
 @RequiredArgsConstructor
 public class RagChatProcessor implements ChatProcessor {
+
+    private static final Logger chatbotMonitorLog = LoggerFactory.getLogger("CHATBOT_MONITOR");
 
     private final RecipeSearchService recipeSearchService;
     private final MemberIngredientRepository memberIngredientRepository;
@@ -99,6 +103,10 @@ public class RagChatProcessor implements ChatProcessor {
             // [Fast-fail] 요리와 완전 무관한 질문이라 유사도가 모두 낮아 검색 결과가 0건인 경우
             if (topRecipes.isEmpty()) {
                 log.info("[RAG 챗봇] 검색 결과 0건 (유사도 미달) -> Fast-fail 처리");
+                
+                // [모니터링] 엉뚱한 질문 (토큰 소모 없음) 비동기 로깅
+                chatbotMonitorLog.info("{\"action\": \"CHATBOT_USAGE\", \"memberId\": {}, \"promptTokens\": 0, \"completionTokens\": 0, \"totalTokens\": 0, \"status\": \"FAST_FAIL\"}", memberId);
+                
                 return ChatProcessorResult.builder()
                         .title("레시피를 찾을 수 없어요 \uD83D\uDE22")
                         .message("말씀하신 내용과 어울리는 레시피를 찾지 못했어요. 저는 요리 추천 챗봇 모해먹집이에요. 음식이나 레시피에 대해 물어봐주시면 친절하게 답변해 드릴게요!")
@@ -139,13 +147,13 @@ public class RagChatProcessor implements ChatProcessor {
                     .parts(List.of(GeminiRequestDTO.Part.builder().text(userPrompt).build()))
                     .build());
 
-            String aiResponse = geminiService.generateChatResponse(SYSTEM_PROMPT, contents);
+            String aiResponse = geminiService.generateChatResponse(memberId, SYSTEM_PROMPT, contents);
             log.info("[RAG 챗봇] Gemini 응답 수신 완료");
 
             // ──────────────────────────────────────────
             // 5. JSON 응답 파싱 → RecipeCardResponse 리스트 및 텍스트 변환
             // ──────────────────────────────────────────
-            GeminiRagResponse parsedResponse = parseJsonResponse(aiResponse, topRecipes);
+            GeminiRagResponse parsedResponse = parseJsonResponse(memberId, aiResponse, topRecipes);
 
             return ChatProcessorResult.builder()
                     .title(parsedResponse.main_title() != null ? parsedResponse.main_title() : "맞춤 레시피 추천")
@@ -155,6 +163,10 @@ public class RagChatProcessor implements ChatProcessor {
 
         } catch (Exception e) {
             log.error("[RAG 챗봇] 처리 중 예외 발생", e);
+            
+            // [모니터링] 시스템 에러 비동기 로깅
+            chatbotMonitorLog.info("{\"action\": \"CHATBOT_USAGE\", \"memberId\": {}, \"promptTokens\": 0, \"completionTokens\": 0, \"totalTokens\": 0, \"status\": \"ERROR\", \"reason\": \"SYSTEM_ERROR\"}", memberId);
+            
             return ChatProcessorResult.builder()
                     .title("일시적 오류")
                     .message("죄송해요, 처리 중 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.")
@@ -205,10 +217,14 @@ public class RagChatProcessor implements ChatProcessor {
      * Gemini의 JSON 응답 문자열을 GeminiRagResponse 객체로 파싱합니다.
      * 파싱 실패 시 검색 결과를 기반으로 Fallback 데이터를 생성합니다.
      */
-    private GeminiRagResponse parseJsonResponse(String aiResponse,
+    private GeminiRagResponse parseJsonResponse(Long memberId, String aiResponse,
             List<RecipeSearchResponseDto> fallbackRecipes) {
         if (aiResponse == null || aiResponse.isBlank()) {
             log.warn("[RAG 챗봇] Gemini 응답이 null 또는 비어있음 → Fallback 적용");
+            
+            // [모니터링] 구글 API 에러(503 등) 발생 비동기 로깅
+            chatbotMonitorLog.info("{\"action\": \"CHATBOT_USAGE\", \"memberId\": {}, \"promptTokens\": 0, \"completionTokens\": 0, \"totalTokens\": 0, \"status\": \"FALLBACK\", \"reason\": \"NULL_RESPONSE\"}", memberId);
+            
             return createFallbackResponse(fallbackRecipes);
         }
 
@@ -222,6 +238,10 @@ public class RagChatProcessor implements ChatProcessor {
             return objectMapper.readValue(cleaned, GeminiRagResponse.class);
         } catch (Exception e) {
             log.error("[RAG 챗봇] JSON 파싱 실패, Fallback 적용. 응답 길이: {}", aiResponse.length(), e);
+            
+            // [모니터링] 응답 형식이 깨진 경우(파싱 에러) 비동기 로깅
+            chatbotMonitorLog.info("{\"action\": \"CHATBOT_USAGE\", \"memberId\": {}, \"promptTokens\": 0, \"completionTokens\": 0, \"totalTokens\": 0, \"status\": \"FALLBACK\", \"reason\": \"PARSE_ERROR\"}", memberId);
+            
             return createFallbackResponse(fallbackRecipes);
         }
     }
