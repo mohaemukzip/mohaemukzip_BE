@@ -134,5 +134,17 @@ public class MemberQueryServiceImpl implements MemberQueryService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
+
+    // 이메일 조회
+    @Override
+    public MemberResponseDTO.AccountSettingDTO getAccountSetting(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
+
+        return new MemberResponseDTO.AccountSettingDTO(
+                member.getEmail(),
+                member.getLoginType()
+        );
+    }
 }
 

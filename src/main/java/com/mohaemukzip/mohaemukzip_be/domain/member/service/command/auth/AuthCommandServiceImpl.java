@@ -95,7 +95,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
             member = memberRepository.findByLoginTypeAndOauthId(LoginType.KAKAO, kakaoId)
                     .orElseGet(() -> {
                         isNewMember.set(true);
-                        return createKakaoMember(kakaoId, nickname);
+                        return createKakaoMember(kakaoId, nickname, kakaoUserInfo.getKakaoAccount().getEmail());
                     });
         } catch (DataIntegrityViolationException e) {
             member = memberRepository.findByLoginTypeAndOauthId(LoginType.KAKAO, kakaoId)
@@ -156,10 +156,11 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         return "카카오 사용자_" + kakaoUserInfo.getId();
     }
 
-    private Member createKakaoMember(String kakaoId, String nickname) {
+    private Member createKakaoMember(String kakaoId, String nickname, String email) {
         Member newMember = Member.builder()
                 .oauthId(kakaoId)
                 .nickname(nickname)
+                .email(email)
                 .loginType(LoginType.KAKAO)
                 .role(Role.ROLE_USER)
                 .score(0)

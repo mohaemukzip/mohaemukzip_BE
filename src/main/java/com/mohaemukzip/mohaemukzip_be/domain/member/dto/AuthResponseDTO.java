@@ -69,6 +69,7 @@ public class AuthResponseDTO {
         @Getter @NoArgsConstructor
         public static class KakaoAccount {
             private Profile profile;
+            private String email;
         }
 
         @Getter @NoArgsConstructor
