@@ -17,9 +17,10 @@ public class ChatConverter {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("a h:mm", Locale.KOREA);
 
     public static ChatResponse toChatResponse(ChatProcessorResult result, String id) {
-        List<ChatRecipeResponse> recipeCards = null;
+        // 기존 방식: Recipe 엔티티 → ChatRecipeResponse 변환
+        List<ChatRecipeResponse> legacyRecipes = null;
         if (result.getRecipes() != null && !result.getRecipes().isEmpty()) {
-            recipeCards = result.getRecipes().stream()
+            legacyRecipes = result.getRecipes().stream()
                     .map(ChatConverter::toChatRecipeResponse)
                     .collect(Collectors.toList());
         }
@@ -32,7 +33,8 @@ public class ChatConverter {
                 .message(result.getMessage())
                 .createdAt(now)
                 .formattedTime(formatTime(now))
-                .recommendRecipes(recipeCards)
+                .recommendRecipes(legacyRecipes)
+                .recipeCards(result.getRecipeCards()) // RAG 방식 카드 (null이면 JSON에서 제외됨)
                 .build();
     }
 
