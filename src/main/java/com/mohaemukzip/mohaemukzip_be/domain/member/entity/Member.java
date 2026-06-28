@@ -23,6 +23,10 @@ import java.time.LocalDate;
                 @UniqueConstraint(
                         name = "uk_provider_oauth_id",
                         columnNames = {"login_type", "oauth_id"}
+                ),
+                @UniqueConstraint(
+                        name = "uk_member_email",
+                        columnNames = {"email"}
                 )
         }
 )
@@ -61,6 +65,9 @@ public class Member extends BaseEntity {
     @Column(name = "profile_image_key", length = 500)
     private String profileImageKey;
 
+    @Column(name = "email")
+    private String email;
+
     @Column(name = "fridge_score")
     @Builder.Default
     private Integer fridgeScore = 100;
@@ -93,5 +100,13 @@ public class Member extends BaseEntity {
     public void updateFridgeScore(int delta) {
         if (this.fridgeScore == null) this.fridgeScore = 100;
         this.fridgeScore = Math.max(0, Math.min(100, this.fridgeScore + delta));
+    }
+
+    public void updateEmail(String email) {
+        this.email = email;
+    }
+
+    public void updatePassword(String password) {
+        this.password = password;
     }
 }

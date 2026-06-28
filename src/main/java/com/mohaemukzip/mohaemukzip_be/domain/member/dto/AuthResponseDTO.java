@@ -58,6 +58,15 @@ public class AuthResponseDTO {
             String message
     ) { }
 
+    public record SendAuthCodeResponse(
+            String message
+    ) {}
+
+    public record VerifyAuthCodeResponse(
+            boolean verified,
+            String message
+    ) {}
+
     @Getter
     @NoArgsConstructor
     public static class GetKakaoUserInfoDTO {
@@ -69,6 +78,7 @@ public class AuthResponseDTO {
         @Getter @NoArgsConstructor
         public static class KakaoAccount {
             private Profile profile;
+            private String email;
         }
 
         @Getter @NoArgsConstructor
@@ -83,4 +93,8 @@ public class AuthResponseDTO {
         private String sub;    // 애플 유저 ID
         private String email;  // 이메일 (최초 로그인 시에만 옴)
     }
+
+    public record ResetPasswordResponse(
+            String message
+    ) {}
 }

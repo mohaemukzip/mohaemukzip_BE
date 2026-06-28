@@ -129,6 +129,15 @@ public class AuthController {
         return ApiResponse.onSuccess(response);
     }
 
+    @Operation(summary = "비밀번호 재설정")
+    @PatchMapping("/reset-password")
+    public ApiResponse<AuthResponseDTO.ResetPasswordResponse> resetPassword(
+            @Valid @RequestBody AuthRequestDTO.ResetPasswordRequest request) {
+
+        AuthResponseDTO.ResetPasswordResponse response = authCommandService.resetPassword(request);
+        return ApiResponse.onSuccess(response);
+    }
+
     @Operation(summary = "회원탈퇴")
     @DeleteMapping("/withdrawal")
     public ApiResponse<AuthResponseDTO.WithdrawalResponse> withdrawal(
@@ -138,6 +147,24 @@ public class AuthController {
         }
         Long memberId = userDetails.getMember().getId();
         AuthResponseDTO.WithdrawalResponse response = authCommandService.withdrawal(memberId);
+        return ApiResponse.onSuccess(response);
+    }
+
+    @Operation(summary = "이메일 인증번호 발송")
+    @PostMapping("/email/send")
+    public ApiResponse<AuthResponseDTO.SendAuthCodeResponse> sendAuthCode(
+            @Valid @RequestBody AuthRequestDTO.SendAuthCodeRequest request) {
+
+        AuthResponseDTO.SendAuthCodeResponse response = authCommandService.sendAuthCode(request);
+        return ApiResponse.onSuccess(response);
+    }
+
+    @Operation(summary = "이메일 인증번호 검증")
+    @PostMapping("/email/verify")
+    public ApiResponse<AuthResponseDTO.VerifyAuthCodeResponse> verifyAuthCode(
+            @Valid @RequestBody AuthRequestDTO.VerifyAuthCodeRequest request) {
+
+        AuthResponseDTO.VerifyAuthCodeResponse response = authCommandService.verifyAuthCode(request);
         return ApiResponse.onSuccess(response);
     }
 }

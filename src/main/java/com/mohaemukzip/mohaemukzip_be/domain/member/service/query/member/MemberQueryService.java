@@ -9,4 +9,5 @@ public interface MemberQueryService {
     MemberResponseDTO.MyPageDTO getMyPage(Long memberId);
     List<RecipeResponseDTO.RecipePreviewDTO> getRecentlyViewedRecipes(Long memberId);
     RecipeResponseDTO.RecipePreviewListDTO getBookmarkedRecipes(Long memberId, int page);
+    MemberResponseDTO.AccountSettingDTO getAccountSetting(Long memberId);
 }

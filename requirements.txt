@@ -1,1 +1,8 @@
+
 youtube-transcript-api==1.2.4
+FlagEmbedding
+transformers
+torch
+
+fastapi
+uvicorn
