@@ -280,6 +280,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         redisTemplate.delete(REFRESH_TOKEN_PREFIX + member.getId());
 
         return new AuthResponseDTO.ResetPasswordResponse("비밀번호가 변경되었습니다.");
+    }
 
     public AuthResponseDTO.SendAuthCodeResponse sendAuthCode(AuthRequestDTO.SendAuthCodeRequest request) {
         // 이메일 중복 확인
