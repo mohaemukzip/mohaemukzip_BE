@@ -1,6 +1,6 @@
 services:
   mohaemukzip-api:
-    image: mohaemukzip/mohaemukzip-api:latest
+    image: ooat/mohaemukzip-api:latest
     expose:
       - "8080"
     restart: always
@@ -15,6 +15,8 @@ services:
       - GEMINI_RECIPE_KEY=${GEMINI_RECIPE_KEY}
       - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
       - TRANSCRIPT_PROXY_URL=${TRANSCRIPT_PROXY_URL}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
     volumes:
       - ./logs:/app/logs
   redis:
