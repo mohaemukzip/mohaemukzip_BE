@@ -20,12 +20,12 @@ public class EmailService {
     private final RedisTemplate<String, String> redisTemplate;
 
     private static final String EMAIL_AUTH_PREFIX = "EMAIL_AUTH:";
-    private static final long EMAIL_AUTH_TTL = 5;
+    private static final long EMAIL_AUTH_TTL = 3;
 
     public void sendAuthCode(String email) {
         String authCode = generateAuthCode();
 
-        // Redis에 저장 (TTL 5분)
+        // Redis에 저장 (TTL 3분)
         redisTemplate.opsForValue().set(
                 EMAIL_AUTH_PREFIX + email,
                 authCode,
@@ -37,7 +37,7 @@ public class EmailService {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject("[뭐해먹집] 이메일 인증번호");
-        message.setText("인증번호: " + authCode + "\n\n5분 안에 입력해주세요.");
+        message.setText("인증번호: " + authCode + "\n\n3분 안에 입력해주세요.");
         mailSender.send(message);
 
         log.info("인증번호 발송 완료 - email: {}", email);
