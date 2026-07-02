@@ -11,6 +11,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import java.time.Duration;
 import java.util.List;
@@ -25,6 +27,7 @@ public class GeminiService {
 
     private final WebClient geminiWebClient;
     private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
 
     @Value("${gemini.recipe.api-url}")
     private String apiUrl;
@@ -33,11 +36,14 @@ public class GeminiService {
 
     public GeminiService(
             @Qualifier("geminiRecipeWebClient") WebClient geminiWebClient,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            MeterRegistry meterRegistry) {
         this.geminiWebClient = geminiWebClient;
         this.objectMapper = objectMapper;
+        this.meterRegistry = meterRegistry;
     }
 
+    @CircuitBreaker(name = "gemini", fallbackMethod = "fallbackGenerateChatResponse")
     public String generateChatResponse(Long memberId, String systemPrompt, List<GeminiRequestDTO.Content> contents) {
         GeminiRequestDTO request = GeminiRequestDTO.builder()
                 .systemInstruction(GeminiRequestDTO.SystemInstruction.builder()
@@ -96,6 +102,8 @@ public class GeminiService {
                             int completionTokens = response.getUsageMetadata().getCandidatesTokenCount();
                             chatbotMonitorLog.info("{\"action\": \"CHATBOT_USAGE\", \"memberId\": {}, \"promptTokens\": {}, \"completionTokens\": {}, \"totalTokens\": {}, \"status\": \"SUCCESS\"}",
                                     memberId, promptTokens, completionTokens, totalTokens);
+                                    
+                            meterRegistry.counter("gemini_api_tokens_total", "model", MODEL_NAME).increment(totalTokens);
                         }
                         
                         return text;
@@ -109,5 +117,10 @@ public class GeminiService {
             return null;
         }
         return null;
+    }
+
+    public String fallbackGenerateChatResponse(Long memberId, String systemPrompt, List<GeminiRequestDTO.Content> contents, Throwable t) {
+        log.error("Gemini API 서킷 브레이커 발동! Fallback 실행 - 원인: {}", t.getMessage());
+        throw new RuntimeException("현재 AI 서비스가 지연되고 있습니다. 잠시 후 다시 시도해주세요.");
     }
 }
