@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -232,5 +233,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.onFailure(ErrorStatus.INTERNAL_SERVER_ERROR));
+    }
+
+    @ExceptionHandler(CallNotPermittedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleCircuitBreakerException(CallNotPermittedException ex) {
+        log.error("CircuitBreaker is OPEN: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.onFailure(ErrorStatus.SERVICE_UNAVAILABLE, ErrorStatus.SERVICE_UNAVAILABLE.getMessage()));
     }
 }

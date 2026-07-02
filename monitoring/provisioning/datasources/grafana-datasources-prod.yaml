@@ -7,3 +7,9 @@ datasources:
     url: http://prometheus-mohaemukzip-prod:9090
     isDefault: true
     editable: false
+
+  - name: Tempo
+    type: tempo
+    access: proxy
+    url: http://tempo-mohaemukzip-prod:3200
+    uid: tempo
