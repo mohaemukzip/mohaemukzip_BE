@@ -8,10 +8,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeRequestDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 
 import java.util.List;
 import java.util.Map;
@@ -60,5 +63,38 @@ public class AdminRecipeController {
                 "recipe_save_fail", failCount,
                 "embedding_result", embeddingResult
         ));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "레시피 저장 API (단건)", description = "관리자 전용. 특정 video_id를 가진 유튜브 영상에 관한 레시피를 저장합니다.")
+    public ApiResponse<RecipeResponseDTO.RecipeCreateResponse> createRecipe(
+            @RequestBody RecipeRequestDTO.RecipeCreateRequest request
+    ) {
+        Long recipeId = recipeCommandService.saveRecipeByVideoId(request.getVideoId());
+        return ApiResponse.onSuccess(new RecipeResponseDTO.RecipeCreateResponse(recipeId));
+    }
+
+    @PostMapping("/{recipeId}/summary")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "요약 레시피 생성 API (단건)", description = "관리자 전용. 특정 RecipeId에 속하는 레시피의 조리법을 요약해서 저장합니다.")
+    public ApiResponse<RecipeResponseDTO.SummaryCreateResponse> createSummary(
+            @PathVariable Long recipeId
+    ) {
+        var result = recipeCommandService.createSummary(recipeId);
+        return ApiResponse.onSuccess(
+                new RecipeResponseDTO.SummaryCreateResponse(result.summaryExists(), result.stepCount())
+        );
+    }
+
+    @PostMapping("/embedding")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "레시피 임베딩 배치 실행 API",
+            description = "관리자 전용. DB에서 embedding이 null인 레시피를 모두 찾아 OpenAPI 서버로 임베딩 요청을 보내고 결과를 저장합니다."
+    )
+    public ApiResponse<String> generateEmbeddings() {
+        String result = recipeEmbeddingService.generateMissingEmbeddings();
+        return ApiResponse.onSuccess(result);
     }
 }
