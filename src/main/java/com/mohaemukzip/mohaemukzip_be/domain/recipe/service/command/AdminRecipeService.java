@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.command.RecipeAdminFacade;
 
 import java.util.List;
 
@@ -12,7 +13,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminRecipeService {
 
-    private final RecipeCommandService recipeCommandService;
+    private final RecipeAdminFacade recipeAdminFacade;
     private final RecipeEmbeddingService recipeEmbeddingService;
 
     @Async
@@ -25,10 +26,10 @@ public class AdminRecipeService {
         for (String videoId : videoIds) {
             try {
                 // 1. 레시피 기본 정보 크롤링 및 저장
-                Long recipeId = recipeCommandService.saveRecipeByVideoId(dishId, videoId);
+                Long recipeId = recipeAdminFacade.saveRecipeByVideoId(dishId, videoId);
                 
                 // 2. 요약 및 스텝 생성
-                recipeCommandService.createSummary(recipeId);
+                recipeAdminFacade.createSummary(recipeId);
                 
                 successCount++;
                 log.info("[관리자] 레시피 및 요약 저장 성공 - videoId: {}", videoId);

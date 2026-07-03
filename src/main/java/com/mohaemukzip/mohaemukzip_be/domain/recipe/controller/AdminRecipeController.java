@@ -17,17 +17,16 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.command.RecipeAdminFacade;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin/recipes")
-@Tag(name = "Admin Recipe", description = "관리자 전용 레시피 API")
+@Tag(name = "Admin Recipe", description = "관리자용 레시피 API")
 public class AdminRecipeController {
 
-    private final RecipeCommandService recipeCommandService;
+    private final RecipeAdminFacade recipeAdminFacade;
     private final RecipeEmbeddingService recipeEmbeddingService;
     private final com.mohaemukzip.mohaemukzip_be.domain.recipe.service.command.AdminRecipeService adminRecipeService;
 
@@ -51,20 +50,18 @@ public class AdminRecipeController {
     public ApiResponse<RecipeResponseDTO.RecipeCreateResponse> createRecipe(
             @RequestBody RecipeRequestDTO.RecipeCreateRequest request
     ) {
-        Long recipeId = recipeCommandService.saveRecipeByVideoId(request.getDishId(), request.getVideoId());
+        Long recipeId = recipeAdminFacade.saveRecipeByVideoId(request.getDishId(), request.getVideoId());
         return ApiResponse.onSuccess(new RecipeResponseDTO.RecipeCreateResponse(recipeId));
     }
 
     @PostMapping("/{recipeId}/summary")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "요약 레시피 생성 API (단건)", description = "관리자 전용. 특정 RecipeId에 속하는 레시피의 조리법을 요약해서 저장합니다.")
-    public ApiResponse<RecipeResponseDTO.SummaryCreateResponse> createSummary(
+    @Operation(summary = "레시피 요약 생성 API", description = "관리자 전용. 특정 레시피의 유튜브 자막을 추출하고, Gemini를 이용해 요약 스텝을 생성합니다.")
+    public ApiResponse<RecipeResponseDTO.SummaryCreateResult> createSummary(
             @PathVariable Long recipeId
     ) {
-        var result = recipeCommandService.createSummary(recipeId);
-        return ApiResponse.onSuccess(
-                new RecipeResponseDTO.SummaryCreateResponse(result.summaryExists(), result.stepCount())
-        );
+        var result = recipeAdminFacade.createSummary(recipeId);
+        return ApiResponse.onSuccess(result);
     }
 
     @PostMapping("/embedding")
