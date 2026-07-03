@@ -16,8 +16,8 @@ public class AdminRecipeService {
     private final RecipeEmbeddingService recipeEmbeddingService;
 
     @Async
-    public void processBulkRecipesAsync(List<String> videoIds) {
-        log.info("[관리자] 대량 레시피 비동기 등록 시작 - 총 {}건", videoIds.size());
+    public void processBulkRecipesAsync(Long dishId, List<String> videoIds) {
+        log.info("[관리자] 대량 레시피 비동기 등록 시작 - 요리ID: {}, 총 {}건", dishId, videoIds.size());
         
         int successCount = 0;
         int failCount = 0;
@@ -25,7 +25,7 @@ public class AdminRecipeService {
         for (String videoId : videoIds) {
             try {
                 // 1. 레시피 기본 정보 크롤링 및 저장
-                Long recipeId = recipeCommandService.saveRecipeByVideoId(videoId);
+                Long recipeId = recipeCommandService.saveRecipeByVideoId(dishId, videoId);
                 
                 // 2. 요약 및 스텝 생성
                 recipeCommandService.createSummary(recipeId);

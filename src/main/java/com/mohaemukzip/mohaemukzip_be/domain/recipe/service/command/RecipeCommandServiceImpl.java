@@ -53,6 +53,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
     @Qualifier("geminiSummaryWebClient")
     private final WebClient geminiSummaryWebClient;
     private final RecipeRepository recipeRepository;
+    private final DishRepository dishRepository;
     private final CookingRecordRepository cookingRecordRepository;
     private final IngredientRepository ingredientRepository;
     private final RecipeIngredientRepository recipeIngredientRepository;
@@ -77,10 +78,16 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
      */
     @Override
     @Transactional
-    public Long saveRecipeByVideoId(String videoId) {
+    public Long saveRecipeByVideoId(Long dishId, String videoId) {
         // 중복 방지
         if (recipeRepository.existsByVideoId(videoId)) {
             throw new BusinessException(ErrorStatus.RECIPE_ALREADY_EXISTS);
+        }
+
+        Dish dish = null;
+        if (dishId != null) {
+            dish = dishRepository.findById(dishId)
+                    .orElseThrow(() -> new BusinessException(ErrorStatus.DISH_NOT_FOUND));
         }
 
         // Gemini 프롬프트용 재료 이름 조회
@@ -89,7 +96,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         // 크롤링
         RecipeCrawler.RecipeData data = recipeCrawler.crawlRecipe(videoId, ingredientNames);
 
-        Recipe recipe = saveRecipe(data);
+        Recipe recipe = saveRecipe(data, dish);
         saveRecipeIngredients(recipe, data.ingredients());
         return recipe.getId();
     }
@@ -242,8 +249,8 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         return RecipeConverter.toBookmarkToggleResult(true);
     }
 
-    private Recipe saveRecipe(RecipeCrawler.RecipeData data) {
-        Recipe recipe = recipeConverter.toEntity(data);
+    private Recipe saveRecipe(RecipeCrawler.RecipeData data, Dish dish) {
+        Recipe recipe = recipeConverter.toEntity(data, dish);
 
         try {
             return recipeRepository.save(recipe);

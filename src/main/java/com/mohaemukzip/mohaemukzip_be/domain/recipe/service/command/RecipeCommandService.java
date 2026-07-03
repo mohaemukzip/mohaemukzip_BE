@@ -4,7 +4,7 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 
 public interface RecipeCommandService {
 
-    Long saveRecipeByVideoId(String videoId);
+    Long saveRecipeByVideoId(Long dishId, String videoId);
 
     RecipeResponseDTO.SummaryCreateResult createSummary(Long recipeId);
 

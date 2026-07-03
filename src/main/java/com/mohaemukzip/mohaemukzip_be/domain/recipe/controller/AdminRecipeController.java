@@ -31,16 +31,16 @@ public class AdminRecipeController {
     private final RecipeEmbeddingService recipeEmbeddingService;
     private final com.mohaemukzip.mohaemukzip_be.domain.recipe.service.command.AdminRecipeService adminRecipeService;
 
-    public record BulkRecipeRequest(List<String> videoIds) {}
+    public record BulkRecipeRequest(Long dishId, List<String> videoIds) {}
 
     @PostMapping("/bulk")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "레시피 대량 등록 (임베딩 포함)", description = "관리자 전용. 다수의 videoId를 입력받아 레시피를 순차 저장하고 임베딩을 일괄 생성합니다.")
     public ApiResponse<String> createRecipesInBulk(@RequestBody BulkRecipeRequest request) {
-        log.info("[관리자] 대량 레시피 비동기 등록 요청 - 건수: {}", request.videoIds().size());
+        log.info("[관리자] 대량 레시피 비동기 등록 요청 - 요리ID: {}, 건수: {}", request.dishId(), request.videoIds().size());
 
         // 비동기 서비스 호출 (레시피 크롤링 -> 요약 -> 임베딩)
-        adminRecipeService.processBulkRecipesAsync(request.videoIds());
+        adminRecipeService.processBulkRecipesAsync(request.dishId(), request.videoIds());
 
         return ApiResponse.onSuccess("레시피 대량 등록 작업이 백그라운드에서 시작되었습니다.");
     }
@@ -51,7 +51,7 @@ public class AdminRecipeController {
     public ApiResponse<RecipeResponseDTO.RecipeCreateResponse> createRecipe(
             @RequestBody RecipeRequestDTO.RecipeCreateRequest request
     ) {
-        Long recipeId = recipeCommandService.saveRecipeByVideoId(request.getVideoId());
+        Long recipeId = recipeCommandService.saveRecipeByVideoId(request.getDishId(), request.getVideoId());
         return ApiResponse.onSuccess(new RecipeResponseDTO.RecipeCreateResponse(recipeId));
     }
 
