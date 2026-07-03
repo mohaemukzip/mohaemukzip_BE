@@ -35,7 +35,6 @@ public class RecipeEmbeddingService {
      *
      * @return 처리 결과 요약 문자열
      */
-    @Transactional
     public String generateMissingEmbeddings() {
         // 1. 모든 레시피 조회 후, 임베딩이 없거나 768차원이 아닌 레시피만 필터링
         List<Recipe> allRecipes = recipeRepository.findAll();

@@ -94,7 +94,6 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         return recipe.getId();
     }
 
-    @Transactional
     @Override
     public RecipeResponseDTO.SummaryCreateResult createSummary(Long recipeId) {
 
@@ -104,10 +103,12 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
             int count = recipeStepRepository
                     .findAllBySummaryIdOrderByStepNumberAsc(existing.getId())
                     .size();
-            return RecipeResponseDTO.SummaryCreateResult.builder()
-                    .summaryExists(true)
-                    .stepCount(count)
-                    .build();
+            if (count > 0) {
+                return RecipeResponseDTO.SummaryCreateResult.builder()
+                        .summaryExists(true)
+                        .stepCount(count)
+                        .build();
+            }
         }
 
         // Recipe 조회
@@ -117,8 +118,8 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
         // 3자막 추출 (RapidAPI 클라이언트 사용)
         List<TranscriptSegment> transcripts = transcriptClient.fetchTranscript(recipe.getVideoId());
 
-        // Summary 생성
-        Summary summary = createSummaryWithRaceConditionHandling(recipe);
+        // Summary 생성 (또는 기존 빈 Summary 재사용)
+        Summary summary = existing != null ? existing : createSummaryWithRaceConditionHandling(recipe);
 
         // Gemini → step draft
         List<GeminiResponseConverter.StepDraft> steps =
