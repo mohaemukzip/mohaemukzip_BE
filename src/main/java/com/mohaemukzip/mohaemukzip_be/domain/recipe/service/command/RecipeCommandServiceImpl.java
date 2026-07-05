@@ -189,7 +189,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
     public Summary tryCreateSummary(Long recipeId) {
         Recipe recipe = getRecipeForSummary(recipeId);
         try {
-            return summaryRepository.save(
+            return summaryRepository.saveAndFlush(
                     Summary.builder()
                             .recipe(recipe)
                             .build()
