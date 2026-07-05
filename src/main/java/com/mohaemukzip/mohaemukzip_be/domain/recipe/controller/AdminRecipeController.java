@@ -17,6 +17,9 @@ import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 
 import java.util.List;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.command.RecipeAdminFacade;
 
 @Slf4j
@@ -30,12 +33,15 @@ public class AdminRecipeController {
     private final RecipeEmbeddingService recipeEmbeddingService;
     private final com.mohaemukzip.mohaemukzip_be.domain.recipe.service.command.AdminRecipeService adminRecipeService;
 
-    public record BulkRecipeRequest(Long dishId, List<String> videoIds) {}
+    public record BulkRecipeRequest(
+            @NotNull(message = "dishId는 필수입니다.") Long dishId,
+            @NotEmpty(message = "비디오 ID 목록은 비어있을 수 없습니다.") List<String> videoIds
+    ) {}
 
     @PostMapping("/bulk")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "레시피 대량 등록 (임베딩 포함)", description = "관리자 전용. 다수의 videoId를 입력받아 레시피를 순차 저장하고 임베딩을 일괄 생성합니다.")
-    public ApiResponse<String> createRecipesInBulk(@RequestBody BulkRecipeRequest request) {
+    public ApiResponse<String> createRecipesInBulk(@Valid @RequestBody BulkRecipeRequest request) {
         log.info("[관리자] 대량 레시피 비동기 등록 요청 - 요리ID: {}, 건수: {}", request.dishId(), request.videoIds().size());
 
         // 비동기 서비스 호출 (레시피 크롤링 -> 요약 -> 임베딩)
@@ -48,7 +54,7 @@ public class AdminRecipeController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "레시피 저장 API (단건)", description = "관리자 전용. 특정 video_id를 가진 유튜브 영상에 관한 레시피를 저장합니다.")
     public ApiResponse<RecipeResponseDTO.RecipeCreateResponse> createRecipe(
-            @RequestBody RecipeRequestDTO.RecipeCreateRequest request
+            @Valid @RequestBody RecipeRequestDTO.RecipeCreateRequest request
     ) {
         Long recipeId = recipeAdminFacade.saveRecipeByVideoId(request.getDishId(), request.getVideoId());
         return ApiResponse.onSuccess(new RecipeResponseDTO.RecipeCreateResponse(recipeId));
