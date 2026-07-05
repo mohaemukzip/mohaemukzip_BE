@@ -77,7 +77,7 @@ public class GeminiService {
                             }))
                     .onErrorResume(e -> {
                         log.error("Gemini API 호출 최종 실패 - Fallback 전환: {}", e.getMessage());
-                        return Mono.justOrEmpty(null);
+                        return Mono.error(e);
                     })
                     .doOnNext(res -> log.info("Gemini API Raw Response 수신 성공"))
                     .block(Duration.ofSeconds(30));
@@ -114,7 +114,7 @@ public class GeminiService {
             }
         } catch (Exception e) {
             log.error("Gemini API 호출 중 예외 발생", e);
-            return null;
+            throw new RuntimeException("Gemini API Call Failed", e);
         }
         return null;
     }
