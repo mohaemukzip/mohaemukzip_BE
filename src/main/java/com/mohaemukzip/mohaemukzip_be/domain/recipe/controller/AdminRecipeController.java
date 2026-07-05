@@ -74,10 +74,10 @@ public class AdminRecipeController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = "레시피 임베딩 배치 실행 API",
-            description = "관리자 전용. DB에서 embedding이 null인 레시피를 모두 찾아 OpenAPI 서버로 임베딩 요청을 보내고 결과를 저장합니다."
+            description = "관리자 전용. DB에서 embedding이 null인 레시피를 모두 찾아 OpenAPI 서버로 임베딩 요청을 보내고 결과를 저장합니다. (비동기)"
     )
     public ApiResponse<String> generateEmbeddings() {
-        String result = recipeEmbeddingService.generateMissingEmbeddings();
-        return ApiResponse.onSuccess(result);
+        adminRecipeService.generateMissingEmbeddingsAsync();
+        return ApiResponse.onSuccess("레시피 임베딩 생성 백그라운드 작업이 시작되었습니다. 완료 시 알림이 전송됩니다.");
     }
 }

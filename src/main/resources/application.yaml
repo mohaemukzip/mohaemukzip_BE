@@ -66,3 +66,8 @@ resilience4j:
         waitDurationInOpenState: 10s
         failureRateThreshold: 50
         eventConsumerBufferSize: 10
+
+# Discord 웹훅 (알림용)
+discord:
+  webhook:
+    url: ${DISCORD_WEBHOOK_URL:}
