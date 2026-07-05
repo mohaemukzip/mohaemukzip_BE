@@ -14,8 +14,8 @@ public class YouTubeConfig {
     private String baseUrl;
 
     @Bean(name = "youtubeWebClient")
-    public WebClient youtubeWebClient() {
-        return WebClient.builder()
+    public WebClient youtubeWebClient(WebClient.Builder builder) {
+        return builder
                 .baseUrl(baseUrl)
                 .defaultHeader("Accept", "application/json")
                 .build();

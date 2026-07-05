@@ -13,6 +13,9 @@ public class RecipeRequestDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class RecipeCreateRequest {
+        @jakarta.validation.constraints.NotNull
+        private Long dishId;
+
         @NotBlank
         private String videoId;
     }

@@ -65,6 +65,20 @@ services:
       - mohaemukzip-api_spring-network
     restart: unless-stopped
 
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo-mohaemukzip-prod
+    user: root
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./monitoring/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/tmp/tempo
+    ports:
+      - "127.0.0.1:9411:9411"  # zipkin port
+    networks:
+      - mohaemukzip-api_spring-network
+    restart: unless-stopped
+
 networks:
   mohaemukzip-api_spring-network:
     external: true
@@ -72,3 +86,4 @@ networks:
 volumes:
   prometheus-data:
   grafana-data:
+  tempo-data:

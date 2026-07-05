@@ -41,7 +41,8 @@ public class SecurityConfig {
             "/actuator/health",
             "/actuator/prometheus",
             "/auth/email/send",
-            "/auth/email/verify"
+            "/auth/email/verify",
+            "/api/diagnostic/trace"
     };
 
     @Bean

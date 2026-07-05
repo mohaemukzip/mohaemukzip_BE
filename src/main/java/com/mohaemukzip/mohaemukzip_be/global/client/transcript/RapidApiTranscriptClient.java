@@ -11,7 +11,11 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import java.time.Duration;
 import java.util.List;
@@ -21,36 +25,57 @@ import java.util.List;
 public class RapidApiTranscriptClient implements TranscriptClient {
 
     private final WebClient webClient;
+    private final MeterRegistry meterRegistry;
+    private final AtomicInteger rapidApiRemaining = new AtomicInteger(0);
 
-    public RapidApiTranscriptClient(@Qualifier("rapidApiWebClient") WebClient webClient) {
+    public RapidApiTranscriptClient(@Qualifier("rapidApiWebClient") WebClient webClient, MeterRegistry meterRegistry) {
         this.webClient = webClient;
+        this.meterRegistry = meterRegistry;
+        this.meterRegistry.gauge("rapidapi_requests_remaining", rapidApiRemaining);
     }
 
     @Override
+    @CircuitBreaker(name = "rapidapi", fallbackMethod = "fallbackFetchTranscript")
     public List<TranscriptSegment> fetchTranscript(String videoId) {
         log.info("RapidAPI 자막 조회 시작 - videoId: {}", videoId);
 
-        // 책임 1+2: HTTP 호출 및 상태코드 → 예외 변환을 reactive chain 내에서 처리
-        RapidApiTranscriptResponse response = webClient.get()
+        ResponseEntity<RapidApiTranscriptResponse> responseEntity = webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/api/transcript")
                         .queryParam("videoId", videoId)
-                        .queryParam("lang", "ko") // 한국어 요청 복구
+                        .queryParam("lang", "ko")
                         .build())
                 .retrieve()
                 .onStatus(this::isAuthOrEndpointError, this::handleAuthOrEndpointError)
                 .onStatus(HttpStatusCode::isError, this::handleGenericHttpError)
-                .bodyToMono(RapidApiTranscriptResponse.class)
-                // BusinessException은 그대로 전파, 나머지는 INTERNAL_SERVER_ERROR로 변환
+                .toEntity(RapidApiTranscriptResponse.class)
                 .onErrorMap(e -> !(e instanceof BusinessException),
                         e -> {
+                            meterRegistry.counter("rapidapi_requests_total", "status", "error").increment();
                             log.error("자막 추출 중 예기치 못한 오류 - videoId: {}", videoId, e);
                             return new BusinessException(ErrorStatus.INTERNAL_SERVER_ERROR);
                         })
-                .block(Duration.ofSeconds(12)); // HttpClient responseTimeout보다 약간 크게 설정하여 경합 조건 방지
+                .block(Duration.ofSeconds(12));
 
-        // 책임 3: 응답 데이터 검증
-        return validateTranscript(response, videoId);
+        meterRegistry.counter("rapidapi_requests_total", "status", "success").increment();
+
+        if (responseEntity != null && responseEntity.getHeaders().containsKey("X-RateLimit-Requests-Remaining")) {
+            try {
+                String remainingStr = responseEntity.getHeaders().getFirst("X-RateLimit-Requests-Remaining");
+                if (remainingStr != null) {
+                    rapidApiRemaining.set(Integer.parseInt(remainingStr));
+                }
+            } catch (NumberFormatException e) {
+                log.warn("Failed to parse X-RateLimit-Requests-Remaining header", e);
+            }
+        }
+
+        return validateTranscript(responseEntity != null ? responseEntity.getBody() : null, videoId);
+    }
+
+    public List<TranscriptSegment> fallbackFetchTranscript(String videoId, Throwable t) {
+        log.error("RapidAPI 서킷 브레이커 발동! Fallback 실행 - videoId: {}, 원인: {}", videoId, t.getMessage());
+        throw new RuntimeException("현재 AI 자막 추출 서비스가 지연되고 있습니다. 잠시 후 다시 시도해주세요.");
     }
 
     // HTTP 상태코드 분류 (책임 2 보조)

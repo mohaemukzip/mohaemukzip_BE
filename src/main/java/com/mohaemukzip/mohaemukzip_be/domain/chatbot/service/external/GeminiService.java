@@ -11,6 +11,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import java.time.Duration;
 import java.util.List;
@@ -25,6 +27,7 @@ public class GeminiService {
 
     private final WebClient geminiWebClient;
     private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
 
     @Value("${gemini.recipe.api-url}")
     private String apiUrl;
@@ -33,11 +36,14 @@ public class GeminiService {
 
     public GeminiService(
             @Qualifier("geminiRecipeWebClient") WebClient geminiWebClient,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            MeterRegistry meterRegistry) {
         this.geminiWebClient = geminiWebClient;
         this.objectMapper = objectMapper;
+        this.meterRegistry = meterRegistry;
     }
 
+    @CircuitBreaker(name = "gemini", fallbackMethod = "fallbackGenerateChatResponse")
     public String generateChatResponse(Long memberId, String systemPrompt, List<GeminiRequestDTO.Content> contents) {
         GeminiRequestDTO request = GeminiRequestDTO.builder()
                 .systemInstruction(GeminiRequestDTO.SystemInstruction.builder()
@@ -71,7 +77,7 @@ public class GeminiService {
                             }))
                     .onErrorResume(e -> {
                         log.error("Gemini API 호출 최종 실패 - Fallback 전환: {}", e.getMessage());
-                        return Mono.justOrEmpty(null);
+                        return Mono.error(e);
                     })
                     .doOnNext(res -> log.info("Gemini API Raw Response 수신 성공"))
                     .block(Duration.ofSeconds(30));
@@ -96,6 +102,8 @@ public class GeminiService {
                             int completionTokens = response.getUsageMetadata().getCandidatesTokenCount();
                             chatbotMonitorLog.info("{\"action\": \"CHATBOT_USAGE\", \"memberId\": {}, \"promptTokens\": {}, \"completionTokens\": {}, \"totalTokens\": {}, \"status\": \"SUCCESS\"}",
                                     memberId, promptTokens, completionTokens, totalTokens);
+                                    
+                            meterRegistry.counter("gemini_api_tokens_total", "model", MODEL_NAME).increment(totalTokens);
                         }
                         
                         return text;
@@ -106,8 +114,15 @@ public class GeminiService {
             }
         } catch (Exception e) {
             log.error("Gemini API 호출 중 예외 발생", e);
-            return null;
+            throw new RuntimeException("Gemini API Call Failed", e);
         }
         return null;
+    }
+
+    public String fallbackGenerateChatResponse(Long memberId, String systemPrompt, List<GeminiRequestDTO.Content> contents, Throwable t) {
+        log.error("Gemini API 서킷 브레이커 발동! Fallback 실행 - 원인: {}", t.getMessage());
+        throw new com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException(
+                com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus.SERVICE_UNAVAILABLE
+        );
     }
 }
