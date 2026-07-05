@@ -33,21 +33,21 @@ public class GeminiConfig {
     private int responseTimeout;
 
     @Bean(name = "geminiRecipeWebClient")
-    public WebClient geminiRecipeWebClient() {
-        return createWebClient(recipeApiUrl, recipeApiKey);
+    public WebClient geminiRecipeWebClient(WebClient.Builder builder) {
+        return createWebClient(builder, recipeApiUrl, recipeApiKey);
     }
 
     @Bean(name = "geminiSummaryWebClient")
-    public WebClient geminiSummaryWebClient() {
-        return createWebClient(summaryApiUrl, summaryApiKey);
+    public WebClient geminiSummaryWebClient(WebClient.Builder builder) {
+        return createWebClient(builder, summaryApiUrl, summaryApiKey);
     }
 
-    private WebClient createWebClient(String baseUrl, String apiKey) {
+    private WebClient createWebClient(WebClient.Builder builder, String baseUrl, String apiKey) {
         HttpClient httpClient = HttpClient.create()
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout * 1000)
                 .responseTimeout(Duration.ofSeconds(responseTimeout));
 
-        return WebClient.builder()
+        return builder
                 .baseUrl(baseUrl)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)

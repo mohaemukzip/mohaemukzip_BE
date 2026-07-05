@@ -56,7 +56,7 @@ public class RecipeConverter {
                 .build();
     }
 
-    public Recipe toEntity(RecipeCrawler.RecipeData data) {
+    public Recipe toEntity(RecipeCrawler.RecipeData data, com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Dish dish) {
         Category category = convertCategory(data.category());
 
         return Recipe.builder()
@@ -73,6 +73,7 @@ public class RecipeConverter {
                 .channelProfileImageUrl(data.channelProfileImageUrl())
                 .videoId(data.videoId())
                 .videoUrl(data.videoUrl())
+                .dish(dish)
                 .build();
     }
 

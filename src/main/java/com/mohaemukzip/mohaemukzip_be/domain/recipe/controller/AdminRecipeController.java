@@ -8,57 +8,76 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeRequestDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.dto.RecipeResponseDTO;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.command.RecipeAdminFacade;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin/recipes")
-@Tag(name = "Admin Recipe", description = "관리자 전용 레시피 API")
+@Tag(name = "Admin Recipe", description = "관리자용 레시피 API")
 public class AdminRecipeController {
 
-    private final RecipeCommandService recipeCommandService;
+    private final RecipeAdminFacade recipeAdminFacade;
     private final RecipeEmbeddingService recipeEmbeddingService;
+    private final com.mohaemukzip.mohaemukzip_be.domain.recipe.service.command.AdminRecipeService adminRecipeService;
 
-    public record BulkRecipeRequest(List<String> videoIds) {}
+    public record BulkRecipeRequest(
+            @NotNull(message = "dishId는 필수입니다.") Long dishId,
+            @NotEmpty(message = "비디오 ID 목록은 비어있을 수 없습니다.") List<String> videoIds
+    ) {}
 
     @PostMapping("/bulk")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "레시피 대량 등록 (임베딩 포함)", description = "관리자 전용. 다수의 videoId를 입력받아 레시피를 순차 저장하고 임베딩을 일괄 생성합니다.")
-    public ApiResponse<Map<String, Object>> createRecipesInBulk(@RequestBody BulkRecipeRequest request) {
-        log.info("[관리자] 대량 레시피 등록 시작 - 요청 건수: {}", request.videoIds().size());
+    public ApiResponse<String> createRecipesInBulk(@Valid @RequestBody BulkRecipeRequest request) {
+        log.info("[관리자] 대량 레시피 비동기 등록 요청 - 요리ID: {}, 건수: {}", request.dishId(), request.videoIds().size());
 
-        int successCount = 0;
-        int failCount = 0;
+        // 비동기 서비스 호출 (레시피 크롤링 -> 요약 -> 임베딩)
+        adminRecipeService.processBulkRecipesAsync(request.dishId(), request.videoIds());
 
-        // 1. 순차적으로 레시피 크롤링 및 기본 정보 저장
-        for (String videoId : request.videoIds()) {
-            try {
-                recipeCommandService.saveRecipeByVideoId(videoId);
-                successCount++;
-                log.info("[관리자] 레시피 저장 성공 - videoId: {}", videoId);
-            } catch (Exception e) {
-                failCount++;
-                log.error("[관리자] 레시피 저장 실패 - videoId: {}, 사유: {}", videoId, e.getMessage());
-            }
-        }
+        return ApiResponse.onSuccess("레시피 대량 등록 작업이 백그라운드에서 시작되었습니다.");
+    }
 
-        // 2. 저장된 레시피 중 임베딩이 없는 레시피 일괄 임베딩 처리
-        log.info("[관리자] 일괄 임베딩 생성 시작");
-        String embeddingResult = recipeEmbeddingService.generateMissingEmbeddings();
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "레시피 저장 API (단건)", description = "관리자 전용. 특정 video_id를 가진 유튜브 영상에 관한 레시피를 저장합니다.")
+    public ApiResponse<RecipeResponseDTO.RecipeCreateResponse> createRecipe(
+            @Valid @RequestBody RecipeRequestDTO.RecipeCreateRequest request
+    ) {
+        Long recipeId = recipeAdminFacade.saveRecipeByVideoId(request.getDishId(), request.getVideoId());
+        return ApiResponse.onSuccess(new RecipeResponseDTO.RecipeCreateResponse(recipeId));
+    }
 
-        return ApiResponse.onSuccess(Map.of(
-                "message", "대량 등록 작업 완료",
-                "recipe_save_success", successCount,
-                "recipe_save_fail", failCount,
-                "embedding_result", embeddingResult
-        ));
+    @PostMapping("/{recipeId}/summary")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "레시피 요약 생성 API", description = "관리자 전용. 특정 레시피의 유튜브 자막을 추출하고, Gemini를 이용해 요약 스텝을 생성합니다.")
+    public ApiResponse<RecipeResponseDTO.SummaryCreateResult> createSummary(
+            @PathVariable Long recipeId
+    ) {
+        var result = recipeAdminFacade.createSummary(recipeId);
+        return ApiResponse.onSuccess(result);
+    }
+
+    @PostMapping("/embedding")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "레시피 임베딩 배치 실행 API",
+            description = "관리자 전용. DB에서 embedding이 null인 레시피를 모두 찾아 OpenAPI 서버로 임베딩 요청을 보내고 결과를 저장합니다. (비동기)"
+    )
+    public ApiResponse<String> generateEmbeddings() {
+        adminRecipeService.generateMissingEmbeddingsAsync();
+        return ApiResponse.onSuccess("레시피 임베딩 생성 백그라운드 작업이 시작되었습니다. 완료 시 알림이 전송됩니다.");
     }
 }

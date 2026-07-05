@@ -56,6 +56,19 @@ services:
       - REDIS_ADDR=redis://host.docker.internal:6379
     restart: unless-stopped
 
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo-mohaemukzip-dev
+    user: root
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./monitoring/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data-dev:/tmp/tempo
+    ports:
+      - "9411:9411"  # zipkin port
+    restart: unless-stopped
+
 volumes:
   prometheus-data-dev:
   grafana-data-dev:
+  tempo-data-dev:

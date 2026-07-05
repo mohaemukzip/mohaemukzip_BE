@@ -4,7 +4,9 @@ global:
 scrape_configs:
   - job_name: 'mohaemukzip-api'
     static_configs:
-      - targets: ['mohaemukzip-api:8080']
+      - targets: ['mohaemukzip-api:9091']
+        labels:
+          application: 'mohaemukzip_BE'
     metrics_path: '/actuator/prometheus'
 
   - job_name: 'node-exporter'
