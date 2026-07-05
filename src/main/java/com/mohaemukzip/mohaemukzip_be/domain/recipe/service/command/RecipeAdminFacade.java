@@ -125,6 +125,8 @@ public class RecipeAdminFacade {
                     .timeout(GEMINI_API_TIMEOUT)
                     .block();
 
+        } catch (BusinessException e) {
+            throw e; // 의도적으로 발생시킨 도메인 예외는 그대로 패스
         } catch (WebClientException e) {
             log.error("Gemini API 호출 실패 - WebClient 예외", e);
             throw new BusinessException(ErrorStatus.EXTERNAL_API_ERROR);
