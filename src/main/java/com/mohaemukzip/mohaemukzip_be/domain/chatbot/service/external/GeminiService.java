@@ -121,6 +121,8 @@ public class GeminiService {
 
     public String fallbackGenerateChatResponse(Long memberId, String systemPrompt, List<GeminiRequestDTO.Content> contents, Throwable t) {
         log.error("Gemini API 서킷 브레이커 발동! Fallback 실행 - 원인: {}", t.getMessage());
-        throw new RuntimeException("현재 AI 서비스가 지연되고 있습니다. 잠시 후 다시 시도해주세요.");
+        throw new com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException(
+                com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus.SERVICE_UNAVAILABLE
+        );
     }
 }
