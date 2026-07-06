@@ -2,6 +2,7 @@ package com.mohaemukzip.mohaemukzip_be.domain.member.controller;
 
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.AuthResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.AuthRequestDTO;
+import com.mohaemukzip.mohaemukzip_be.domain.member.dto.TermRequestDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.dto.TermResponseDTO;
 import com.mohaemukzip.mohaemukzip_be.domain.member.service.command.auth.AuthCommandService;
 import com.mohaemukzip.mohaemukzip_be.domain.member.service.query.auth.AuthQueryService;
@@ -19,6 +20,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -100,25 +103,25 @@ public class AuthController {
         return ApiResponse.onSuccess(response);
     }
 
-//    @Operation(summary = "소셜로그인 후 약관 동의",
-//            description = "[\n" +
-//                    " { \"termId\": 1, \"isAgreed\": true },\n" +
-//                    " { \"termId\": 2, \"isAgreed\": true },\n" +
-//                    " { \"termId\": 3, \"isAgreed\": true },\n" +
-//                    " { \"termId\": 4, \"isAgreed\": false }\n" +
-//                    " ]")
-//
-//    @PostMapping("/terms/agree")
-//    public ApiResponse<Void> agreeTermsAfterSocialLogin(
-//            @AuthenticationPrincipal CustomUserDetails userDetails,
-//            @Valid @RequestBody List<TermRequestDTO.TermAgreementRequest> terms) {
-//        if (userDetails == null) {
-//            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
-//        }
-//        Long memberId = userDetails.getMember().getId();
-//        termCommandService.updateMemberTerms(memberId, terms);
-//        return ApiResponse.onSuccess(null);
-//    }
+    @Operation(summary = "소셜로그인 후 약관 동의",
+            description = "[\n" +
+                    " { \"termId\": 1, \"isAgreed\": true },\n" +
+                    " { \"termId\": 2, \"isAgreed\": true },\n" +
+                    " { \"termId\": 3, \"isAgreed\": true },\n" +
+                    " { \"termId\": 4, \"isAgreed\": false }\n" +
+                    " ]")
+
+    @PostMapping("/terms/agree")
+    public ApiResponse<Void> agreeTermsAfterSocialLogin(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody List<TermRequestDTO.TermAgreementRequest> terms) {
+        if (userDetails == null) {
+            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
+        }
+        Long memberId = userDetails.getMember().getId();
+        termCommandService.updateMemberTerms(memberId, terms);
+        return ApiResponse.onSuccess(null);
+    }
 
     @Operation(summary = "로그아웃")
     @PostMapping("/logout")

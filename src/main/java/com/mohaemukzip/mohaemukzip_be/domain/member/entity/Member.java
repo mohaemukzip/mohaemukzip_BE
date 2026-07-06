@@ -72,6 +72,10 @@ public class Member extends BaseEntity {
     @Builder.Default
     private Integer fridgeScore = 100;
 
+    @Column(name = "terms_agreed", nullable = false)
+    @Builder.Default
+    private Boolean termsAgreed = false;
+
     public void deactivate() {
         if (this.inactiveDate == null) {
             this.inactiveDate = LocalDate.now();
@@ -108,5 +112,9 @@ public class Member extends BaseEntity {
 
     public void updatePassword(String password) {
         this.password = password;
+    }
+
+    public void agreeToTerms() {
+        this.termsAgreed = true;
     }
 }

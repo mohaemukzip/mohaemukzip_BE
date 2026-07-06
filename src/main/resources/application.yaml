@@ -8,6 +8,7 @@ spring:
         hibernate:
             format_sql: true # SQL 로그 포맷팅
 
+
   profiles:
     active: dev
     # include: openai  <-- 제거 (통합하므로 불필요)
