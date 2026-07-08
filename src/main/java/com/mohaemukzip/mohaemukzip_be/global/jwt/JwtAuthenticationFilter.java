@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.util.AntPathMatcher;
 
 import java.io.IOException;
 import java.util.Set;
@@ -22,9 +23,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final TokenBlacklistChecker tokenBlacklistChecker;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
+    private static final AntPathMatcher pathMatcher = new AntPathMatcher();
+
     private static final Set<String> TERMS_WHITELIST = Set.of(
-            "/auth/terms/agree",
-            "/auth/terms",
+            "/auth/terms/**",
             "/auth/logout",
             "/auth/withdrawal"
     );
@@ -63,8 +65,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         }
 
                         // 약관동의 미완료 회원 - 화이트리스트 경로 아니면 차단
-                        if (!Boolean.TRUE.equals(userDetails.getMember().getTermsAgreed())
-                                && !TERMS_WHITELIST.contains(request.getRequestURI())) {
+                        boolean isWhitelisted = TERMS_WHITELIST.stream()
+                                .anyMatch(pattern -> pathMatcher.match(pattern, request.getRequestURI()));
+
+                        if (!Boolean.TRUE.equals(userDetails.getMember().getTermsAgreed()) && !isWhitelisted) {
                             jwtAccessDeniedHandler.handle(request, response,
                                     new TermsAgreementRequiredException("약관 동의가 필요합니다."));
                             return;
