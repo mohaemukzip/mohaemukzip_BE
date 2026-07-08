@@ -68,10 +68,10 @@ public class SecurityConfig {
                 .requestMatchers( PUBLIC_ENDPOINTS).permitAll()
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(
-                new JwtAuthenticationFilter(jwtProvider, tokenBlacklistChecker),
-                UsernamePasswordAuthenticationFilter.class
-            );
+                .addFilterBefore(
+                        new JwtAuthenticationFilter(jwtProvider, tokenBlacklistChecker, jwtAccessDeniedHandler),
+                        UsernamePasswordAuthenticationFilter.class
+                );
 
         return http.build();
     }

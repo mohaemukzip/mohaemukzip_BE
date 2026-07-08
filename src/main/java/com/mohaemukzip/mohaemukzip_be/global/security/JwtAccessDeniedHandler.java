@@ -32,7 +32,11 @@ public class JwtAccessDeniedHandler implements AccessDeniedHandler {
         response.setCharacterEncoding("UTF-8");
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 
-        ApiResponse<Object> apiResponse = ApiResponse.onFailure(ErrorStatus.FORBIDDEN);
+        ErrorStatus errorStatus = (accessDeniedException instanceof TermsAgreementRequiredException)
+                ? ErrorStatus.TERMS_AGREEMENT_REQUIRED
+                : ErrorStatus.FORBIDDEN;
+
+        ApiResponse<Object> apiResponse = ApiResponse.onFailure(errorStatus);
         objectMapper.writeValue(response.getWriter(), apiResponse);
     }
 }

@@ -65,6 +65,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
                 .build();
         Member savedMember = memberRepository.save(member);
         termCommandService.createMemberTerms(savedMember, request.termAgreements());
+        savedMember.agreeToTerms();
 
         return generateAndSaveTokens(member, true);
     }
