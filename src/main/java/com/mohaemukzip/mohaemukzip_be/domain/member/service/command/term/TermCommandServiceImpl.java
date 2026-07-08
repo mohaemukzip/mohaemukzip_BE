@@ -66,6 +66,7 @@ public class TermCommandServiceImpl implements TermCommandService {
         memberTermRepository.deleteAllByMember(member);
         // createMemberTerms 재사용 (termName, agreedAt 완벽)
         createMemberTerms(member, terms);
+        member.agreeToTerms();
     }
 
     /**

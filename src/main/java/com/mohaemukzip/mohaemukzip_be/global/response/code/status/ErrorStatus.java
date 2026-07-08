@@ -46,6 +46,7 @@ public enum ErrorStatus implements BaseCode {
     TERM_NOT_FOUND(HttpStatus.NOT_FOUND, "T001", "약관을 찾을 수 없습니다."),
     REQUIRED_TERM_NOT_AGREED(HttpStatus.BAD_REQUEST, "T002", "필수 약관에 동의하지 않았습니다."),
     DUPLICATE_TERM_ID(HttpStatus.BAD_REQUEST, "T003", "중복된 약관 ID입니다."),
+    TERMS_AGREEMENT_REQUIRED(HttpStatus.FORBIDDEN, "T004", "약관 동의가 필요합니다."),
     
     //재료 관련 에러
     INGREDIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "INGREDIENT4001", "해당 재료를 찾을 수 없습니다."),

@@ -1,6 +1,8 @@
 package com.mohaemukzip.mohaemukzip_be.global.jwt;
 
 import com.mohaemukzip.mohaemukzip_be.global.security.CustomUserDetails;
+import com.mohaemukzip.mohaemukzip_be.global.security.JwtAccessDeniedHandler;
+import com.mohaemukzip.mohaemukzip_be.global.security.TermsAgreementRequiredException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,13 +12,24 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.util.AntPathMatcher;
 
 import java.io.IOException;
+import java.util.Set;
 
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtProvider jwtProvider;
     private final TokenBlacklistChecker tokenBlacklistChecker;
+    private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
+
+    private static final AntPathMatcher pathMatcher = new AntPathMatcher();
+
+    private static final Set<String> TERMS_WHITELIST = Set.of(
+            "/auth/terms/**",
+            "/auth/logout",
+            "/auth/withdrawal"
+    );
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -48,6 +61,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         if (userDetails.getMember().isInactive()) {
                             SecurityContextHolder.clearContext();
                             filterChain.doFilter(request, response);
+                            return;
+                        }
+
+                        // 약관동의 미완료 회원 - 화이트리스트 경로 아니면 차단
+                        boolean isWhitelisted = TERMS_WHITELIST.stream()
+                                .anyMatch(pattern -> pathMatcher.match(pattern, request.getRequestURI()));
+
+                        if (!Boolean.TRUE.equals(userDetails.getMember().getTermsAgreed()) && !isWhitelisted) {
+                            jwtAccessDeniedHandler.handle(request, response,
+                                    new TermsAgreementRequiredException("약관 동의가 필요합니다."));
                             return;
                         }
                     }
