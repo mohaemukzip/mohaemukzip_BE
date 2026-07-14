@@ -15,16 +15,18 @@ public class AuthResponseDTO {
             String refreshToken,
             boolean isNewUser,
             boolean isInactive,
-            LoginType loginType
+            LoginType loginType,
+            boolean termsAgreed
     ) {
-        public static GetUserDTO of(Member member, String accessToken, String refreshToken , boolean isNewUser) {
+        public static GetUserDTO of(Member member, String accessToken, String refreshToken, boolean isNewUser) {
             return new GetUserDTO(
                     member.getId(),
                     accessToken,
                     refreshToken,
                     isNewUser,
                     member.isInactive(),
-                    member.getLoginType()
+                    member.getLoginType(),
+                    member.getTermsAgreed()
             );
         }
     }
