@@ -107,7 +107,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         }
 
         if (member.isInactive()) {
-            throw new BusinessException(ErrorStatus.ALREADY_WITHDRAWN_MEMBER);
+            member.reactivate();
         }
 
         return generateAndSaveTokens(member, isNewMember.get());
@@ -133,7 +133,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         }
 
         if (member.isInactive()) {
-            throw new BusinessException(ErrorStatus.ALREADY_WITHDRAWN_MEMBER);
+            member.reactivate();
         }
 
         return generateAndSaveTokens(member, isNewMember.get());
