@@ -123,6 +123,18 @@ public class AuthController {
         return ApiResponse.onSuccess(null);
     }
 
+    @Operation(summary = "약관동의 여부 조회", description = "로그인한 회원의 약관동의 완료 여부를 반환합니다.")
+    @GetMapping("/terms/status")
+    public ApiResponse<AuthResponseDTO.TermsAgreementStatusDTO> getTermsAgreementStatus(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        if (userDetails == null) {
+            throw new BusinessException(ErrorStatus.TOKEN_MISSING);
+        }
+        boolean termsAgreed = userDetails.getMember().getTermsAgreed();
+        return ApiResponse.onSuccess(new AuthResponseDTO.TermsAgreementStatusDTO(termsAgreed));
+    }
+
     @Operation(summary = "로그아웃")
     @PostMapping("/logout")
     public ApiResponse<AuthResponseDTO.LogoutResponse> logout(
