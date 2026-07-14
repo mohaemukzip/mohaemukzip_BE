@@ -67,6 +67,10 @@ public class AuthResponseDTO {
             String message
     ) {}
 
+    public record TermsAgreementStatusDTO(
+            boolean termsAgreed
+    ) {}
+
     @Getter
     @NoArgsConstructor
     public static class GetKakaoUserInfoDTO {
