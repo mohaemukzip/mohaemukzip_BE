@@ -107,11 +107,4 @@ public class AuthRequestDTO {
             @Pattern(regexp = "^\\d{6}$", message = "인증번호는 6자리 숫자입니다.")
             String authCode
     ) {}
-
-    public record SendResetPasswordAuthCodeRequest(
-            @Schema(description = "이메일", example = "test@naver.com")
-            @NotBlank(message = "이메일을 입력해주세요.")
-            @Email(message = "이메일 형식이 아닙니다.")
-            String email
-    ) {}
 }
