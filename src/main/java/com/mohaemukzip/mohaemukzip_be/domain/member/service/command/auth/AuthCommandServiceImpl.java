@@ -294,6 +294,17 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         return new AuthResponseDTO.SendAuthCodeResponse("인증번호가 발송되었습니다.");
     }
 
+
+    @Transactional(readOnly = true)
+    public AuthResponseDTO.SendAuthCodeResponse sendResetPasswordAuthCode(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
+
+        emailService.sendAuthCode(member.getEmail());
+
+        return new AuthResponseDTO.SendAuthCodeResponse("인증번호가 발송되었습니다.");
+    }
+
     public AuthResponseDTO.VerifyAuthCodeResponse verifyAuthCode(AuthRequestDTO.VerifyAuthCodeRequest request) {
         boolean verified = emailService.verifyAuthCode(request.email(), request.authCode());
 
@@ -335,5 +346,15 @@ public class AuthCommandServiceImpl implements AuthCommandService {
             log.error("Kakao API Unexpected Error", e);
             throw new BusinessException(ErrorStatus.KAKAO_API_ERROR);
         }
+    }
+
+    public AuthResponseDTO.SendAuthCodeResponse sendResetPasswordAuthCode(AuthRequestDTO.SendResetPasswordAuthCodeRequest request) {
+        if (!memberRepository.existsByEmail(request.email())) {
+            throw new BusinessException(ErrorStatus.MEMBER_NOT_FOUND_BY_EMAIL);
+        }
+
+        emailService.sendAuthCode(request.email());
+
+        return new AuthResponseDTO.SendAuthCodeResponse("인증번호가 발송되었습니다.");
     }
 }
