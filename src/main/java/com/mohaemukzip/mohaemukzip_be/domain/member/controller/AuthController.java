@@ -174,15 +174,16 @@ public class AuthController {
         return ApiResponse.onSuccess(response);
     }
 
-    @Operation(summary = "비밀번호 변경 - 이메일 인증번호 발송 (로그인 상태)")
+    @Operation(summary = "비밀번호 변경 - 이메일 인증번호 발송")
     @PostMapping("/email/send/reset-password")
     public ApiResponse<AuthResponseDTO.SendAuthCodeResponse> sendResetPasswordAuthCode(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody AuthRequestDTO.SendResetPasswordAuthCodeRequest request) {
         if (userDetails == null) {
             throw new BusinessException(ErrorStatus.TOKEN_MISSING);
         }
-        Long memberId = userDetails.getMember().getId();
-        AuthResponseDTO.SendAuthCodeResponse response = authCommandService.sendResetPasswordAuthCode(memberId);
+
+        AuthResponseDTO.SendAuthCodeResponse response = authCommandService.sendResetPasswordAuthCode(request);
         return ApiResponse.onSuccess(response);
     }
 
