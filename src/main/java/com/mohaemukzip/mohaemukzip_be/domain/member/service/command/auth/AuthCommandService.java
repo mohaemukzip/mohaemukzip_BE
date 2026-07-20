@@ -14,4 +14,5 @@ public interface AuthCommandService {
     AuthResponseDTO.ResetPasswordResponse resetPassword(AuthRequestDTO.ResetPasswordRequest request);
     AuthResponseDTO.SendAuthCodeResponse sendAuthCode(AuthRequestDTO.SendAuthCodeRequest request);
     AuthResponseDTO.VerifyAuthCodeResponse verifyAuthCode(AuthRequestDTO.VerifyAuthCodeRequest request);
+    AuthResponseDTO.SendAuthCodeResponse sendResetPasswordAuthCode(Long memberId);
 }
