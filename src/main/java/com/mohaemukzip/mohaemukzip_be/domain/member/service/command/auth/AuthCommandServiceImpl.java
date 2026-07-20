@@ -295,6 +295,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     }
 
 
+    @Transactional(readOnly = true)
     public AuthResponseDTO.SendAuthCodeResponse sendResetPasswordAuthCode(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
