@@ -347,4 +347,14 @@ public class AuthCommandServiceImpl implements AuthCommandService {
             throw new BusinessException(ErrorStatus.KAKAO_API_ERROR);
         }
     }
+
+    public AuthResponseDTO.SendAuthCodeResponse sendResetPasswordAuthCode(AuthRequestDTO.SendResetPasswordAuthCodeRequest request) {
+        if (!memberRepository.existsByEmail(request.email())) {
+            throw new BusinessException(ErrorStatus.MEMBER_NOT_FOUND_BY_EMAIL);
+        }
+
+        emailService.sendAuthCode(request.email());
+
+        return new AuthResponseDTO.SendAuthCodeResponse("인증번호가 발송되었습니다.");
+    }
 }
