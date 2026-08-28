@@ -34,7 +34,7 @@ cloud:
     region:
       static: ap-northeast-2
     s3:
-        bucket: mohaemukzip-s3
+        bucket: ${AWS_S3_BUCKET}
 
 # Gemini API 설정 통합
 gemini:
