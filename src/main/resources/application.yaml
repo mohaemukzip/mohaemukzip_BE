@@ -67,6 +67,12 @@ resilience4j:
         waitDurationInOpenState: 10s
         failureRateThreshold: 50
         eventConsumerBufferSize: 10
+    instances:
+      rapidapi:
+        baseConfig: default
+        # 영상에 자막이 없는 것은 정상적인 비즈니스 결과이므로 서킷 브레이커 실패로 집계하지 않는다.
+        ignoreExceptions:
+          - com.mohaemukzip.mohaemukzip_be.global.client.transcript.TranscriptNotFoundException
 
 # Discord 웹훅 (알림용)
 discord:
