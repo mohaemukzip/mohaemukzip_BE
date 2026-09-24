@@ -103,8 +103,8 @@ public class RapidApiTranscriptClient implements TranscriptClient {
     private List<TranscriptSegment> validateTranscript(RapidApiTranscriptResponse response, String videoId) {
         if (response == null || !response.success()
                 || response.transcript() == null || response.transcript().isEmpty()) {
-            log.warn("자막 데이터 없음 또는 API 응답 실패 - videoId: {}", videoId);
-            throw new BusinessException(ErrorStatus.TRANSCRIPT_NOT_AVAILABLE);
+            log.warn("자막 데이터 없음 - videoId: {}", videoId);
+            throw new TranscriptNotFoundException();
         }
         return response.transcript();
     }
