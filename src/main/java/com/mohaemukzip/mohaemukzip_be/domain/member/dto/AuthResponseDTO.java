@@ -66,8 +66,8 @@ public class AuthResponseDTO {
 
     public record VerifyAuthCodeResponse(
             boolean verified,
-            String message
-    ) {}
+            String message,
+            String resetToken) {}
 
     public record TermsAgreementStatusDTO(
             boolean termsAgreed
