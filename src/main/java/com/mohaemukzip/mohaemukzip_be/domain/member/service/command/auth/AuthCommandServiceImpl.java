@@ -31,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import java.util.UUID;
 
 
 import java.time.Duration;
@@ -61,6 +62,8 @@ public class AuthCommandServiceImpl implements AuthCommandService {
 
     private static final String KAKAO_USER_INFO_URI = "https://kapi.kakao.com/v2/user/me";
     private static final String REFRESH_TOKEN_PREFIX = "RT:";
+    private static final String PASSWORD_RESET_VERIFIED_PREFIX = "password-reset:verified:";
+    private static final Duration PASSWORD_RESET_TOKEN_TTL = Duration.ofMinutes(10);
 
     @Transactional
     public AuthResponseDTO.GetUserDTO signup(AuthRequestDTO.SignUpRequest request) {
@@ -302,12 +305,20 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     // 비밀번호 변경
     @Transactional
     public AuthResponseDTO.ResetPasswordResponse resetPassword(AuthRequestDTO.ResetPasswordRequest request) {
+        String verifiedKey = PASSWORD_RESET_VERIFIED_PREFIX + request.email();
+        String savedToken = redisTemplate.opsForValue().get(verifiedKey);
+
+        if (savedToken == null || !savedToken.equals(request.resetToken())) {
+            throw new BusinessException(ErrorStatus.PASSWORD_RESET_NOT_VERIFIED);
+        }
+
         Member member = memberRepository.findByEmail(request.email())
                 .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
 
         member.updatePassword(passwordEncoder.encode(request.newPassword()));
 
         redisTemplate.delete(REFRESH_TOKEN_PREFIX + member.getId());
+        redisTemplate.delete(verifiedKey); // 1회용 — 재사용 방지
 
         return new AuthResponseDTO.ResetPasswordResponse("비밀번호가 변경되었습니다.");
     }
@@ -338,10 +349,17 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         boolean verified = emailService.verifyAuthCode(request.email(), request.authCode());
 
         if (!verified) {
-            return new AuthResponseDTO.VerifyAuthCodeResponse(false, "인증번호가 일치하지 않거나 만료되었습니다.");
+            return new AuthResponseDTO.VerifyAuthCodeResponse(false, "인증번호가 일치하지 않거나 만료되었습니다.", null);
         }
 
-        return new AuthResponseDTO.VerifyAuthCodeResponse(true, "인증이 완료되었습니다.");
+        String resetToken = UUID.randomUUID().toString();
+        redisTemplate.opsForValue().set(
+                PASSWORD_RESET_VERIFIED_PREFIX + request.email(),
+                resetToken,
+                PASSWORD_RESET_TOKEN_TTL
+        );
+
+        return new AuthResponseDTO.VerifyAuthCodeResponse(true, "인증이 완료되었습니다.", resetToken);
     }
 
     private AuthResponseDTO.GetKakaoUserInfoDTO getKakaoUserInfo(String accessToken) {

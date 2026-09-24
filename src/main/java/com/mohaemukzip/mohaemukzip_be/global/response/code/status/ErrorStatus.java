@@ -32,6 +32,7 @@ public enum ErrorStatus implements BaseCode {
     TOKEN_PARSING_ERROR(HttpStatus.UNAUTHORIZED, "AUTH4012", "토큰 파싱 중 오류가 발생했습니다."),
     MEMBER_NOT_FOUND_BY_EMAIL(HttpStatus.BAD_REQUEST, "AUTH4017", "가입된 계정을 찾을 수 없습니다."),
     KAKAO_ACCOUNT_EXISTS(HttpStatus.BAD_REQUEST, "AUTH4018", "카카오로 가입되어 있는 계정입니다."),
+    PASSWORD_RESET_NOT_VERIFIED(HttpStatus.UNAUTHORIZED, "AUTH4019", "이메일 인증이 완료되지 않았거나 만료되었습니다."),
     // 카카오 로그인 관련 에러
     KAKAO_API_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AUTH5001", "카카오 API 호출 중 오류가 발생했습니다."),
     INVALID_KAKAO_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH4013", "유효하지 않은 카카오 액세스 토큰입니다."),

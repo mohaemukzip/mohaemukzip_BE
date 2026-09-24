@@ -74,7 +74,11 @@ public class AuthRequestDTO {
                     regexp = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*#?&]{10,}$",
                     message = "비밀번호는 영문과 숫자를 포함해 10자 이상 입력해 주세요."
             )
-            String newPassword
+            String newPassword,
+
+            @Schema(description = "이메일 인증 완료 토큰", example = "550e8400-e29b-41d4-...")
+            @NotBlank(message = "인증 토큰이 필요합니다.")
+            String resetToken
     ) {}
 
     public record KakaoLoginRequest(
