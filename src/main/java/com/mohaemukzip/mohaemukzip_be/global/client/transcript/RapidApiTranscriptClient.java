@@ -49,15 +49,16 @@ public class RapidApiTranscriptClient implements TranscriptClient {
                 .onStatus(this::isAuthOrEndpointError, this::handleAuthOrEndpointError)
                 .onStatus(HttpStatusCode::isError, this::handleGenericHttpError)
                 .toEntity(RapidApiTranscriptResponse.class)
+                .timeout(Duration.ofSeconds(12))
                 .onErrorMap(e -> !(e instanceof BusinessException),
                         e -> {
                             meterRegistry.counter("rapidapi_requests_total", "status", "error").increment();
                             log.error("자막 추출 중 예기치 못한 오류 - videoId: {}", videoId, e);
-                            return new BusinessException(ErrorStatus.INTERNAL_SERVER_ERROR);
+                            return new BusinessException(e instanceof org.springframework.core.codec.DecodingException
+                                    ? ErrorStatus.EXTERNAL_API_ERROR : ErrorStatus.SERVICE_UNAVAILABLE);
                         })
-                .block(Duration.ofSeconds(12));
+                .block();
 
-        meterRegistry.counter("rapidapi_requests_total", "status", "success").increment();
 
         if (responseEntity != null && responseEntity.getHeaders().containsKey("X-RateLimit-Requests-Remaining")) {
             try {
@@ -70,12 +71,17 @@ public class RapidApiTranscriptClient implements TranscriptClient {
             }
         }
 
-        return validateTranscript(responseEntity != null ? responseEntity.getBody() : null, videoId);
+        List<TranscriptSegment> transcript = validateTranscript(responseEntity != null ? responseEntity.getBody() : null, videoId);
+        meterRegistry.counter("rapidapi_requests_total", "status", "success").increment();
+        return transcript;
     }
 
     public List<TranscriptSegment> fallbackFetchTranscript(String videoId, Throwable t) {
         log.error("RapidAPI 서킷 브레이커 발동! Fallback 실행 - videoId: {}, 원인: {}", videoId, t.getMessage());
-        throw new RuntimeException("현재 AI 자막 추출 서비스가 지연되고 있습니다. 잠시 후 다시 시도해주세요.");
+        if (t instanceof BusinessException businessException) {
+            throw businessException;
+        }
+        throw new BusinessException(ErrorStatus.SERVICE_UNAVAILABLE);
     }
 
     // HTTP 상태코드 분류 (책임 2 보조)
@@ -96,13 +102,17 @@ public class RapidApiTranscriptClient implements TranscriptClient {
         return clientResponse.bodyToMono(String.class)
                 .defaultIfEmpty("(empty body)")
                 .doOnNext(body -> log.error("RapidAPI 통신 오류 - status: {}, body: {}", clientResponse.statusCode(), body))
-                .thenReturn(new BusinessException(ErrorStatus.TRANSCRIPT_NOT_AVAILABLE));
+                .thenReturn(new BusinessException(
+                        clientResponse.statusCode().value() == 429 || clientResponse.statusCode().is5xxServerError()
+                                ? ErrorStatus.SERVICE_UNAVAILABLE : ErrorStatus.EXTERNAL_API_ERROR));
     }
 
     // 응답 검증 (책임 3)
     private List<TranscriptSegment> validateTranscript(RapidApiTranscriptResponse response, String videoId) {
-        if (response == null || !response.success()
-                || response.transcript() == null || response.transcript().isEmpty()) {
+        if (response == null || !response.success()) {
+            throw new BusinessException(ErrorStatus.EXTERNAL_API_ERROR);
+        }
+        if (response.transcript() == null || response.transcript().isEmpty()) {
             log.warn("자막 데이터 없음 - videoId: {}", videoId);
             throw new TranscriptNotFoundException();
         }
