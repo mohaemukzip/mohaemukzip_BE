@@ -16,6 +16,8 @@ public interface RecipeCommandService {
 
     // --- For Facade (DB Transactions Only) ---
     List<String> getAllIngredientNames();
+
+    void validateRecipeRegistration(Long dishId, String videoId);
     
     Long saveRecipeAndIngredients(Long dishId, String videoId, RecipeCrawler.RecipeData data);
     
