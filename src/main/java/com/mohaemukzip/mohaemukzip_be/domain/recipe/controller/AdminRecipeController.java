@@ -21,6 +21,10 @@ import java.util.List;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.command.RecipeBatchPolicy;
 import com.mohaemukzip.mohaemukzip_be.domain.recipe.service.command.RecipeAdminFacade;
 
 @Slf4j
@@ -35,7 +39,9 @@ public class AdminRecipeController {
 
     public record BulkRecipeRequest(
             @NotNull(message = "dishId는 필수입니다.") Long dishId,
-            @NotEmpty(message = "비디오 ID 목록은 비어있을 수 없습니다.") List<String> videoIds
+            @NotEmpty(message = "비디오 ID 목록은 비어있을 수 없습니다.")
+            @Size(max = RecipeBatchPolicy.MAX_RECIPES)
+            List<@NotBlank @Pattern(regexp = RecipeBatchPolicy.VIDEO_ID_PATTERN) String> videoIds
     ) {}
 
     @PostMapping("/bulk")
@@ -45,7 +51,7 @@ public class AdminRecipeController {
         log.info("[관리자] 대량 레시피 비동기 등록 요청 - 요리ID: {}, 건수: {}", request.dishId(), request.videoIds().size());
 
         // 비동기 서비스 호출 (레시피 크롤링 -> 요약)
-        adminRecipeService.processBulkRecipesAsync(request.dishId(), request.videoIds());
+        adminRecipeService.processBulkRecipesAsync(request.dishId(), RecipeBatchPolicy.normalize(request.videoIds()));
 
         return ApiResponse.onSuccess("레시피 대량 등록 작업이 백그라운드에서 시작되었습니다.");
     }
