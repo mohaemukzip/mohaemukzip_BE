@@ -247,11 +247,8 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
     private Recipe saveRecipe(RecipeCrawler.RecipeData data, Dish dish) {
         Recipe recipe = recipeConverter.toEntity(data, dish);
 
-        try {
-            return recipeRepository.save(recipe);
-        } catch (DataIntegrityViolationException e) {
-            throw new BusinessException(ErrorStatus.RECIPE_ALREADY_EXISTS);
-        }
+        // 제약 이름/종류를 확인하지 않은 무결성 오류를 중복 영상이라고 단정하지 않는다.
+        return recipeRepository.save(recipe);
     }
 
     private void saveRecipeIngredients(Recipe recipe, List<RecipeCrawler.IngredientData> ingredientDataList) {

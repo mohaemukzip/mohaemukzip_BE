@@ -57,6 +57,10 @@ public class RecipeConverter {
     }
 
     public Recipe toEntity(RecipeCrawler.RecipeData data, com.mohaemukzip.mohaemukzip_be.domain.recipe.entity.Dish dish) {
+        if (data == null || missing(data.title()) || missing(data.videoId()) || missing(data.videoUrl())
+                || missing(data.category())) {
+            throw new BusinessException(ErrorStatus.EXTERNAL_API_ERROR);
+        }
         Category category = convertCategory(data.category());
 
         return Recipe.builder()
@@ -70,11 +74,15 @@ public class RecipeConverter {
                 .views(data.viewCount())
                 .imageUrl(data.thumbnailUrl())
                 .category(category)
-                .channelProfileImageUrl(data.channelProfileImageUrl())
+                .channelProfileImageUrl(missing(data.channelProfileImageUrl()) ? "" : data.channelProfileImageUrl())
                 .videoId(data.videoId())
                 .videoUrl(data.videoUrl())
                 .dish(dish)
                 .build();
+    }
+
+    private boolean missing(String value) {
+        return value == null || value.isBlank();
     }
 
     private Category convertCategory(String categoryName) {
