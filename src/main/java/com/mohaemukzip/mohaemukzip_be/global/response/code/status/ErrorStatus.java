@@ -81,6 +81,7 @@ public enum ErrorStatus implements BaseCode {
     RECIPE_NOT_FOUND(HttpStatus.NOT_FOUND, "RECIPE4001", "해당 레시피를 찾을 수 없습니다."),
     RECIPE_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "RECIPE4002", "이미 저장된 레시피입니다."),
     INVALID_RATING_VALUE(HttpStatus.BAD_REQUEST, "RECIPE4003",   "난이도는 1부터 5 사이의 값입니다."),
+    SUMMARY_IN_PROGRESS(HttpStatus.CONFLICT, "RECIPE4091", "요약을 생성 중입니다. 잠시 후 다시 확인해주세요."),
     TRANSCRIPT_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "RECIPE4004", "해당 영상에 자막이 없어 요약을 생성할 수 없습니다."),
 
 
