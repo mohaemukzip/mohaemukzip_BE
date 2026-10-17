@@ -79,3 +79,8 @@ apple:
   team-id: temp
   key-id: temp
   private-key: temp
+
+# 서버 에러(5xx) Discord 알림 - prod(EC2/RDS)에서만 전송. 다른 프로필은 미설정이라 전송하지 않음
+discord:
+  error-webhook:
+    url: ${DISCORD_ERROR_WEBHOOK_URL:}
