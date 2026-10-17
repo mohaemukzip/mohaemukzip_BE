@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -219,7 +220,7 @@ public class RecipeChatProcessor implements ChatProcessor {
 
     /**
      * Gemini가 반환한 recipe_id가 실제 후보 목록에 있었는지 검증해 없는 id(할루시네이션)는 제거하고,
-     * 살아남은 id에 대해 title/썸네일/영상길이를 서버가 보유한 실제 Recipe 데이터로 채운 카드를 만든다.
+     * 처음 선택된 서로 다른 유효 id를 최대 3개까지 서버의 실제 Recipe 데이터로 채운 카드로 만든다.
      */
     private List<RecipeCardResponse> toValidatedCards(List<Long> recipeIds, Map<Long, Recipe> candidatesById, Long memberId) {
         if (recipeIds == null || recipeIds.isEmpty()) {
@@ -227,11 +228,15 @@ public class RecipeChatProcessor implements ChatProcessor {
         }
 
         List<RecipeCardResponse> cards = new ArrayList<>();
+        Set<Long> addedRecipeIds = new HashSet<>();
         int droppedCount = 0;
         for (Long recipeId : recipeIds) {
             Recipe recipe = recipeId != null ? candidatesById.get(recipeId) : null;
             if (recipe == null) {
                 droppedCount++;
+                continue;
+            }
+            if (cards.size() >= MAX_RECOMMENDATIONS || !addedRecipeIds.add(recipeId)) {
                 continue;
             }
             cards.add(RecipeCardResponse.builder()

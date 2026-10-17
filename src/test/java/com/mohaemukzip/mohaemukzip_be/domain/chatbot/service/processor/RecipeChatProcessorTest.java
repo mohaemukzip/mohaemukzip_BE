@@ -16,6 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -75,6 +77,81 @@ class RecipeChatProcessorTest {
         when(memberIngredientRepository.findAllByMemberIdOrderByExpireDateAsc(MEMBER_ID)).thenReturn(List.of());
         when(cookingRecordRepository.findAllByMemberIdAndCreatedAtAfter(eq(MEMBER_ID), any())).thenReturn(List.of());
         when(chatContextHelper.buildHistoryContents(anyList(), eq(12))).thenReturn(new java.util.ArrayList<>());
+    }
+
+    private ChatProcessorResult processRecipeIds(String recipeIds) {
+        when(recipeCandidateFinder.findCandidates(anyString())).thenReturn(List.of(
+                recipe(10L, "김치찌개"), recipe(20L, "두부조림"),
+                recipe(30L, "볶음밥"), recipe(40L, "계란말이")));
+        givenEmptyMemberContext();
+
+        String response = "{\"main_title\":\"맞춤 추천\",\"main_message\":\"추천 안내\",\"recipe_ids\":"
+                + recipeIds + "}";
+        when(geminiService.generateChatResponse(eq(MEMBER_ID), anyString(), anyList(), anyMap()))
+                .thenReturn(response);
+
+        return recipeChatProcessor.process(MEMBER_ID, "요리 추천해줘", List.of());
+    }
+
+    @Test
+    @DisplayName("추천 ID가 중복되면 처음 선택된 레시피 순서를 유지하며 중복 카드를 제거한다")
+    void deduplicatesCardsInFirstSelectedOrder() {
+        ChatProcessorResult result = processRecipeIds("[20, 10, 20, 30, 10]");
+
+        assertThat(result.getRecipeCards()).extracting(card -> card.getRecipeId())
+                .containsExactly(20L, 10L, 30L);
+    }
+
+    @Test
+    @DisplayName("서로 다른 유효 추천 ID가 4개 이상이어도 처음 선택된 카드 3개만 반환한다")
+    void limitsCardsToFirstThreeValidRecipes() {
+        ChatProcessorResult result = processRecipeIds("[40, 20, 30, 10]");
+
+        assertThat(result.getRecipeCards()).extracting(card -> card.getRecipeId())
+                .containsExactly(40L, 20L, 30L);
+    }
+
+    @Test
+    @DisplayName("무효 ID와 중복은 3개 제한에 포함하지 않고 유효한 서로 다른 카드 3개를 반환한다")
+    void filtersInvalidAndDuplicateIdsBeforeLimitingCards() {
+        ChatProcessorResult result = processRecipeIds("[999, null, 20, 20, 10, 30, 40, 998]");
+
+        assertThat(result.getRecipeCards()).extracting(card -> card.getRecipeId())
+                .containsExactly(20L, 10L, 30L);
+        verify(chatMonitorLogger).logUsage(MEMBER_ID, 0, 0, 0, "WARNING", "HALLUCINATED_RECIPE_ID");
+    }
+
+    @Test
+    @DisplayName("유효 카드가 3개 채워진 뒤의 무효 ID도 기존 경고로 기록한다")
+    void reportsInvalidIdsAfterCardLimit() {
+        ChatProcessorResult result = processRecipeIds("[40, 20, 30, 999, 10]");
+
+        assertThat(result.getRecipeCards()).extracting(card -> card.getRecipeId())
+                .containsExactly(40L, 20L, 30L);
+        verify(chatMonitorLogger).logUsage(MEMBER_ID, 0, 0, 0, "WARNING", "HALLUCINATED_RECIPE_ID");
+    }
+
+    @Test
+    @DisplayName("정상 추천 카드 3개의 순서와 DB에서 구성하는 메타데이터를 유지한다")
+    void preservesThreeValidCardsAndServerMetadata() {
+        ChatProcessorResult result = processRecipeIds("[30, 10, 20]");
+
+        assertThat(result.getRecipeCards()).extracting(card -> card.getRecipeId())
+                .containsExactly(30L, 10L, 20L);
+        assertThat(result.getRecipeCards().get(0).getTitle()).isEqualTo("볶음밥");
+        assertThat(result.getRecipeCards().get(0).getImageUrl()).isEqualTo("https://img.example.com/30.jpg");
+        assertThat(result.getRecipeCards().get(0).getVideoTime()).isEqualTo("10:54");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"[]", "null"})
+    @DisplayName("빈 추천 또는 null 추천 목록은 임의의 인기 카드로 채우지 않고 빈 목록을 유지한다")
+    void preservesEmptyRecommendations(String recipeIds) {
+        ChatProcessorResult result = processRecipeIds(recipeIds);
+
+        assertThat(result.getRecipeCards()).isEmpty();
+        assertThat(result.getTitle()).isEqualTo("맞춤 추천");
+        assertThat(result.getMessage()).isEqualTo("추천 안내");
     }
 
     @Test
