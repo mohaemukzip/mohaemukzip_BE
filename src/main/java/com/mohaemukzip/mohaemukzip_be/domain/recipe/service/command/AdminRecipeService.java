@@ -20,6 +20,7 @@ public class AdminRecipeService {
 
     @Async
     public void processBulkRecipesAsync(Long dishId, List<String> videoIds) {
+        videoIds = RecipeBatchPolicy.normalize(videoIds);
         log.info("[관리자] 대량 레시피 비동기 등록 시작 - 요리ID: {}, 총 {}건", dishId, videoIds.size());
 
         int successCount = 0;
@@ -29,13 +30,13 @@ public class AdminRecipeService {
         for (String videoId : videoIds) {
             try {
                 Long recipeId = recipeAdminFacade.saveRecipeByVideoId(dishId, videoId);
-                recipeAdminFacade.createSummary(recipeId);
+                requireCompleted(recipeAdminFacade.createSummary(recipeId));
 
                 successCount++;
                 log.info("[관리자] 레시피 및 요약 저장 성공 - videoId: {}", videoId);
             } catch (Exception e) {
                 failCount++;
-                String errorMsg = String.format("`%s`: %s", videoId, e.getMessage());
+                String errorMsg = String.format("`%s`: %s", videoId, RecipeBatchPolicy.truncate(String.valueOf(e.getMessage()), 160));
                 errorDetails.add(errorMsg);
                 log.error("[관리자] 레시피 처리 실패 - videoId: {}, 사유: {}", videoId, e.getMessage());
             }
@@ -54,7 +55,7 @@ public class AdminRecipeService {
 
         log.info("[관리자] 대량 레시피 비동기 등록 완료 - 성공: {}건, 실패: {}건", successCount, failCount);
 
-        discordNotificationClient.sendNotification(finalMessage.toString());
+        notifyCompletion(finalMessage.toString());
     }
 
     /**
@@ -72,12 +73,12 @@ public class AdminRecipeService {
 
         for (RecipeResponseDTO.MissingSummaryItem target : targets) {
             try {
-                recipeAdminFacade.createSummary(target.recipeId());
+                requireCompleted(recipeAdminFacade.createSummary(target.recipeId()));
                 successCount++;
                 log.info("[관리자] 요약 재시도 성공 - recipeId: {}", target.recipeId());
             } catch (Exception e) {
                 failCount++;
-                String errorMsg = String.format("`%s`(recipeId=%d): %s", target.title(), target.recipeId(), e.getMessage());
+                String errorMsg = String.format("`%s`(recipeId=%d): %s", target.title(), target.recipeId(), RecipeBatchPolicy.truncate(String.valueOf(e.getMessage()), 160));
                 errorDetails.add(errorMsg);
                 log.error("[관리자] 요약 재시도 실패 - recipeId: {}, 사유: {}", target.recipeId(), e.getMessage());
             }
@@ -96,6 +97,21 @@ public class AdminRecipeService {
 
         log.info("[관리자] 요약 누락 레시피 재시도 완료 - 성공: {}건, 실패: {}건", successCount, failCount);
 
-        discordNotificationClient.sendNotification(finalMessage.toString());
+        notifyCompletion(finalMessage.toString());
+    }
+    private void requireCompleted(RecipeResponseDTO.SummaryCreateResult result) {
+        if (result == null || !result.summaryExists() || result.stepCount() <= 0) {
+            throw new com.mohaemukzip.mohaemukzip_be.global.exception.BusinessException(
+                    com.mohaemukzip.mohaemukzip_be.global.response.code.status.ErrorStatus.SUMMARY_CREATION_FAILED);
+        }
+    }
+
+    private void notifyCompletion(String message) {
+        try {
+            discordNotificationClient.sendNotification(RecipeBatchPolicy.truncate(message, 2000));
+        } catch (Exception notificationFailure) {
+            // 작업은 이미 완료됐다. 알림 실패로 등록/차감 작업을 다시 실행하지 않는다.
+            log.error("[관리자] 완료 알림 요청 실패", notificationFailure);
+        }
     }
 }
