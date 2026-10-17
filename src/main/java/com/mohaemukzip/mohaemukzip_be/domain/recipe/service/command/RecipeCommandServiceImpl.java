@@ -160,6 +160,20 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public void validateRecipeRegistration(Long dishId, String videoId) {
+        if (videoId == null || videoId.isBlank() || dishId == null) {
+            throw new BusinessException(ErrorStatus.BAD_REQUEST);
+        }
+        if (!dishRepository.existsById(dishId)) {
+            throw new BusinessException(ErrorStatus.DISH_NOT_FOUND);
+        }
+        if (recipeRepository.existsByVideoId(videoId)) {
+            throw new BusinessException(ErrorStatus.RECIPE_ALREADY_EXISTS);
+        }
+    }
+
+    @Override
     @Transactional
     public Long saveRecipeAndIngredients(Long dishId, String videoId, RecipeCrawler.RecipeData data) {
         if (recipeRepository.existsByVideoId(videoId)) {

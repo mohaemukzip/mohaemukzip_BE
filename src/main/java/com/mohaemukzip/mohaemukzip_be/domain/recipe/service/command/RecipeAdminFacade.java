@@ -48,6 +48,8 @@ public class RecipeAdminFacade {
     public Long saveRecipeByVideoId(Long dishId, String videoId) {
         log.info("[Facade] 유튜브 레시피 등록 시작 - videoId: {}", videoId);
 
+        recipeCommandService.validateRecipeRegistration(dishId, videoId);
+
         // 1. 필요한 재료 이름만 DB에서 조회 (빠름)
         List<String> ingredientNames = recipeCommandService.getAllIngredientNames();
 
