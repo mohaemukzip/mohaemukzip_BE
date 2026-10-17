@@ -27,8 +27,8 @@ import java.util.Date;
 public class JwtProvider {
     // 30분 (1000L * 60 * 30)
     private static final long ACCESS_TOKEN_VALIDITY_MS = 1800000L;
-    // 7일 (1000L * 60 * 60 * 24 * 7)
-    public static final long REFRESH_TOKEN_VALIDITY_MS = 604800000L;
+    // 6개월 = 180일 (1000L * 60 * 60 * 24 * 180)
+    public static final long REFRESH_TOKEN_VALIDITY_MS = 15552000000L;
 
     private final Key key;
     private final UserDetailsService userDetailsService;
