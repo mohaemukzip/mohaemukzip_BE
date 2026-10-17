@@ -86,10 +86,8 @@ public class RecipeAdminFacade {
             return recipeCommandService.saveSummarySteps(summary.getId(), steps);
 
         } catch (Exception e) {
-            log.error("[Facade] 요약 생성 중 외부 API 통신 실패 - recipeId: {}, 오류: {}", recipeId, e.getMessage());
-            // 실패 시 선점한 Summary를 지울 것인지 고민해 볼 수 있으나, 
-            // 현재는 Exception이 발생하면 빈 Summary만 남게 되어 추후 재시도를 위해 삭제하는 로직이 필요할 수 있습니다.
-            // 일단 기존 설계의 안정성을 위해 던집니다.
+            log.error("[Facade] 요약 생성 실패 - recipeId: {}, 오류: {}", recipeId, e.getMessage());
+            // 통신·응답 검증·저장 실패 시 선점한 Summary를 정리해 기존 재시도 경로를 유지한다.
             recipeCommandService.deleteSummary(summary.getId());
             throw e;
         }
