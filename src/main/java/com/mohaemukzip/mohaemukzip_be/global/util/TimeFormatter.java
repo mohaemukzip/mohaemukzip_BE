@@ -10,13 +10,13 @@ public class TimeFormatter {
         try {
             if (parts.length == 3) {  // HH:MM:SS → 총 MM:SS
                 int hours = Integer.parseInt(parts[0]);
-                int minutes = Integer.parseInt(parts[1]) + (hours * 60);
+                int minutes = Integer.parseInt(parts[1]);
                 int seconds = Integer.parseInt(parts[2]);
-                if (hours < 0 || minutes < 0 || seconds < 0 || seconds >= 60) {
+                if (hours < 0 || minutes < 0 || minutes >= 60 || seconds < 0 || seconds >= 60) {
                     return "00:00";
                 }
 
-                int totalMinutes = hours * 60 + minutes;
+                long totalMinutes = (long) hours * 60 + minutes;
                 return String.format("%02d:%02d", totalMinutes, seconds);
             } else if (parts.length == 2) {  // MM:SS → 그대로
                 int minutes = Integer.parseInt(parts[0]);
