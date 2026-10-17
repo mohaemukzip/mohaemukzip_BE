@@ -10,6 +10,8 @@ import com.mohaemukzip.mohaemukzip_be.domain.member.entity.enums.LoginType;
 import com.mohaemukzip.mohaemukzip_be.domain.member.entity.enums.Role;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.member.converter.AuthConverter;
+import com.mohaemukzip.mohaemukzip_be.domain.member.event.MemberSignedUpEvent;
+import com.mohaemukzip.mohaemukzip_be.domain.member.event.MemberWithdrawnEvent;
 import com.mohaemukzip.mohaemukzip_be.domain.member.repository.MemberTermRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.member.service.command.term.TermCommandService;
 import com.mohaemukzip.mohaemukzip_be.domain.mission.repository.MemberMissionRepository;
@@ -23,6 +25,7 @@ import com.mohaemukzip.mohaemukzip_be.global.service.ApplePublicKeyService;
 import com.mohaemukzip.mohaemukzip_be.global.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -51,6 +54,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     private final TokenBlacklistService tokenBlacklistService;
     private final ApplePublicKeyService applePublicKeyService;
     private final EmailService emailService;
+    private final ApplicationEventPublisher eventPublisher;
 
     private final MemberTermRepository memberTermRepository;
     private final MemberMissionRepository memberMissionRepository;
@@ -85,6 +89,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         termCommandService.createMemberTerms(savedMember, request.termAgreements());
         savedMember.agreeToTerms();
 
+        publishSignedUpEvent(savedMember);
         return generateAndSaveTokens(member, true);
     }
 
@@ -128,6 +133,10 @@ public class AuthCommandServiceImpl implements AuthCommandService {
             member.reactivate();
         }
 
+        if (isNewMember.get()) {
+            publishSignedUpEvent(member);
+        }
+
         return generateAndSaveTokens(member, isNewMember.get());
     }
 
@@ -154,7 +163,16 @@ public class AuthCommandServiceImpl implements AuthCommandService {
             member.reactivate();
         }
 
+        if (isNewMember.get()) {
+            publishSignedUpEvent(member);
+        }
+
         return generateAndSaveTokens(member, isNewMember.get());
+    }
+
+    private void publishSignedUpEvent(Member member) {
+        eventPublisher.publishEvent(
+                new MemberSignedUpEvent(member.getId(), member.getNickname(), member.getLoginType()));
     }
 
     private Member createAppleMember(String appleId) {
@@ -298,6 +316,9 @@ public class AuthCommandServiceImpl implements AuthCommandService {
 
         // 회원 자체 삭제
         memberRepository.delete(member);
+
+        eventPublisher.publishEvent(
+                new MemberWithdrawnEvent(memberId, member.getNickname(), member.getLoginType()));
 
         return AuthConverter.toWithdrawalResponseDTO();
     }
