@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -13,7 +14,7 @@ public class DiscordNotificationClient {
     private final WebClient webClient;
     private final String webhookUrl;
 
-    public DiscordNotificationClient(WebClient.Builder webClientBuilder, 
+    public DiscordNotificationClient(WebClient.Builder webClientBuilder,
                                      @Value("${discord.webhook.url:}") String webhookUrl) {
         this.webClient = webClientBuilder.build();
         this.webhookUrl = webhookUrl;
@@ -26,7 +27,9 @@ public class DiscordNotificationClient {
         }
 
         try {
-            Map<String, String> body = Map.of("content", message);
+            Map<String, Object> body = Map.of(
+                    "content", message,
+                    "allowed_mentions", Map.of("parse", List.of()));
 
             webClient.post()
                     .uri(webhookUrl)

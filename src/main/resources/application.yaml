@@ -74,7 +74,8 @@ resilience4j:
         ignoreExceptions:
           - com.mohaemukzip.mohaemukzip_be.global.client.transcript.TranscriptNotFoundException
 
-# Discord 웹훅 (알림용)
+# Discord 웹훅
 discord:
+  # 관리자 알림용 (레시피 대량 등록 등)
   webhook:
     url: ${DISCORD_WEBHOOK_URL:}
