@@ -28,13 +28,18 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 
+import lombok.RequiredArgsConstructor;
+
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    private final ServerErrorNotifier serverErrorNotifier;
 
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAuthorizationDenied(
@@ -62,8 +67,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> globalExceptionHandler(GlobalException ex) {
 
         BaseCode baseCode = ex.getBaseCode();
-        log.error("GlobalException occurred: code={}, message={}",
-                baseCode.getCode(), baseCode.getMessage());
+        if (baseCode.getHttpStatus().is5xxServerError()) {
+            log.error("GlobalException occurred: code={}, message={}",
+                    baseCode.getCode(), baseCode.getMessage(), ex);
+            serverErrorNotifier.notify(baseCode.getHttpStatus(), ex);
+        } else {
+            log.warn("GlobalException occurred: code={}, message={}",
+                    baseCode.getCode(), baseCode.getMessage());
+        }
 
         return ResponseEntity
                 .status(baseCode.getHttpStatus())
@@ -74,8 +85,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> businessExceptionHandler(BusinessException ex) {
 
         BaseCode baseCode = ex.getBaseCode();
-        log.error("BusinessException occurred: code={}, message={}",
-                baseCode.getCode(), baseCode.getMessage());
+        if (baseCode.getHttpStatus().is5xxServerError()) {
+            log.error("BusinessException occurred: code={}, message={}",
+                    baseCode.getCode(), baseCode.getMessage(), ex);
+            serverErrorNotifier.notify(baseCode.getHttpStatus(), ex);
+        } else {
+            log.warn("BusinessException occurred: code={}, message={}",
+                    baseCode.getCode(), baseCode.getMessage());
+        }
 
         return ResponseEntity
                 .status(baseCode.getHttpStatus())
@@ -137,7 +154,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Object> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
 
-        log.error("Data integrity violation occurred", ex);
+        log.warn("Data integrity violation occurred: {}", ex.getMostSpecificCause().getMessage());
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -156,6 +173,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(BeanCreationException.class)
     public ResponseEntity<Object> handleBeanCreationException(BeanCreationException ex) {
+        log.error("BeanCreationException occurred", ex);
+        serverErrorNotifier.notify(HttpStatus.INTERNAL_SERVER_ERROR, ex);
 
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -164,6 +183,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(ClassCastException.class)
     public ResponseEntity<Object> handleClassCastException(ClassCastException ex) {
+        log.error("ClassCastException occurred", ex);
+        serverErrorNotifier.notify(HttpStatus.INTERNAL_SERVER_ERROR, ex);
 
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -172,6 +193,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(HttpMessageConversionException.class)
     public ResponseEntity<Object> handleHttpMessageConversionException(HttpMessageConversionException ex) {
+        log.error("HttpMessageConversionException occurred", ex);
+        serverErrorNotifier.notify(HttpStatus.INTERNAL_SERVER_ERROR, ex);
 
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -181,9 +204,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(IncorrectResultSizeDataAccessException.class)
     public ResponseEntity<Object> handleIncorrectResultSizeException(IncorrectResultSizeDataAccessException ex) {
 
+        log.error("IncorrectResultSizeDataAccessException occurred", ex);
+        serverErrorNotifier.notify(HttpStatus.INTERNAL_SERVER_ERROR, ex);
+
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.onFailure(ErrorStatus.BAD_REQUEST, ex.getMessage()));
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.onFailure(ErrorStatus.INTERNAL_SERVER_ERROR, ex.getMessage()));
     }
 
     @ExceptionHandler(InvalidDataAccessApiUsageException.class)
@@ -196,6 +222,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(JpaSystemException.class)
     public ResponseEntity<Object> handleJpaSystemException(JpaSystemException ex) {
+        log.error("JpaSystemException occurred", ex);
+        serverErrorNotifier.notify(HttpStatus.INTERNAL_SERVER_ERROR, ex);
 
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -212,6 +240,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(NullPointerException.class)
     public ResponseEntity<Object> handleNullPointerException(NullPointerException ex) {
+        log.error("NullPointerException occurred", ex);
+        serverErrorNotifier.notify(HttpStatus.INTERNAL_SERVER_ERROR, ex);
 
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -220,6 +250,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(UnsatisfiedDependencyException.class)
     public ResponseEntity<Object> handleUnsatisfiedDependencyException(UnsatisfiedDependencyException ex) {
+        log.error("UnsatisfiedDependencyException occurred", ex);
+        serverErrorNotifier.notify(HttpStatus.INTERNAL_SERVER_ERROR, ex);
 
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -230,6 +262,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleAllException(Exception ex) {
 
         log.error("Unhandled exception occurred", ex);
+        serverErrorNotifier.notify(HttpStatus.INTERNAL_SERVER_ERROR, ex);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.onFailure(ErrorStatus.INTERNAL_SERVER_ERROR));
@@ -238,8 +271,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(CallNotPermittedException.class)
     public ResponseEntity<ApiResponse<Object>> handleCircuitBreakerException(CallNotPermittedException ex) {
         log.error("CircuitBreaker is OPEN: {}", ex.getMessage());
+        serverErrorNotifier.notify(HttpStatus.SERVICE_UNAVAILABLE, ex);
         return ResponseEntity
                 .status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(ApiResponse.onFailure(ErrorStatus.SERVICE_UNAVAILABLE, ErrorStatus.SERVICE_UNAVAILABLE.getMessage()));
+    }
+
+    // Spring MVC 표준 예외 중 5xx로 내려가는 것도 알림
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(
+            Exception ex, Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
+
+        if (statusCode.is5xxServerError()) {
+            log.error("Spring MVC internal error: status={}", statusCode.value(), ex);
+            serverErrorNotifier.notify(statusCode, ex);
+        }
+        return super.handleExceptionInternal(ex, body, headers, statusCode, request);
     }
 }
