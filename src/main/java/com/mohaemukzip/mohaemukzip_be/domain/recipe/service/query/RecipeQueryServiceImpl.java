@@ -79,9 +79,8 @@ public class RecipeQueryServiceImpl implements RecipeQueryService {
                         ingredientIds
                 );
 
-        boolean summaryExists = summaryRepository.existsByRecipeId(recipeId);
-
         List<RecipeStep> steps = fetchRecipeSteps(recipeId);
+        boolean summaryExists = !steps.isEmpty();
 
         recentlyViewedRecipeManager.add(memberId, recipeId);
 

@@ -70,8 +70,10 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
     // ===== 관리자용 요약(Summary) 누락 확인/재시도 메서드 =====
 
-    // Summary가 하나도 생성되지 않은(=요약 실패했거나 시도조차 안 된) 레시피 조회. dishId가 null이면 전체 대상.
-    @Query("SELECT r FROM Recipe r WHERE NOT EXISTS (SELECT 1 FROM Summary s WHERE s.recipe = r) " +
+    // Summary가 없거나 15분 예약 기간이 지난 빈 Summary의 레시피 조회. 완료된 요약/현재 예약은 제외.
+    @Query("SELECT r FROM Recipe r WHERE (NOT EXISTS (SELECT 1 FROM Summary s WHERE s.recipe = r) " +
+            "OR EXISTS (SELECT 1 FROM Summary s WHERE s.recipe = r AND s.createdAt < :cutoff " +
+            "AND NOT EXISTS (SELECT 1 FROM RecipeStep step WHERE step.summary = s))) " +
             "AND (:dishId IS NULL OR r.dish.id = :dishId)")
-    List<Recipe> findAllWithoutSummary(@Param("dishId") Long dishId);
+    List<Recipe> findAllWithoutSummary(@Param("dishId") Long dishId, @Param("cutoff") java.time.LocalDateTime cutoff);
 }

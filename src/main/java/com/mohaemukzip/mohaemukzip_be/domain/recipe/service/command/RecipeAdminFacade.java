@@ -90,17 +90,22 @@ public class RecipeAdminFacade {
             // 실패 시 선점한 Summary를 지울 것인지 고민해 볼 수 있으나, 
             // 현재는 Exception이 발생하면 빈 Summary만 남게 되어 추후 재시도를 위해 삭제하는 로직이 필요할 수 있습니다.
             // 일단 기존 설계의 안정성을 위해 던집니다.
-            recipeCommandService.deleteSummary(summary.getId());
+            try {
+                recipeCommandService.deleteSummary(summary.getId());
+            } catch (Exception cleanupFailure) {
+                e.addSuppressed(cleanupFailure);
+                log.error("요약 예약 정리 실패 - summaryId: {}", summary.getId(), cleanupFailure);
+            }
             throw e;
         }
     }
 
     /**
-     * Summary가 하나도 생성되지 않은(=시도조차 안 됐거나 실패해서 정리된) 레시피 목록을 조회한다.
+     * Summary가 없거나 만료된 빈 예약이 있는 레시피 목록을 조회한다.
      * dishId를 주면 해당 요리로만 좁혀서 조회한다.
      */
     public List<RecipeResponseDTO.MissingSummaryItem> getRecipesWithoutSummary(Long dishId) {
-        return recipeRepository.findAllWithoutSummary(dishId).stream()
+        return recipeRepository.findAllWithoutSummary(dishId, RecipeCommandServiceImpl.summaryReservationCutoff()).stream()
                 .map(recipe -> RecipeResponseDTO.MissingSummaryItem.builder()
                         .recipeId(recipe.getId())
                         .title(recipe.getTitle())

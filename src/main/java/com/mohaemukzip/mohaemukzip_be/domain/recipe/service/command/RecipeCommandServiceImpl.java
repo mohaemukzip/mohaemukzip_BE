@@ -187,17 +187,19 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
     @Override
     @Transactional
     public Summary tryCreateSummary(Long recipeId) {
-        Recipe recipe = getRecipeForSummary(recipeId);
-        try {
-            return summaryRepository.saveAndFlush(
-                    Summary.builder()
-                            .recipe(recipe)
-                            .build()
-            );
-        } catch (DataIntegrityViolationException e) {
-            log.info("Summary 동시 생성 감지 (선점 실패) - recipeId: {}", recipe.getId());
-            return null; // 누군가 먼저 생성함
+        Recipe recipe = recipeRepository.findByIdForUpdate(recipeId);
+        if (recipe == null) throw new BusinessException(ErrorStatus.RECIPE_NOT_FOUND);
+        Summary existing = summaryRepository.findByRecipeId(recipeId).orElse(null);
+        if (existing != null) {
+            if (recipeStepRepository.existsBySummaryId(existing.getId())) return null;
+            if (existing.getCreatedAt() == null || !existing.getCreatedAt().isBefore(summaryReservationCutoff())) {
+                throw new BusinessException(ErrorStatus.SUMMARY_IN_PROGRESS);
+            }
+            // 새 ID가 이전 작업의 늦은 저장/실패 정리를 차단하는 예약 소유권이 된다.
+            summaryRepository.delete(existing);
+            summaryRepository.flush();
         }
+        return summaryRepository.saveAndFlush(Summary.builder().recipe(recipe).build());
     }
 
     @Override
@@ -208,6 +210,7 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
             int count = recipeStepRepository
                     .findAllBySummaryIdOrderByStepNumberAsc(existing.getId())
                     .size();
+            if (count == 0) throw new BusinessException(ErrorStatus.SUMMARY_IN_PROGRESS);
             return RecipeResponseDTO.SummaryCreateResult.builder()
                     .summaryExists(true)
                     .stepCount(count)
@@ -224,7 +227,17 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
     public RecipeResponseDTO.SummaryCreateResult saveSummarySteps(Long summaryId, List<GeminiResponseConverter.StepDraft> steps) {
         Summary summary = summaryRepository.findById(summaryId)
                 .orElseThrow(() -> new BusinessException(ErrorStatus.SUMMARY_CREATION_FAILED));
-        
+
+        recipeRepository.findByIdForUpdate(summary.getRecipe().getId());
+        if (!summaryRepository.existsById(summaryId)) {
+            throw new BusinessException(ErrorStatus.SUMMARY_CREATION_FAILED);
+        }
+        if (steps == null || steps.isEmpty()) {
+            throw new BusinessException(ErrorStatus.SUMMARY_CREATION_FAILED);
+        }
+        if (recipeStepRepository.existsBySummaryId(summaryId)) {
+            return getExistingSummaryResult(summary.getRecipe().getId());
+        }
         List<RecipeStep> entities = recipeStepConverter.toEntities(summary, steps);
         recipeStepRepository.saveAll(entities);
 
@@ -238,6 +251,11 @@ public class RecipeCommandServiceImpl implements RecipeCommandService {
     @Transactional
     public void deleteSummary(Long summaryId) {
         summaryRepository.deleteById(summaryId);
+    }
+
+    public static LocalDateTime summaryReservationCutoff() {
+        // 외부 호출 대기(12초 + 30초)보다 충분히 긴 예약 기간. 만료 예약은 새 ID로 교체한다.
+        return LocalDateTime.now().minusMinutes(15);
     }
 
     // ==========================================================
