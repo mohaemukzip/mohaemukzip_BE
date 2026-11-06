@@ -1,5 +1,6 @@
 package com.mohaemukzip.mohaemukzip_be.domain.member.service.command.auth;
 
+import com.mohaemukzip.mohaemukzip_be.domain.chatbot.repository.ChatLogRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.IngredientRequestRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberFavoriteRepository;
 import com.mohaemukzip.mohaemukzip_be.domain.ingredient.repository.MemberIngredientRepository;
@@ -32,14 +33,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import java.util.UUID;
+import java.util.List;
 
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 @Slf4j
 @Service
@@ -53,6 +59,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     private final WebClient webClient;
     private final TokenBlacklistService tokenBlacklistService;
     private final ApplePublicKeyService applePublicKeyService;
+    private final SocialMemberCreator socialMemberCreator;
     private final EmailService emailService;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -63,6 +70,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     private final MemberRecipeRepository memberRecipeRepository;
     private final CookingRecordRepository cookingRecordRepository;
     private final IngredientRequestRepository ingredientRequestRepository;
+    private final ChatLogRepository chatLogRepository;
 
     private static final String KAKAO_USER_INFO_URI = "https://kapi.kakao.com/v2/user/me";
     private static final String REFRESH_TOKEN_PREFIX = "RT:";
@@ -107,67 +115,60 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         return generateAndSaveTokens(member, false);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public AuthResponseDTO.GetUserDTO kakaoLogin(AuthRequestDTO.KakaoLoginRequest kakaoLoginRequest){
         AuthResponseDTO.GetKakaoUserInfoDTO kakaoUserInfo = getKakaoUserInfo(kakaoLoginRequest.kakaoAccessToken());
-
         String kakaoId = kakaoUserInfo.getId();
-        String nickname = extractNickname(kakaoUserInfo);
 
-        AtomicBoolean isNewMember = new AtomicBoolean(false);
+        SocialMemberResult result = findOrCreateSocialMember(LoginType.KAKAO, kakaoId,
+                () -> buildKakaoMember(kakaoId, extractNickname(kakaoUserInfo),
+                        kakaoUserInfo.getKakaoAccount().getEmail()));
 
-
-        Member member;
-        try {
-            member = memberRepository.findByLoginTypeAndOauthId(LoginType.KAKAO, kakaoId)
-                    .orElseGet(() -> {
-                        isNewMember.set(true);
-                        return createKakaoMember(kakaoId, nickname, kakaoUserInfo.getKakaoAccount().getEmail());
-                    });
-        } catch (DataIntegrityViolationException e) {
-            member = memberRepository.findByLoginTypeAndOauthId(LoginType.KAKAO, kakaoId)
-                    .orElseThrow(() -> new BusinessException(ErrorStatus.KAKAO_API_ERROR));
-        }
-
-        if (member.isInactive()) {
-            member.reactivate();
-        }
-
-        if (isNewMember.get()) {
-            publishSignedUpEvent(member);
-        }
-
-        return generateAndSaveTokens(member, isNewMember.get());
+        return completeSocialLogin(result);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public AuthResponseDTO.GetUserDTO appleLogin(AuthRequestDTO.AppleLoginRequest appleLoginRequest) {
-
         String appleId = applePublicKeyService.extractSubFromIdentityToken(appleLoginRequest.identityToken());
-        AtomicBoolean isNewMember = new AtomicBoolean(false);
 
-        Member member;
-        try {
-            member = memberRepository.findByLoginTypeAndOauthId(LoginType.APPLE, appleId)
-                    .orElseGet(() -> {
-                        isNewMember.set(true);
-                        return createAppleMember(appleId);
-                    });
-        } catch (DataIntegrityViolationException e) {
+        SocialMemberResult result = findOrCreateSocialMember(LoginType.APPLE, appleId,
+                () -> buildAppleMember(appleId));
 
-            member = memberRepository.findByLoginTypeAndOauthId(LoginType.APPLE, appleId)
-                    .orElseThrow(() -> new BusinessException(ErrorStatus.KAKAO_API_ERROR));
+        return completeSocialLogin(result);
+    }
+
+    private record SocialMemberResult(Member member, boolean isNewMember) {}
+
+    // 동시 로그인으로 다른 요청이 먼저 가입시킨 경우, 재조회에서 그 회원이 보이도록 READ_COMMITTED에서 호출한다.
+    private SocialMemberResult findOrCreateSocialMember(LoginType loginType, String oauthId,
+                                                        Supplier<Member> newMember) {
+        Optional<Member> existing = memberRepository.findByLoginTypeAndOauthId(loginType, oauthId);
+        if (existing.isPresent()) {
+            return new SocialMemberResult(existing.get(), false);
         }
+
+        try {
+            return new SocialMemberResult(socialMemberCreator.create(newMember.get()), true);
+        } catch (DataIntegrityViolationException e) {
+            log.warn("[소셜 로그인] 동시 가입 충돌 - loginType: {}, 기존 회원 재조회", loginType);
+            Member member = memberRepository.findByLoginTypeAndOauthId(loginType, oauthId)
+                    .orElseThrow(() -> new BusinessException(ErrorStatus.KAKAO_API_ERROR));
+            return new SocialMemberResult(member, false);
+        }
+    }
+
+    private AuthResponseDTO.GetUserDTO completeSocialLogin(SocialMemberResult result) {
+        Member member = result.member();
 
         if (member.isInactive()) {
             member.reactivate();
         }
 
-        if (isNewMember.get()) {
+        if (result.isNewMember()) {
             publishSignedUpEvent(member);
         }
 
-        return generateAndSaveTokens(member, isNewMember.get());
+        return generateAndSaveTokens(member, result.isNewMember());
     }
 
     private void publishSignedUpEvent(Member member) {
@@ -175,15 +176,14 @@ public class AuthCommandServiceImpl implements AuthCommandService {
                 new MemberSignedUpEvent(member.getId(), member.getNickname(), member.getLoginType()));
     }
 
-    private Member createAppleMember(String appleId) {
-        Member newMember = Member.builder()
+    private Member buildAppleMember(String appleId) {
+        return Member.builder()
                 .oauthId(appleId)
                 .nickname("애플 사용자_" + (appleId.length() >= 6 ? appleId.substring(0, 6) : appleId))
                 .loginType(LoginType.APPLE)
                 .role(Role.ROLE_USER)
                 .score(0)
                 .build();
-        return memberRepository.save(newMember);
     }
 
     private String extractNickname(AuthResponseDTO.GetKakaoUserInfoDTO kakaoUserInfo) {
@@ -196,8 +196,8 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         return "카카오 사용자_" + kakaoUserInfo.getId();
     }
 
-    private Member createKakaoMember(String kakaoId, String nickname, String email) {
-        Member newMember = Member.builder()
+    private Member buildKakaoMember(String kakaoId, String nickname, String email) {
+        return Member.builder()
                 .oauthId(kakaoId)
                 .nickname(nickname)
                 .email(email)
@@ -205,8 +205,6 @@ public class AuthCommandServiceImpl implements AuthCommandService {
                 .role(Role.ROLE_USER)
                 .score(0)
                 .build();
-
-        return memberRepository.save(newMember);
     }
 
     private AuthResponseDTO.GetUserDTO generateAndSaveTokens(Member member, boolean isNewUser) {
@@ -292,7 +290,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
 
     @Transactional
     public AuthResponseDTO.WithdrawalResponse withdrawal(Long memberId) {
-        Member member = memberRepository.findById(memberId)
+        Member member = memberRepository.findByIdForUpdate(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorStatus.MEMBER_NOT_FOUND));
 
         if (member.isInactive()) {
@@ -300,7 +298,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         }
 
 
-        // 연관 데이터 완전 삭제 (외래키 제약 없는 순서라 순서 무관)
+        // 개인 활동 데이터는 삭제하고, 분석용 대화 기록은 회원 연결만 해제한다.
         memberTermRepository.deleteAllByMember(member);
         memberMissionRepository.deleteAllByMember_Id(memberId);
         memberFavoriteRepository.deleteAllByMember_Id(memberId);
@@ -308,19 +306,33 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         memberRecipeRepository.deleteAllByMember_Id(memberId);
         cookingRecordRepository.deleteAllByMember_Id(memberId);
         ingredientRequestRepository.deleteAllByMember_Id(memberId);
-        memberRepository.deleteCookHistoriesByMemberId(memberId);
-
-
-        // Redis에서 Refresh Token 삭제
-        redisTemplate.delete(REFRESH_TOKEN_PREFIX + memberId);
+        chatLogRepository.detachMember(memberId);
 
         // 회원 자체 삭제
         memberRepository.delete(member);
+        memberRepository.flush();
+        deleteWithdrawalCachesAfterCommit(memberId);
 
         eventPublisher.publishEvent(
                 new MemberWithdrawnEvent(memberId, member.getNickname(), member.getLoginType()));
 
         return AuthConverter.toWithdrawalResponseDTO();
+    }
+
+    private void deleteWithdrawalCachesAfterCommit(Long memberId) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    redisTemplate.delete(List.of(
+                            REFRESH_TOKEN_PREFIX + memberId,
+                            "chat:room:" + memberId + ":messages"));
+                } catch (Exception e) {
+                    // 회원 삭제는 이미 커밋됐다. 실패 응답으로 되돌리지 않고 운영 확인 대상으로 남긴다.
+                    log.error("[회원 탈퇴] DB 삭제 완료 후 Redis 정리 실패 - memberId: {}", memberId, e);
+                }
+            }
+        });
     }
 
     // 비밀번호 변경
